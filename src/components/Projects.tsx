@@ -2,6 +2,15 @@ import { motion } from 'framer-motion';
 import { ExternalLink, FileText } from 'lucide-react';
 
 const projects = [
+  
+  {
+    title: 'SyncScripts',
+    problem: 'Professional teams, in service-based and technical consulting firms, face Information Overload post-meeting.',
+    tags: ['Gemini AI', 'LLM Integration','React', 'TypeScript'],
+    liveUrl: 'https://syncscripts.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/1xxIGKOABNoZG3CJZFtJGcnBue6ZnAqBX/view?usp=drive_link',
+    gradient: 'from-cyan-500 to-blue-500',
+  },
   {
     title: 'AI Agent Orchestration Platform',
     problem: 'Engineering teams lose 40% of sprint capacity to manual operational tasks and context switching.',
@@ -17,14 +26,6 @@ const projects = [
     liveUrl: '#',
     caseStudyUrl: '#',
     gradient: 'from-blue-500 to-indigo-500',
-  },
-  {
-    title: 'SyncScripts',
-    problem: 'Professional teams, in service-based and technical consulting firms, face Information Overload post-meeting.',
-    tags: ['Gemini AI', 'LLM Integration','React', 'TypeScript'],
-    liveUrl: 'https://syncscripts.netlify.app/',
-    caseStudyUrl: 'https://drive.google.com/file/d/1xxIGKOABNoZG3CJZFtJGcnBue6ZnAqBX/view?usp=drive_link',
-    gradient: 'from-cyan-500 to-blue-500',
   },
   {
     title: 'Code Review Automation Engine',
@@ -46,8 +47,8 @@ const projects = [
     title: 'The Portfolio',
     problem: 'Because why not?.',
     tags: ['OpenAI', 'React', 'Python', 'Analytics'],
-    liveUrl: '#',
-    caseStudyUrl: '#',
+    liveUrl: 'https://priyanshu-rawat.netlify.app',
+    caseStudyUrl: 'https://github.com/therealrawat',
     gradient: 'from-green-500 to-emerald-500',
   },
 ];
