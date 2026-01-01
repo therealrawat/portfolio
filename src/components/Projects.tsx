@@ -12,11 +12,11 @@ const projects = [
     gradient: 'from-cyan-500 to-blue-500',
   },
   {
-    title: 'AI Agent Orchestration Platform',
-    problem: 'Engineering teams lose 40% of sprint capacity to manual operational tasks and context switching.',
-    tags: ['Gemini AI', 'React', 'TypeScript', 'Google Cloud'],
-    liveUrl: '#',
-    caseStudyUrl: '#',
+    title: 'EchoMap - English Diagnostic Utility',
+    problem: 'Many English learners possess proficiency but lack the awareness to identify subtle linguistic gaps that hinder professional growth.',
+    tags: ['Gemini AI', 'TypeScript', 'Speech Recognition'],
+    liveUrl: 'https://echo-map.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/1qgzbImMw64QSZPnS2o3smqBu3XvGHzpH/view?usp=drive_link',
     gradient: 'from-indigo-500 to-purple-500',
   },
   {
@@ -82,7 +82,7 @@ export default function Projects() {
               transition={{ duration: 0.6, delay: index * 0.1 }}
               className="group relative bg-slate-900/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl overflow-hidden hover:border-slate-700/50 transition-all duration-300"
             >
-              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.gradient}`} />
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${project.gradient}`} />
 
               <div className="p-6">
                 <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-indigo-400 transition-colors">
