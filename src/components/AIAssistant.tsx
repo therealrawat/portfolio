@@ -175,17 +175,31 @@ Your role:
 
   return (
     <>
+      {/* Backdrop Overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Floating Bubble Button */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(true)}
+        onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full shadow-lg shadow-indigo-500/50 flex items-center justify-center text-white hover:shadow-indigo-500/70 transition-all duration-300"
-        aria-label="Open AI Assistant"
+        aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
       >
-        <MessageCircle className="w-6 h-6" />
+        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
       </motion.button>
 
       {/* Chat Window */}
@@ -195,6 +209,7 @@ Your role:
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            onClick={(e) => e.stopPropagation()}
             className="fixed bottom-24 right-6 z-50 w-96 h-[600px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
@@ -216,10 +231,10 @@ Your role:
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 flex items-center justify-center text-white hover:bg-white/20 rounded-lg transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/30 rounded-lg transition-colors bg-white/10 border border-white/20"
                 aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
