@@ -33,7 +33,7 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
         >
-          Building the right Products to{' '}
+          Building the Right Products to{' '}
           <span className="bg-gradient-to-r from-indigo-400 to-indigo-600 bg-clip-text text-transparent">
             Solve Operational Debt
           </span>
