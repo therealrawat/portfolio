@@ -45,9 +45,9 @@ const projects = [
   },
   {
     title: 'The Portfolio',
-    problem: 'Because why not?.',
+    problem: 'Personal portfolio to showcase projects and case studies effectively.',
     tags: ['OpenAI', 'React', 'Python', 'Analytics'],
-    liveUrl: 'https://priyanshu-rawat.netlify.app',
+    liveUrl: 'https://www.priyanshurawat.co.in/',
     caseStudyUrl: 'https://github.com/therealrawat',
     gradient: 'from-green-500 to-emerald-500',
   },
