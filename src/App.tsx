@@ -6,6 +6,7 @@ import ProductMindset from './components/ProductMindsset';
 import TechStack from './components/TechStack';
 import Footer from './components/Footer';
 import AIAssistant from './components/AIAssistant';
+import Experience from './components/Experience';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
       <Projects />
       <ProductMindset />
       <TechStack />
+      <Experience />
       <Footer />
       <AIAssistant />
     </div>
