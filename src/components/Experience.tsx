@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Search, FileText, Boxes, Hammer, Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin } from 'lucide-react';
 
 const TestingXpertsLogo = () => (
   <svg className="w-full h-full p-2" viewBox="0 0 58 52" xmlns="http://www.w3.org/2000/svg">
@@ -94,7 +94,7 @@ export default function Experience() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="relative flex items-start gap-8"
+                  className="relative flex items-start gap-0 md:gap-8"
                 >
                   {/* Desktop Icon Container */}
                   <div className="hidden md:flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shrink-0 z-10 shadow-xl overflow-hidden shadow-indigo-500/20 border border-slate-800/50">
