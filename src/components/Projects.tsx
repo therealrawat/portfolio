@@ -2,14 +2,22 @@ import { motion } from 'framer-motion';
 import { ExternalLink, FileText } from 'lucide-react';
 
 const projects = [
-  
+
   {
     title: 'SyncScripts',
     problem: 'Professional teams, in service-based and technical consulting firms, face Information Overload post-meeting.',
-    tags: ['Gemini AI', 'LLM Integration','React', 'TypeScript'],
+    tags: ['Gemini AI', 'LLM Integration', 'React', 'TypeScript'],
     liveUrl: 'https://syncscripts.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/1xxIGKOABNoZG3CJZFtJGcnBue6ZnAqBX/view?usp=drive_link',
     gradient: 'from-cyan-500 to-blue-500',
+  },
+  {
+    title: '4Her - Menstrual Health Application',
+    problem: 'Wellness application for women that empowers them to track reproductive health with dignity.',
+    tags: ['MongoDb', 'Express', 'Node.js', 'React'],
+    liveUrl: 'https://the4her.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/129ssK2BYRBFnUTGMo6yYc9sb5awPVW-s/view?usp=drive_link',
+    gradient: 'from-indigo-500 to-purple-500',
   },
   {
     title: 'EchoMap - English Diagnostic Utility',
@@ -17,14 +25,6 @@ const projects = [
     tags: ['Gemini AI', 'TypeScript', 'Speech Recognition'],
     liveUrl: 'https://echo-map.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/1qgzbImMw64QSZPnS2o3smqBu3XvGHzpH/view?usp=drive_link',
-    gradient: 'from-indigo-500 to-purple-500',
-  },
-  {
-    title: 'Intelligent PRD Generator',
-    problem: 'Product managers spend 15+ hours per feature writing comprehensive PRDs from scratch.',
-    tags: ['LLM Integration', 'Next.js', 'PostgreSQL', 'OpenAI'],
-    liveUrl: '#',
-    caseStudyUrl: '#',
     gradient: 'from-blue-500 to-indigo-500',
   },
   {
@@ -42,7 +42,7 @@ const projects = [
     liveUrl: '#',
     caseStudyUrl: '#',
     gradient: 'from-orange-500 to-red-500',
-  },  
+  },
   {
     title: 'The Portfolio',
     problem: 'Because why not?.',
@@ -107,6 +107,7 @@ export default function Projects() {
                 <div className="flex items-center gap-3">
                   <a
                     href={project.liveUrl}
+                    target="_blank"
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/30 text-indigo-400 rounded-lg transition-all duration-300 text-sm font-medium"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -114,6 +115,7 @@ export default function Projects() {
                   </a>
                   <a
                     href={project.caseStudyUrl}
+                    target="_blank"
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-300 rounded-lg transition-all duration-300 text-sm font-medium"
                   >
                     <FileText className="w-4 h-4" />
