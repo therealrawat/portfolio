@@ -7,10 +7,12 @@ import TechStack from './components/TechStack';
 import Footer from './components/Footer';
 import AIAssistant from './components/AIAssistant';
 import Experience from './components/Experience';
+import CustomCursor from './components/CustomCursor';
 
 function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <CustomCursor />
       <Navigation />
       <Hero />
       <ValueProp />
