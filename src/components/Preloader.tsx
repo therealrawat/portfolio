@@ -47,7 +47,7 @@ export default function Preloader() {
               transition={{ delay: 1, duration: 0.5 }}
               className="mt-4 flex justify-between items-center text-[10px] uppercase tracking-[0.3em] text-neutral-500 font-medium"
             >
-              <span>Portfolio 2024</span>
+              <span>Portfolio {new Date().getFullYear()}</span>
               <span>Loading Experience</span>
             </motion.div>
           </div>
