@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Loader2, ArrowUpRight } from 'lucide-react';
+import logo from '../assets/pr-light.svg';
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -54,9 +55,16 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-8 md:px-20 flex items-center justify-between">
         <button 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="text-xl font-black tracking-tighter text-white"
+          className="flex items-center gap-2.5 group"
         >
-          PR.
+          <img 
+            src={logo} 
+            alt="Priyanshu Rawat Logo" 
+            className="h-[1.1rem] w-auto opacity-90 transition-transform duration-500 group-hover:scale-110" 
+          />
+          <span className="text-xl font-black tracking-tighter text-white leading-none">
+            PR.
+          </span>
         </button>
 
         <div className="flex items-center gap-12">
