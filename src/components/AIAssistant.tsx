@@ -148,13 +148,13 @@ Your role:
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-8 right-8 z-50 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+        className="fixed bottom-8 right-8 z-50 w-16 h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
         aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
       >
         {isOpen ? (
           <X className="w-8 h-8 text-white" />
         ) : (
-          <img src={logo} alt="AI Assistant" className="w-14 h-14" />
+          <img src={logo} alt="AI Assistant" className="w-12 h-12 object-contain" />
         )}
       </motion.button>
 

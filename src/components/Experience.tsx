@@ -16,6 +16,18 @@ const TestingXpertsLogo = () => (
   </svg>
 );
 
+const RitesLogo = () => (
+  <svg className="w-full h-full p-4 opacity-50 group-hover:opacity-100 transition-opacity" viewBox="0 0 1100 1000" xmlns="http://www.w3.org/2000/svg">
+    <path d="
+      M 801 84.367 C 771.243 91.289, 748.601 109.370, 735.990 136.279 C 724.816 160.125, 724.777 188.791, 735.885 212.496 C 745.814 233.683, 760.322 248.208, 781.381 258.045 C 810.414 271.606, 846.057 268.267, 872.500 249.508 C 880.901 243.548, 892.949 230.619, 897.958 222.187 C 903.420 212.993, 907.411 202.625, 909.545 192.081 C 911.838 180.757, 911.122 160.739, 908.041 150 C 899.165 119.062, 875.086 95.031, 843.826 85.912 C 834.672 83.242, 809.710 82.341, 801 84.367
+      M 736 297.086 C 534.605 298.031, 524.438 298.201, 511.849 300.833 C 465.578 310.508, 428.245 337.337, 403.227 378.890 C 393.513 395.026, 387.138 408.550, 303.708 590 C 261.097 682.675, 216.686 779.200, 205.017 804.500 C 193.348 829.800, 183.568 851.288, 183.284 852.250 C 182.794 853.908, 187.758 854, 277.729 854 L 372.691 854 403.526 789.750 C 431.050 732.398, 486.195 618.096, 523.053 542 C 530.378 526.875, 538.201 511.412, 540.436 507.639 C 549.033 493.124, 563.358 480.707, 578.035 475.047 C 594.202 468.812, 588.781 469.004, 750.381 468.964 C 831.296 468.945, 901.775 468.545, 907 468.076 C 929.952 466.017, 948.239 458.063, 964.072 443.251 C 976.979 431.178, 987.850 412.570, 1000.914 380.186 C 1008.112 362.346, 1030.110 297.444, 1029.251 296.584 C 1028.579 295.912, 961.737 296.027, 736 297.086
+      M 598.069 492.088 C 589.979 493.675, 581.190 497.077, 575.310 500.898 C 564.323 508.037, 562.131 511.375, 543.475 549.385 C 509.044 619.532, 449.010 745.135, 412.524 823.358 C 399.818 850.600, 397.002 857.404, 398.116 858.179 C 398.992 858.788, 433.822 858.952, 493 858.624 C 568.421 858.207, 586.633 857.855, 587.186 856.804 C 587.564 856.087, 620.598 788, 660.595 705.500 C 700.592 623, 740.221 541.371, 748.659 524.102 C 757.096 506.833, 764 492.321, 764 491.852 C 764 490.732, 603.821 490.960, 598.069 492.088"
+      fill="#fff"
+      fillRule="evenodd"
+    />
+  </svg>
+);
+
 const phases = [
   {
     icon: TestingXpertsLogo,
@@ -28,7 +40,7 @@ const phases = [
     tags: ['AI Orchestration', 'FastAPI', 'Product Strategy', 'SQL Server']
   },
   {
-    icon: 'https://media.licdn.com/dms/image/v2/D560BAQGbBTOC2UdwXg/company-logo_200_200/company-logo_200_200/0/1703668177911/smart_data_enterprises_logo?e=1770249600&v=beta&t=TazlPNfK9Amk-uaY_iL0KH4MnZvXN4NSrbt10isQXDI',
+    icon: 'https://dkk4qeqny48s0.cloudfront.net/wp-content/uploads/2025/02/logo-updated.png',
     title: 'Associate Software Engineer',
     company: 'smartData Enterprises',
     date: 'March 2023 - Oct 2024',
@@ -38,7 +50,7 @@ const phases = [
     tags: ['.NET Core', 'Microservices', 'EHR Systems', 'ReactJS']
   },
   {
-    icon: 'https://media.licdn.com/dms/image/v2/D560BAQGbbTH_anzOLg/img-crop_100/B56Zbo192cH4AU-/0/1747663184024?e=1770249600&v=beta&t=YQTs8_3EbrafGCmn2ZcZcnU6oN9_CbY9mTFu9hzo2TE',
+    icon: RitesLogo,
     title: 'Intern',
     company: 'Rites Ltd',
     date: 'Aug 2022 - Jan 2023',
@@ -71,10 +83,10 @@ export default function Experience() {
     <section id="experience" className="py-32 px-8 md:px-20 bg-black relative">
       <div className="max-w-7xl mx-auto">
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: true }}
-           transition={{ duration: 0.8 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
           className="mb-24"
         >
           <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-6 font-bold">
@@ -86,7 +98,7 @@ export default function Experience() {
           </h2>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -139,7 +151,7 @@ export default function Experience() {
                       <p className="text-neutral-500 text-lg leading-relaxed max-w-2xl">
                         {phase.description}
                       </p>
-                      
+
                       <div className="flex flex-wrap gap-x-6 gap-y-3 h-fit">
                         {phase.tags.map(tag => (
                           <div key={tag} className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-neutral-700 font-black group-hover:text-white transition-colors">
@@ -162,4 +174,4 @@ export default function Experience() {
       </div>
     </section>
   );
-}
+}
