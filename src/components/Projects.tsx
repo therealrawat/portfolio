@@ -1,132 +1,149 @@
 import { motion } from 'framer-motion';
-import { ExternalLink, FileText } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 const projects = [
-
   {
     title: 'SyncScripts',
-    problem: 'Professional teams, in service-based and technical consulting firms, face Information Overload post-meeting.',
-    tags: ['Gemini AI', 'LLM Integration', 'React', 'TypeScript'],
+    problem: 'Professional teams face information overload post-meeting.',
+    tags: ['Gemini AI', 'LLM Integration', 'React'],
     liveUrl: 'https://syncscripts.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/1xxIGKOABNoZG3CJZFtJGcnBue6ZnAqBX/view?usp=drive_link',
-    gradient: 'from-cyan-500 to-blue-500',
   },
   {
-    title: '4Her - Menstrual Health Application',
-    problem: 'Wellness application for women that empowers them to track reproductive health with dignity.',
-    tags: ['MongoDb', 'Express', 'Node.js', 'React'],
+    title: '4Her - Menstrual Health',
+    problem: 'Wellness application empowering women to track health with dignity.',
+    tags: ['MongoDB', 'Express', 'React', 'Node.js'],
     liveUrl: 'https://the4her.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/129ssK2BYRBFnUTGMo6yYc9sb5awPVW-s/view?usp=drive_link',
-    gradient: 'from-indigo-500 to-purple-500',
   },
   {
-    title: 'EchoMap - English Diagnostic Utility',
-    problem: 'Many English learners possess proficiency but lack the awareness to identify subtle linguistic gaps that hinder professional growth.',
-    tags: ['Gemini AI', 'TypeScript', 'Speech Recognition'],
+    title: 'EchoMap - Diagnostic Utility',
+    problem: 'AI-driven tool to identify subtle linguistic gaps in English.',
+    tags: ['Gemini AI', 'Speech Recognition', 'TypeScript'],
     liveUrl: 'https://echo-map.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/1qgzbImMw64QSZPnS2o3smqBu3XvGHzpH/view?usp=drive_link',
-    gradient: 'from-blue-500 to-indigo-500',
   },
   {
-    title: 'Code Review Automation Engine',
-    problem: 'Senior engineers spend 30% of their time on repetitive code review tasks.',
-    tags: ['AI/ML', 'Python', 'FastAPI', 'Docker'],
+    title: 'Review Engine',
+    problem: 'Automating repetitive code review tasks for senior engineers.',
+    tags: ['AI/ML', 'Python', 'FastAPI'],
     liveUrl: '#',
     caseStudyUrl: '#',
-    gradient: 'from-purple-500 to-pink-500',
   },
   {
-    title: 'Customer Feedback Loop System',
-    problem: 'Product teams lack systematic way to close the loop between feedback and features.',
-    tags: ['React', 'Supabase', 'TypeScript', 'Analytics'],
+    title: 'Feedback Loop',
+    problem: 'Systematic way to close the loop between feedback and features.',
+    tags: ['React', 'Supabase', 'TypeScript'],
     liveUrl: '#',
     caseStudyUrl: '#',
-    gradient: 'from-orange-500 to-red-500',
   },
   {
     title: 'The Portfolio',
-    problem: 'Personal portfolio to showcase projects and case studies effectively.',
-    tags: ['OpenAI', 'React', 'Python', 'Analytics'],
+    problem: 'Personal portfolio to showcase projects and case studies.',
+    tags: ['OpenAI', 'React', 'Framer Motion'],
     liveUrl: 'https://www.priyanshurawat.co.in/',
     caseStudyUrl: 'https://github.com/therealrawat',
-    gradient: 'from-green-500 to-emerald-500',
   },
 ];
 
 export default function Projects() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as any },
+    },
+  };
+
   return (
-    <section id="projects" className="py-24 px-6 relative">
+    <section id="projects" className="py-32 px-8 md:px-20 relative bg-black">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.8 }}
+          className="mb-20"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Featured Projects
+          <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-6 font-bold">
+            <span className="w-12 h-[1px] bg-neutral-800" />
+            Featured Work
+          </div>
+          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
+            SELECTED PROJECTS.
           </h2>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            End-to-end case studies showcasing the journey from problem space to shipped product
-          </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-neutral-900 border border-neutral-900"
+        >
+          {projects.map((project) => (
             <motion.div
               key={project.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="group relative bg-slate-900/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl overflow-hidden hover:border-slate-700/50 transition-all duration-300"
+              variants={itemVariants}
+              className="group relative bg-black p-8 flex flex-col justify-between min-h-[400px] transition-colors duration-500 hover:bg-neutral-950"
             >
-              <div className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${project.gradient}`} />
+              <div>
+                <div className="flex justify-between items-start mb-12">
+                   <div className="flex flex-wrap gap-2">
+                    {project.tags.slice(0, 2).map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] uppercase tracking-widest text-neutral-600 font-bold"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-neutral-800 group-hover:text-white transition-colors duration-500" />
+                </div>
 
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-indigo-400 transition-colors">
+                <h3 className="text-3xl font-black text-white mb-6 group-hover:translate-x-2 transition-transform duration-500">
                   {project.title}
                 </h3>
 
-                <p className="text-slate-400 text-sm mb-4 leading-relaxed">
+                <p className="text-neutral-500 text-sm leading-relaxed mb-8 max-w-xs">
                   {project.problem}
                 </p>
-
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {project.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-slate-800/50 border border-slate-700/50 rounded-full text-xs text-slate-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <a
-                    href={project.liveUrl}
-                    target="_blank"
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/30 text-indigo-400 rounded-lg transition-all duration-300 text-sm font-medium"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Live
-                  </a>
-                  <a
-                    href={project.caseStudyUrl}
-                    target="_blank"
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-300 rounded-lg transition-all duration-300 text-sm font-medium"
-                  >
-                    <FileText className="w-4 h-4" />
-                    PRD
-                  </a>
-                </div>
               </div>
+
+              <div className="flex items-center gap-6 pt-10 border-t border-neutral-900 overflow-hidden">
+                <a
+                  href={project.liveUrl}
+                  target="_blank"
+                  className="text-[10px] uppercase tracking-[0.3em] text-white font-bold hover:text-neutral-400 transition-colors"
+                >
+                  Live View
+                </a>
+                <a
+                  href={project.caseStudyUrl}
+                  target="_blank"
+                  className="text-[10px] uppercase tracking-[0.3em] text-neutral-600 font-bold hover:text-white transition-colors"
+                >
+                  Read PRD
+                </a>
+              </div>
+
+              {/* Hover Grain Effect for each card */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] pointer-events-none transition-opacity duration-500 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E')]" />
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
+

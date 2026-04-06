@@ -35,63 +35,78 @@ const phases = [
 ];
 
 export default function ProductMindset() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as any },
+    },
+  };
+
   return (
-    <section id="mindset" className="py-24 px-6 relative">
-      <div className="max-w-5xl mx-auto">
+    <section id="mindset" className="py-32 px-8 md:px-20 bg-black relative">
+      <div className="max-w-7xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+           initial={{ opacity: 0, y: 20 }}
+           whileInView={{ opacity: 1, y: 0 }}
+           viewport={{ once: true }}
+           transition={{ duration: 0.8 }}
+          className="mb-24"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            My Product Approach
+          <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-6 font-bold">
+            <span className="w-12 h-[1px] bg-neutral-800" />
+            Product Lifecycle
+          </div>
+          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
+            MY APPROACH.
           </h2>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            A structured methodology for turning ambiguous problems into production-ready solutions
-          </p>
         </motion.div>
 
-        <div className="relative">
-          <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500 via-indigo-500/50 to-transparent hidden md:block" />
-
-          <div className="space-y-12">
-            {phases.map((phase, index) => {
-              const Icon = phase.icon;
-              return (
-                <motion.div
-                  key={phase.title}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="relative flex items-start gap-8"
-                >
-                  <div className="hidden md:flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex-shrink-0 shadow-lg shadow-indigo-500/25">
-                    <Icon className="w-7 h-7 text-white" />
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-px bg-neutral-900 border border-neutral-900"
+        >
+          {phases.map((phase) => {
+            const Icon = phase.icon;
+            return (
+              <motion.div
+                key={phase.title}
+                variants={itemVariants}
+                className="group relative bg-black p-10 min-h-[300px] flex flex-col justify-between transition-colors duration-500 hover:bg-neutral-950"
+              >
+                <div>
+                  <div className="w-12 h-12 border border-neutral-800 flex items-center justify-center mb-10 group-hover:bg-white group-hover:border-white transition-all duration-500">
+                    <Icon className="w-5 h-5 text-neutral-500 group-hover:text-black transition-colors duration-500" />
                   </div>
 
-                  <div className="flex-1 bg-slate-900/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 md:p-8 hover:border-slate-700/50 transition-all duration-300">
-                    <div className="flex items-start gap-4">
-                      <div className="md:hidden flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex-shrink-0">
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
+                  <h3 className="text-2xl font-black text-white mb-6 uppercase tracking-tight">
+                    {phase.title}
+                  </h3>
 
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-5xl font-bold text-slate-800">{phase.number}</span>
-                          <h3 className="text-2xl font-semibold text-white">{phase.title}</h3>
-                        </div>
-                        <p className="text-slate-400 leading-relaxed">{phase.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
+                  <p className="text-neutral-500 leading-relaxed text-sm">
+                    {phase.description}
+                  </p>
+                </div>
+
+                <div className="absolute top-6 right-6 text-[40px] font-black text-white/[0.01] transition-colors group-hover:text-white/[0.03]">
+                  {phase.number}
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
       </div>
     </section>
   );

@@ -8,20 +8,37 @@ import Footer from './components/Footer';
 import AIAssistant from './components/AIAssistant';
 import Experience from './components/Experience';
 import CustomCursor from './components/CustomCursor';
+import Preloader from './components/Preloader';
+import { useEffect, useState } from 'react';
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Match this with the Preloader timer + transition
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2800);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-[#050505] selection:bg-white/10">
       <CustomCursor />
-      <Navigation />
-      <Hero />
-      <ValueProp />
-      <Projects />
-      <ProductMindset />
-      <TechStack />
-      <Experience />
-      <Footer />
-      <AIAssistant />
+      <Preloader />
+      
+      <main className={`transition-opacity duration-1000 ${loading ? 'opacity-0' : 'opacity-100'}`}>
+        <Navigation />
+        <Hero />
+        <ValueProp />
+        <Projects />
+        <ProductMindset />
+        <TechStack />
+        <Experience />
+        <Footer />
+        <AIAssistant />
+      </main>
     </div>
   );
 }

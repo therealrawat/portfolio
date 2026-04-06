@@ -32,13 +32,13 @@ const CustomCursor = () => {
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Color palette for particles (blue to purple gradient)
+        // Monochromatic palette for particles (shades of white and gray)
         const colors = [
-            'rgba(59, 130, 246, 0.8)',   // Blue
-            'rgba(99, 102, 241, 0.8)',   // Indigo
-            'rgba(139, 92, 246, 0.8)',   // Purple
-            'rgba(168, 85, 247, 0.8)',   // Purple
-            'rgba(236, 72, 153, 0.8)',   // Pink
+            'rgba(255, 255, 255, 0.8)',   // Pure White
+            'rgba(212, 212, 212, 0.8)',   // Light Gray
+            'rgba(163, 163, 163, 0.8)',   // Gray
+            'rgba(115, 115, 115, 0.8)',   // Medium Gray
+            'rgba(82, 82, 82, 0.8)',      // Dark Gray
         ];
 
         // Track mouse position

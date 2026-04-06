@@ -22,7 +22,6 @@ export default function AIAssistant() {
   const [currentSection, setCurrentSection] = useState<SectionContext>('home');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Detect which section is currently in view
   useEffect(() => {
     const handleScroll = () => {
       const sections = [
@@ -44,18 +43,16 @@ export default function AIAssistant() {
         }
       }
 
-      // Default to home if in hero section
       if (window.scrollY < window.innerHeight) {
         setCurrentSection('home');
       }
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -71,7 +68,7 @@ export default function AIAssistant() {
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
-        throw new Error('Gemini API key not found. Please add VITE_GEMINI_API_KEY to your .env file.');
+        throw new Error('Gemini API key not found.');
       }
 
       const sectionContext = getContextForSection(currentSection);
@@ -85,80 +82,29 @@ ${JSON.stringify(PORTFOLIO_CONTEXT, null, 2)}
 
 Your role:
 - Answer questions about Priyanshu's work, projects, and philosophy
-- Provide context-aware responses based on which section the user is viewing
-- If they're viewing projects, emphasize engineering details
-- If they're viewing the mindset/approach section, emphasize PM philosophy
 - Be conversational, professional, and helpful
 - Guide the conversation toward demonstrating Priyanshu's value as a Product-Minded Engineer
-- Keep responses concise but informative (2-3 sentences when possible)
-- If asked about something not in the context, politely redirect to what you know about Priyanshu's work`;
+- Keep responses concise but informative (2-3 sentences when possible)`;
 
-      // const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${apiKey}`,
-      //   },
-      //   body: JSON.stringify({
-      //     model: 'gpt-4o-mini',
-      //     messages: [
-      //       { role: 'system', content: systemPrompt },
-      //       ...messages.map(msg => ({ role: msg.role, content: msg.content })),
-      //       { role: 'user', content: input },
-      //     ],
-      //     temperature: 0.7,
-      //     max_tokens: 300,
-      //   }),
-      // });
-
-      /* Using Gemini API */
       const ai = new GoogleGenAI({ apiKey });
-      
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: systemPrompt,
       });
-      
+
       const responseText = response.text || '';
-      
-      if (!responseText) {
-        throw new Error('No response text received from API');
-      }
+      if (!responseText) throw new Error('No response received');
 
-      // const response = await fetch('https://gemini.googleapis.com/v1beta2/models/gemini-1.5-pro-chat:generateMessage', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${apiKey}`,
-      //   },
-      //   body: JSON.stringify({
-      //     model: 'gemini-2.5-flash',
-      //     messages: [
-      //       { role: 'system', content: systemPrompt },
-      //       ...messages.map(msg => ({ role: msg.role, content: msg.content })),
-      //       { role: 'user', content: input },
-      //     ],
-      //     temperature: 0.7,
-      //     max_tokens: 300,
-      //   }),
-      // });
-
-      // if (!response.ok) {
-      //   const error = await response.json();
-      //   throw new Error(error.error?.message || 'Failed to get response from AI');
-      // }
-
-      const data = await response.text;
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data || 'Sorry, I could not generate a response.',
+        content: responseText,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       const errorMessage: Message = {
         role: 'assistant',
-        content: error instanceof Error ? error.message : 'Sorry, there was an error. Please try again.',
+        content: 'Sorry, there was an error. Please try again.',
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -175,7 +121,6 @@ Your role:
 
   return (
     <>
-      {/* Backdrop Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -183,63 +128,49 @@ Your role:
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
             aria-hidden="true"
           />
         )}
       </AnimatePresence>
 
-      {/* Floating Bubble Button */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full shadow-lg shadow-indigo-500/50 flex items-center justify-center text-white hover:shadow-indigo-500/70 transition-all duration-300"
+        className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-white border border-white flex items-center justify-center text-black shadow-2xl transition-all duration-500"
         aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
       </motion.button>
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            exit={{ opacity: 0, y: 40, scale: 0.95 }}
+            transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="fixed bottom-24 right-6 z-50 w-96 h-[600px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-28 right-8 z-50 w-[90vw] md:w-[400px] h-[600px] bg-black border border-white/10 shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 border border-white/20 flex items-center justify-center">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold">AI Assistant</h3>
-                  <p className="text-xs text-indigo-100">
-                    {currentSection === 'home' && 'Home'}
-                    {currentSection === 'projects' && 'Viewing Projects'}
-                    {currentSection === 'mindset' && 'Viewing Approach'}
-                    {currentSection === 'tech' && 'Viewing Tech Stack'}
-                    {currentSection === 'contact' && 'Contact Section'}
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest">AI ASSISTANT</h3>
+                  <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">
+                    {currentSection}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/30 rounded-lg transition-colors bg-white/10 border border-white/20"
-                aria-label="Close"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
               {messages.map((message, index) => (
                 <motion.div
                   key={index}
@@ -248,52 +179,46 @@ Your role:
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${
                       message.role === 'user'
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-slate-800 text-slate-100'
+                        ? 'bg-white text-black font-medium'
+                        : 'bg-neutral-900 text-neutral-300 border border-neutral-800'
                     }`}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
+                    {message.content}
                   </div>
                 </motion.div>
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-slate-800 rounded-2xl px-4 py-2">
-                    <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+                  <div className="bg-neutral-900 border border-neutral-800 px-4 py-3">
+                    <Loader2 className="w-4 h-4 text-white animate-spin" />
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-slate-800">
-              <div className="flex gap-2">
+            <div className="p-6 border-t border-white/10 bg-black">
+              <div className="flex gap-4">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask me anything..."
-                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  placeholder="ASK ME ANYTHING..."
+                  className="flex-1 bg-neutral-950 border border-neutral-900 px-4 py-3 text-white placeholder-neutral-700 focus:outline-none focus:border-white transition-colors text-[10px] uppercase tracking-widest font-bold"
                   disabled={isLoading}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
-                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center justify-center"
+                  className="w-12 h-12 bg-white flex items-center justify-center text-black disabled:opacity-20 transition-opacity"
                   aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-slate-500 mt-2 text-center">
-                Context-aware based on current section
-              </p>
             </div>
           </motion.div>
         )}

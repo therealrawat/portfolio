@@ -7,76 +7,94 @@ const competencies = [
     title: 'AI Orchestration',
     description:
       'Building intelligent systems that leverage LLMs and AI agents to automate complex workflows and reduce operational overhead.',
-    gradient: 'from-indigo-500 to-purple-500',
   },
   {
     icon: FileText,
-    title: 'Product Strategy (PRDs)',
+    title: 'Product Strategy',
     description:
       'Crafting comprehensive Product Requirements Documents that align stakeholders, define clear success metrics, and guide execution.',
-    gradient: 'from-blue-500 to-indigo-500',
   },
   {
     icon: Code2,
-    title: 'Full-Stack Development',
+    title: 'Full-Stack Execution',
     description:
-      'End-to-end implementation with React, TypeScript, and modern cloud infrastructure. From prototype to production-ready systems.',
-    gradient: 'from-indigo-500 to-cyan-500',
+      'End-to-end implementation with modern frameworks. Rapid prototyping from concept to production-ready systems.',
   },
 ];
 
 export default function ValueProp() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as any },
+    },
+  };
+
   return (
-    <section className="py-24 px-6 relative">
+    <section id="mindset" className="py-32 px-8 md:px-20 bg-black relative">
       <div className="max-w-7xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+           initial={{ opacity: 0, y: 20 }}
+           whileInView={{ opacity: 1, y: 0 }}
+           viewport={{ once: true }}
+           transition={{ duration: 0.8 }}
+          className="mb-20"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-6 font-bold">
+            <span className="w-12 h-[1px] bg-neutral-800" />
             Core Competencies
+          </div>
+          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
+            THE VALUE PROP.
           </h2>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            A unique blend of product thinking, technical execution, and strategic vision
-          </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {competencies.map((competency, index) => {
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid md:grid-cols-3 gap-px bg-neutral-900 border border-neutral-900"
+        >
+          {competencies.map((competency) => {
             const Icon = competency.icon;
             return (
               <motion.div
                 key={competency.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="group relative p-8 bg-slate-900/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl hover:border-slate-700/50 transition-all duration-300"
+                variants={itemVariants}
+                className="group relative bg-black p-10 min-h-[350px] flex flex-col justify-between transition-colors duration-500 hover:bg-neutral-950"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-
-                <div className="relative z-10">
-                  <div
-                    className={`w-12 h-12 bg-gradient-to-br ${competency.gradient} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <Icon className="w-6 h-6 text-white" />
+                <div>
+                  <div className="w-12 h-12 border border-neutral-800 flex items-center justify-center mb-10 group-hover:bg-white group-hover:border-white transition-all duration-500">
+                    <Icon className="w-5 h-5 text-neutral-500 group-hover:text-black transition-colors duration-500" />
                   </div>
 
-                  <h3 className="text-xl font-semibold text-white mb-3">
+                  <h3 className="text-2xl font-black text-white mb-6 tracking-tight">
                     {competency.title}
                   </h3>
 
-                  <p className="text-slate-400 leading-relaxed">
+                  <p className="text-neutral-500 leading-relaxed text-sm max-w-[280px]">
                     {competency.description}
                   </p>
+                </div>
+
+                <div className="absolute bottom-6 right-6 text-[40px] font-black text-white/[0.02] transition-colors group-hover:text-white/[0.05]">
+                  0{competencies.indexOf(competency) + 1}
                 </div>
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

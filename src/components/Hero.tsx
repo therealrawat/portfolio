@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { MoveUpRight } from 'lucide-react';
 
 export default function Hero() {
   const scrollToSection = (id: string) => {
@@ -7,81 +7,106 @@ export default function Hero() {
     element?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 40, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as any },
+    },
+  };
+
   return (
-    <section className="min-h-screen flex items-center justify-center relative overflow-hidden px-6">
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 via-transparent to-transparent" />
+    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-8 md:px-20 pt-20">
+      {/* Structural Lines */}
+      <div className="absolute top-0 left-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
+      <div className="absolute top-0 right-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
 
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 max-w-5xl mx-auto text-center">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 max-w-7xl mx-auto w-full"
+      >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-full mb-8"
+           variants={itemVariants}
+          className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-12 font-medium"
         >
-          <Sparkles className="w-4 h-4 text-indigo-400" />
-          <span className="text-sm text-slate-300">Product Manager & Engineer</span>
+          <span className="w-12 h-[1px] bg-neutral-800" />
+          Product Manager & Engineer
         </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
+          variants={itemVariants}
+          className="text-6xl sm:text-7xl md:text-9xl font-black text-white mb-10 leading-[0.9] tracking-tighter"
         >
-          Building the Right Products to{' '}
-          <span className="bg-gradient-to-r from-indigo-400 to-indigo-600 bg-clip-text text-transparent">
-            Solve Operational Debt
-          </span>
+          SOLVING <br />
+          <span className="text-neutral-700">OPERATIONAL</span> <br />
+          DEBT.
         </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto"
-        >
-          Bridging the gap between Engineering and Strategy. From PRDs to Production,
-          I architect solutions that scale.
-        </motion.p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 pt-10 border-t border-neutral-900">
+          <motion.p
+            variants={itemVariants}
+            className="text-xl md:text-2xl text-neutral-400 max-w-2xl leading-relaxed"
+          >
+            I bridge the gap between complex engineering systems and strategic product growth. 
+            Designing AI-driven products that actually work.
+          </motion.p>
+
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-wrap gap-6"
+          >
+            <button
+              onClick={() => scrollToSection('projects')}
+              className="group relative px-10 py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                Explore Work
+                <MoveUpRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </span>
+              <div className="absolute inset-0 bg-neutral-200 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
+            </button>
+            
+            <button
+              onClick={() => scrollToSection('experience')}
+              className="group px-10 py-5 border border-neutral-800 text-white font-bold uppercase text-xs tracking-widest hover:border-white transition-colors duration-500"
+            >
+              Contact
+            </button>
+          </motion.div>
+        </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          variants={itemVariants}
+          className="mt-24 flex items-center gap-10 text-[10px] uppercase tracking-widest text-neutral-600 font-bold"
         >
-          <button
-            onClick={() => scrollToSection('projects')}
-            className="group px-8 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl transition-all duration-300 font-medium flex items-center gap-2 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40"
-          >
-            View Projects
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button
-            onClick={() => scrollToSection('mindset')}
-            className="px-8 py-4 bg-slate-800/50 hover:bg-slate-800 backdrop-blur-sm border border-slate-700/50 text-white rounded-xl transition-all duration-300 font-medium"
-          >
-            My Approach
-          </button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-          className="mt-20 flex items-center justify-center gap-8 text-slate-500 text-sm"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span>Available for opportunities</span>
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+            <span>Currently building at therealrawat</span>
           </div>
+          <span className="hidden sm:block opacity-30">|</span>
+          <span className="hidden sm:block">Scroll to explore</span>
         </motion.div>
+      </motion.div>
+
+      {/* Background Decorative Element */}
+      <div className="absolute -bottom-20 -right-20 text-[20vw] font-black text-white/[0.02] pointer-events-none select-none">
+        PM+ENG
       </div>
     </section>
   );
 }
+
