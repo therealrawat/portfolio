@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, Loader2 } from 'lucide-react';
+import { X, Send, Bot, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { PORTFOLIO_CONTEXT, getContextForSection, type SectionContext } from '../data/bio';
+import logo from '../assets/pr-light.svg';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -144,13 +145,17 @@ Your role:
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-white border border-white flex items-center justify-center text-black shadow-2xl transition-all duration-500"
+        className="fixed bottom-8 right-8 z-50 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
         aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        {isOpen ? (
+          <X className="w-8 h-8 text-white" />
+        ) : (
+          <img src={logo} alt="AI Assistant" className="w-14 h-14" />
+        )}
       </motion.button>
 
       <AnimatePresence>
