@@ -52,7 +52,7 @@ export default function Hero() {
           className="text-6xl sm:text-7xl md:text-9xl font-black text-white mb-10 leading-[0.9] tracking-tighter"
         >
           SOLVING <br />
-          <span className="text-neutral-700">OPERATIONAL</span> <br />
+          <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.2)' }}>OPERATIONAL</span> <br />
           DEBT.
         </motion.h1>
 

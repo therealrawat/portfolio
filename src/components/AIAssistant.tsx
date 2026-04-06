@@ -86,10 +86,16 @@ Your role:
 - Guide the conversation toward demonstrating Priyanshu's value as a Product-Minded Engineer
 - Keep responses concise but informative (2-3 sentences when possible)`;
 
-      const ai = new GoogleGenAI({ apiKey });
+      // Corrected SDK usage for @google/genai
+      const ai = new GoogleGenAI(apiKey);
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: systemPrompt,
+        model: "gemini-1.5-flash",
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `${systemPrompt}\n\nUser Question: ${userMessage.content}` }]
+          }
+        ],
       });
 
       const responseText = response.text || '';
@@ -102,9 +108,10 @@ Your role:
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
+      console.error('AI Assistant Error:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'Sorry, there was an error. Please try again.',
+        content: 'Sorry, I encountered an error. Please check your API key or try again later.',
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {

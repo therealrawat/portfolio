@@ -6,9 +6,16 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'completed'>('idle');
 
+  const [scrollProgress, setScrollProgress] = useState(0);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
+      
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      setScrollProgress(scrolled);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -85,6 +92,12 @@ export default function Navigation() {
           </button>
         </div>
       </div>
+
+      {/* Progress Bar */}
+      <motion.div
+        className="absolute bottom-0 left-0 h-[2px] bg-white origin-left z-[60]"
+        style={{ scaleX: scrollProgress / 100 }}
+      />
     </motion.nav>
   );
 }
