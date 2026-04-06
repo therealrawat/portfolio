@@ -35,9 +35,9 @@ const phases = [
     company: 'TestingXperts Pvt Ltd',
     date: 'Oct 2024 - Present',
     location: 'Chandigarh, IN',
-    description: 'Architecting "DB Genius," an AI-driven tool reducing data-dependency by 60% through automated SQL generation. Driving product strategy and enterprise client success.',
+    description: 'Driving end-to-end delivery of client-facing projects while building AI-powered internal products that shape org capability. Delivered multiple client projects earning individual and team recognition for quality and impact.',
     number: '01',
-    tags: ['AI Orchestration', 'FastAPI', 'Product Strategy', 'SQL Server']
+    tags: ['AI Orchestration', 'Microservices', 'Product Strategy', 'SQL Server']
   },
   {
     icon: 'https://dkk4qeqny48s0.cloudfront.net/wp-content/uploads/2025/02/logo-updated.png',
