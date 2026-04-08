@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Linkedin, Github, Mail, ArrowUp } from 'lucide-react';
+import { Linkedin, Github, Mail, ArrowUp, Instagram } from 'lucide-react';
 
 export default function Footer() {
   const scrollToTop = () => {
@@ -40,6 +40,7 @@ export default function Footer() {
           >
             {[
               { icon: Linkedin, label: 'LinkedIn', href: 'https://linkedin.com/in/rawat-priyanshu' },
+              { icon: Instagram, label: 'Instagram', href: 'https://instagram.com/lowwhiskey' },
               { icon: Github, label: 'GitHub', href: 'https://github.com/therealrawat' },
               { icon: Mail, label: 'Email', href: 'mailto:priyanshurawat.business@gmail.com' },
             ].map((social) => (
