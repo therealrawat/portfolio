@@ -87,16 +87,11 @@ Your role:
 - Guide the conversation toward demonstrating Priyanshu's value as a Product-Minded Engineer
 - Keep responses concise but informative (2-3 sentences when possible)`;
 
-      // Corrected SDK usage for @google/genai
-      const ai = new GoogleGenAI(apiKey);
+      const prompt = `${systemPrompt}\n\nUser Question: ${userMessage.content}`;
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${systemPrompt}\n\nUser Question: ${userMessage.content}` }]
-          }
-        ],
+        model: "gemini-2.5-flash",
+        contents: prompt,
       });
 
       const responseText = response.text || '';
@@ -110,11 +105,6 @@ Your role:
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('AI Assistant Error:', error);
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please check your API key or try again later.',
-      };
-      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -191,11 +181,10 @@ Your role:
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${
-                      message.role === 'user'
-                        ? 'bg-white text-black font-medium'
-                        : 'bg-neutral-900 text-neutral-300 border border-neutral-800'
-                    }`}
+                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${message.role === 'user'
+                      ? 'bg-white text-black font-medium'
+                      : 'bg-neutral-900 text-neutral-300 border border-neutral-800'
+                      }`}
                   >
                     {message.content}
                   </div>
