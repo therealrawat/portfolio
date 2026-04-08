@@ -4,6 +4,7 @@ import ValueProp from './components/ValueProp';
 import Projects from './components/Projects';
 import ProductMindset from './components/ProductMindset';
 import TechStack from './components/TechStack';
+import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
 import AIAssistant from './components/AIAssistant';
 import Experience from './components/Experience';
@@ -33,6 +34,7 @@ function App() {
         <Projects />
         <ProductMindset />
         <TechStack />
+        <Testimonials />
         <Experience />
         <Footer />
         <AIAssistant />
