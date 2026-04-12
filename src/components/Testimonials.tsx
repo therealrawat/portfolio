@@ -7,36 +7,36 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const testimonials = [
   {
     quote:
-      "Priyanshu brings an exceptional blend of product thinking and engineering execution. He doesn't just build features \u2014 he solves the right problems with clarity and speed.",
-    name: 'ADITYA KUMAR',
-    title: 'Co-Founder & CTO at TechVenture',
-    prefix: 'ADITYA SAID',
-    initials: 'AK',
+      "Priyanshu is very transparent with his communication. He has been very incredibly accommodating and responsive to our constant evolving needs.",
+    name: 'MARTINE PAUL',
+    title: 'Co-Founder at TechVenture',
+    prefix: 'MARTINE SAID',
+    initials: 'MP',
   },
   {
     quote:
-      'Working with Priyanshu was a game-changer. He transformed our chaotic workflows into intelligent, automated systems that saved us hundreds of hours every month.',
-    name: 'NEHA SHARMA',
-    title: 'Head of Product at ScaleOps',
-    prefix: 'NEHA SAID',
-    initials: 'NS',
+      'Priyanshu consistently ensures accuracy and reliability, driving significant project impact through both individual contributions and proactive peer reviews.',
+    name: 'MANAS K BISWAS',
+    title: 'Sr. Technical Architect at TestingXperts',
+    prefix: 'MANAS SAID',
+    initials: 'MB',
   },
   {
     quote:
-      'His ability to understand both the technical constraints and the business impact is rare. Every product decision was backed by data and delivered with precision.',
-    name: 'RAHUL MEHTA',
-    title: 'VP of Engineering at CloudFirst',
+      'Sincere, and a total powerhouse. PR is one of those rare developers who treats a side project with the same rigor as a Tier-1 product. A great guy to work with.',
+    name: 'RAHUL B',
+    title: 'APM at AmEx',
     prefix: 'RAHUL SAID',
-    initials: 'RM',
+    initials: 'RB',
   },
-  {
-    quote:
-      "Priyanshu doesn't just ship code \u2014 he ships outcomes. His AI-driven solutions were the most impactful addition to our product in years.",
-    name: 'SARAH CHEN',
-    title: 'Director of Innovation at NovaTech',
-    prefix: 'SARAH SAID',
-    initials: 'SC',
-  },
+  // {
+  //   quote:
+  //     "PR is the kind of 'workaholic beast' you actually want in your corner. His sincerity is unmatched, and his drive is honestly a bit contagious. We knocked out months of features in weeks—just the right person to have in the trenches with you.",
+  //   name: 'SARAH CHEN',
+  //   title: 'Director of Innovation at NovaTech',
+  //   prefix: 'SARAH SAID',
+  //   initials: 'SC',
+  // },
 ];
 
 /* ─── Animation Variants ─────────────────────────────────────────────────── */
