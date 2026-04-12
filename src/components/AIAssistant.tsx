@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { PORTFOLIO_CONTEXT, getContextForSection, type SectionContext } from '../data/bio';
 import logo from '../assets/pr-light.svg';
 
@@ -24,6 +23,7 @@ export default function AIAssistant() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let raf = 0;
     const handleScroll = () => {
       const sections = [
         { id: 'projects', element: document.getElementById('projects') },
@@ -49,10 +49,27 @@ export default function AIAssistant() {
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    const onScroll = () => {
+      if (raf !== 0) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        handleScroll();
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf !== 0) cancelAnimationFrame(raf);
+    };
   }, []);
+
+  // Warm the GenAI bundle as soon as the panel opens so the first send feels instant.
+  useEffect(() => {
+    if (!isOpen) return;
+    void import('@google/genai');
+  }, [isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,6 +105,7 @@ Your role:
 - Keep responses concise but informative (2-3 sentences when possible)`;
 
       const prompt = `${systemPrompt}\n\nUser Question: ${userMessage.content}`;
+      const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
