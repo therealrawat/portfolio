@@ -96,21 +96,25 @@ export default function Testimonials() {
   /* ── Fluid wave: driven by scroll velocity ── */
   const scrollVelocity = useVelocity(scrollY);
   // Absolute velocity → always pushes upward regardless of scroll direction
-  const rawAmplitude = useTransform(scrollVelocity, (v: number) => Math.min(Math.abs(v) / 80, 30));
-  const waveAmplitude = useSpring(rawAmplitude, { stiffness: 150, damping: 12, mass: 0.6 });
+  const rawAmplitude = useTransform(scrollVelocity, (v: number) =>
+    Math.min(Math.abs(v) / 55, 52)
+  );
+  const waveAmplitude = useSpring(rawAmplitude, {
+    stiffness: 72,
+    damping: 22,
+    mass: 0.85,
+  });
 
-  // Single centered wave bump — flat on edges, bell curve in the middle
+  // Two cubics: horizontal tangents at left/right (smooth into the section), wide crest
   const wavePathD = useTransform(waveAmplitude, (amp: number) => {
-    const h = 60;
-    const base = 58;
-    // Flat left → smooth rise → centered peak → smooth fall → flat right
+    const h = 88;
+    const base = 78;
+    const peak = base - amp;
     return [
       `M0,${h}`,
       `L0,${base}`,
-      `L400,${base}`,
-      `C550,${base} 600,${base - amp} 750,${base - amp}`,
-      `C900,${base - amp} 950,${base} 1100,${base}`,
-      `L1500,${base}`,
+      `C320,${base} 480,${peak} 750,${peak}`,
+      `C1020,${peak} 1180,${base} 1500,${base}`,
       `L1500,${h}`,
       'Z',
     ].join(' ');
@@ -177,9 +181,9 @@ export default function Testimonials() {
       style={{ backgroundColor: bgColor }}
     >
       {/* ── Fluid wave top border ── */}
-      <div className="absolute -top-[58px] left-0 right-0 h-[60px] pointer-events-none z-20 overflow-visible">
+      <div className="absolute -top-[78px] left-0 right-0 h-[88px] pointer-events-none z-20 overflow-visible">
         <svg
-          viewBox="0 0 1500 60"
+          viewBox="0 0 1500 88"
           preserveAspectRatio="none"
           className="w-full h-full block"
         >
