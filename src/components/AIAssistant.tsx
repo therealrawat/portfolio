@@ -2,7 +2,117 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2 } from 'lucide-react';
 import { PORTFOLIO_CONTEXT, getContextForSection, type SectionContext } from '../data/bio';
-import logo from '../assets/pr-light.svg';
+
+/* ─── Morphing Bot Component ────────────────────────────────────────────── */
+
+function MorphingBot({ isOpen }: { isOpen: boolean }) {
+  const [isBot, setIsBot] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsBot(false);
+      setShowTooltip(false);
+      return;
+    }
+
+    // Initial sequence: Logo -> Bot -> Logo
+    const timer = setTimeout(() => {
+      setIsBot(true);
+      setTimeout(() => setShowTooltip(true), 600);
+
+      setTimeout(() => {
+        setIsBot(false);
+        setShowTooltip(false);
+      }, 5000);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <AnimatePresence>
+        {showTooltip && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, x: 10 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: 10 }}
+            className="absolute right-full mr-4 px-4 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-xl"
+          >
+            Hi! Ask me anything
+            <div className="absolute right-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <svg
+        viewBox="0 0 750 750"
+        className="w-12 h-12 transition-transform duration-700"
+        style={{ transform: isBot ? 'scale(0.9) rotate(5deg)' : 'scale(1) rotate(0deg)' }}
+      >
+        {/* Top Part of Logo → transforms to Bot Head */}
+        <motion.path
+          d="M456,82 C496,75 536,81 537,81 C583,98 618,143 618,196 L618,375 L375,375 L375,196 C375,143 409,98 456,82 Z"
+          fill="white"
+          animate={isBot ? {
+            y: -20,
+            scale: 0.85,
+            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
+          } : {
+            y: 0,
+            scale: 1,
+            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
+          }}
+        />
+
+        {/* Bottom Part of Logo → transforms to Bot Body */}
+        <motion.path
+          d="M293,667 C253,675 213,668 212,668 C166,651 131,606 131,553 L131,375 L375,375 L375,553 C374,606 340,651 293,667 Z"
+          fill="white"
+          animate={isBot ? {
+            y: 20,
+            scale: 1.1,
+            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
+          } : {
+            y: 0,
+            scale: 1,
+            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
+          }}
+        />
+
+        {/* Eyes (only visible in Bot state) */}
+        <motion.circle
+          cx="450" cy="240" r="25" fill="black"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={isBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+          transition={{ delay: 0.4 }}
+        />
+        <motion.circle
+          cx="550" cy="240" r="25" fill="black"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={isBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+          transition={{ delay: 0.5 }}
+        />
+
+        {/* Antenna (only visible in Bot state) */}
+        <motion.line
+          x1="500" y1="80" x2="500" y2="20"
+          stroke="white" strokeWidth="15" strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={isBot ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+          transition={{ delay: 0.6 }}
+        />
+        <motion.circle
+          cx="500" cy="15" r="15" fill="white"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={isBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+          transition={{ delay: 0.8 }}
+        />
+      </svg>
+    </div>
+  );
+}
 
 interface Message {
   role: 'user' | 'assistant';
@@ -162,7 +272,7 @@ Your role:
         {isOpen ? (
           <X className="w-8 h-8 text-white" />
         ) : (
-          <img src={logo} alt="AI Assistant" className="w-12 h-12 object-contain" />
+          <MorphingBot isOpen={isOpen} />
         )}
       </motion.button>
 
