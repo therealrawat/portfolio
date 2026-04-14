@@ -224,7 +224,7 @@ export default function Testimonials() {
             </motion.div>
 
             <motion.h2
-              className="relative z-10 text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter"
+              className="relative z-10 text-5xl md:text-7xl font-black tracking-tighter"
               style={{ color: textColor }}
             >
               TESTIMONIALS
