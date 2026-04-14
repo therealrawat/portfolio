@@ -5,14 +5,28 @@ const projects = [
   {
     title: 'SyncScripts',
     problem: 'Professional teams face information overload post-meeting. AI-driven transcript analysis for actionable insights.',
-    tags: ['Gemini AI', 'LLM Integration', 'TypeScript'],
+    tags: ['LLM Integration', 'SQL'],
     liveUrl: 'https://syncscripts.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/1xxIGKOABNoZG3CJZFtJGcnBue6ZnAqBX/view?usp=drive_link',
   },
   {
+    title: 'EchoMap',
+    problem: 'Identifying subtle linguistic gaps in English using AI-driven speech recognition and diagnostics.',
+    tags: ['Speech AI', 'TypeScript', 'Vite'],
+    liveUrl: 'https://echo-map.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/1qgzbImMw64QSZPnS2o3smqBu3XvGHzpH/view?usp=drive_link',
+  },
+  {
+    title: '4Her',
+    problem: 'Empowering menstrual health tracking with dignity and technical precision for wellness metrics.',
+    tags: ['MongoDB', 'Express', 'React'],
+    liveUrl: 'https://the4her.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/129ssK2BYRBFnUTGMo6yYc9sb5awPVW-s/view?usp=drive_link',
+  },
+  {
     title: 'AI Agent Orchestrator',
     problem: 'Engineering teams lose 40% of capacity to manual operations. Automating complex technical workflows.',
-    tags: ['Gemini AI', 'Google Cloud', 'Python'],
+    tags: ['Google Cloud', 'Python'],
     liveUrl: '#',
     caseStudyUrl: '#',
   },
@@ -29,20 +43,6 @@ const projects = [
     tags: ['Recharts', 'Gemini AI', 'Tailwind'],
     liveUrl: '#',
     caseStudyUrl: '#',
-  },
-  {
-    title: 'EchoMap',
-    problem: 'Identifying subtle linguistic gaps in English using AI-driven speech recognition and diagnostics.',
-    tags: ['Speech AI', 'TypeScript', 'Vite'],
-    liveUrl: 'https://echo-map.netlify.app/',
-    caseStudyUrl: 'https://drive.google.com/file/d/1qgzbImMw64QSZPnS2o3smqBu3XvGHzpH/view?usp=drive_link',
-  },
-  {
-    title: '4Her',
-    problem: 'Empowering menstrual health tracking with dignity and technical precision for wellness metrics.',
-    tags: ['MongoDB', 'Express', 'React'],
-    liveUrl: 'https://the4her.netlify.app/',
-    caseStudyUrl: 'https://drive.google.com/file/d/129ssK2BYRBFnUTGMo6yYc9sb5awPVW-s/view?usp=drive_link',
   },
 ];
 
@@ -83,7 +83,7 @@ export default function Projects() {
           </h2>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -98,8 +98,8 @@ export default function Projects() {
             >
               <div>
                 <div className="flex justify-between items-start mb-12">
-                   <div className="flex flex-wrap gap-2">
-                    {project.tags.slice(0, 2).map((tag) => (
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
                         className="text-[10px] uppercase tracking-widest text-neutral-600 font-bold"
