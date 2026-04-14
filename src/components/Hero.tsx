@@ -28,7 +28,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-8 md:px-20 pt-20">
+    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-6 md:px-20 pt-20">
       {/* Structural Lines */}
       <div className="absolute top-0 left-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
       <div className="absolute top-0 right-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
@@ -40,7 +40,7 @@ export default function Hero() {
         className="relative z-10 max-w-7xl mx-auto w-full"
       >
         <motion.div
-           variants={itemVariants}
+          variants={itemVariants}
           className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-12 font-medium"
         >
           <span className="w-12 h-[1px] bg-neutral-800" />
@@ -49,7 +49,7 @@ export default function Hero() {
 
         <motion.h1
           variants={itemVariants}
-          className="text-6xl sm:text-7xl md:text-9xl font-black text-white mb-10 leading-[0.9] tracking-tighter"
+          className="text-5xl sm:text-7xl md:text-9xl font-black text-white mb-10 leading-[0.9] tracking-tighter"
         >
           SOLVING <br />
           <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.2)' }}>OPERATIONAL</span> <br />
@@ -61,7 +61,7 @@ export default function Hero() {
             variants={itemVariants}
             className="text-xl md:text-2xl text-neutral-400 max-w-2xl leading-relaxed"
           >
-            I bridge the gap between complex engineering systems and strategic product growth. 
+            I bridge the gap between complex engineering systems and strategic product growth.
             Designing AI-driven products that actually work.
           </motion.p>
 
@@ -79,7 +79,7 @@ export default function Hero() {
               </span>
               <div className="absolute inset-0 bg-neutral-200 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
             </button>
-            
+
             <button
               onClick={() => scrollToSection('experience')}
               className="group px-10 py-5 border border-neutral-800 text-white font-bold uppercase text-xs tracking-widest hover:border-white transition-colors duration-500"
