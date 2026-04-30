@@ -175,12 +175,6 @@ export default function AIAssistant() {
     };
   }, []);
 
-  // Warm the GenAI bundle as soon as the panel opens so the first send feels instant.
-  useEffect(() => {
-    if (!isOpen) return;
-    void import('@google/genai');
-  }, [isOpen]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -194,11 +188,6 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('Gemini API key not found.');
-      }
-
       const sectionContext = getContextForSection(currentSection);
       const systemPrompt = `You are a helpful AI assistant representing Priyanshu Rawat's portfolio. You help recruiters and visitors understand his work, projects, and approach.
 
@@ -215,14 +204,24 @@ Your role:
 - Keep responses concise but informative (2-3 sentences when possible)`;
 
       const prompt = `${systemPrompt}\n\nUser Question: ${userMessage.content}`;
-      const { GoogleGenAI } = await import('@google/genai');
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
       });
 
-      const responseText = response.text || '';
+      if (!response.ok) {
+        // Handle the 503/429 errors we discussed
+        if (response.status === 503) {
+          throw new Error("The AI is currently under high demand. Please try again in a few seconds.");
+        }
+        throw new Error(`Connection error (${response.status})`);
+      }
+
+      const data: { text?: string; error?: string } = await response.json();
+      const responseText = data.text || '';
       if (!responseText) throw new Error('No response received');
 
       const assistantMessage: Message = {
@@ -231,8 +230,12 @@ Your role:
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Assistant Error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: error.message || "I'm having trouble connecting. Please try again later."
+      }]);
     } finally {
       setIsLoading(false);
     }
