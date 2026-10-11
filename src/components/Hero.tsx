@@ -95,7 +95,7 @@ export default function Hero() {
         >
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-            <span>Currently building at therealrawat</span>
+            <span>Currently building at testingXperts pvt ltd</span>
           </div>
           <span className="hidden sm:block opacity-30">|</span>
           <span className="hidden sm:block">Scroll to explore</span>

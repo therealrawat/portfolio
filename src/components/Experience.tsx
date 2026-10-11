@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { Calendar } from 'lucide-react';
 
 const TestingXpertsLogo = () => (
   <svg className="w-full h-full p-2 opacity-50 group-hover:opacity-100 transition-opacity" viewBox="0 0 58 52" xmlns="http://www.w3.org/2000/svg">
@@ -33,7 +32,6 @@ const phases = [
     icon: TestingXpertsLogo,
     title: 'Software Engineer',
     company: 'TestingXperts Pvt Ltd',
-    date: 'Oct 2024 - Present',
     location: 'Chandigarh, IN',
     description: 'Driving end-to-end delivery of client-facing projects while building AI-powered internal products that shape org capability. Delivered multiple client projects earning individual and team recognition for quality and impact.',
     number: '01',
@@ -43,7 +41,6 @@ const phases = [
     icon: 'https://dkk4qeqny48s0.cloudfront.net/wp-content/uploads/2025/02/logo-updated.png',
     title: 'Associate Software Engineer',
     company: 'smartData Enterprises',
-    date: 'March 2023 - Oct 2024',
     location: 'Dehradun, IN',
     description: 'Delivered high-performance backend modules for EHR systems, ensuring compliance and scalability. Refined system architecture for real-time data processing.',
     number: '02',
@@ -53,7 +50,6 @@ const phases = [
     icon: RitesLogo,
     title: 'Intern',
     company: 'Rites Ltd',
-    date: 'Aug 2022 - Jan 2023',
     location: 'Remote',
     description: 'Developed technical documentation and gained hands-on experience in professional software life cycles and system design.',
     number: '03',
@@ -139,11 +135,6 @@ export default function Experience() {
                             <span className="text-[10px] uppercase tracking-widest text-neutral-600 font-bold">{phase.location}</span>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-neutral-500 font-black">
-                        <Calendar className="w-3 h-3" />
-                        {phase.date}
                       </div>
                     </div>
 
