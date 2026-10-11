@@ -195,7 +195,7 @@ export default function Testimonials() {
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* ── Header: Large title with avatar circle ── */}
+        {/* ── Header: Large title ── */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -203,33 +203,12 @@ export default function Testimonials() {
           transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
           className="text-center mb-8"
         >
-          {/* Title with overlapping avatar ring */}
-          <div className="relative inline-block">
-            {/* Avatar circle behind the "T" */}
-            <motion.div
-              className="absolute -top-6 -left-4 md:-top-8 md:-left-6 w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center overflow-hidden z-0"
-              style={{
-                backgroundColor: avatarBg,
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor,
-              }}
-            >
-              <motion.span
-                className="text-2xl md:text-4xl font-black select-none"
-                style={{ color: mutedColor }}
-              >
-                {current.initials}
-              </motion.span>
-            </motion.div>
-
-            <motion.h2
-              className="relative z-10 text-5xl md:text-7xl font-black tracking-tighter"
-              style={{ color: textColor }}
-            >
-              TESTIMONIALS
-            </motion.h2>
-          </div>
+          <motion.h2
+            className="text-5xl md:text-7xl font-black tracking-tighter"
+            style={{ color: textColor }}
+          >
+            TESTIMONIALS
+          </motion.h2>
         </motion.div>
 
         {/* ── Subtitle ── */}
