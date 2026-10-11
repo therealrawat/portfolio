@@ -114,6 +114,81 @@ function MorphingBot({ isOpen }: { isOpen: boolean }) {
   );
 }
 
+function FormattedMessage({ content, isUser }: { content: string; isUser: boolean }) {
+  const tokenRegex = /(\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s)]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[.,!?]?)/g;
+  const parts = content.split(tokenRegex);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (!part) return null;
+
+        const mdMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+        if (mdMatch) {
+          const [, label, url] = mdMatch;
+          return (
+            <a
+              key={i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={isUser ? "underline font-bold" : "text-white underline hover:text-neutral-400 font-bold transition-colors"}
+            >
+              {label}
+            </a>
+          );
+        }
+
+        if (/^https?:\/\//.test(part)) {
+          let url = part;
+          let punct = '';
+          const punctMatch = url.match(/[.,!?]+$/);
+          if (punctMatch) {
+            punct = punctMatch[0];
+            url = url.slice(0, -punct.length);
+          }
+          return (
+            <span key={i}>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={isUser ? "underline font-bold" : "text-white underline hover:text-neutral-400 font-bold transition-colors"}
+              >
+                {url}
+              </a>
+              {punct}
+            </span>
+          );
+        }
+
+        if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(part)) {
+          let email = part;
+          let punct = '';
+          const punctMatch = email.match(/[.,!?]+$/);
+          if (punctMatch) {
+            punct = punctMatch[0];
+            email = email.slice(0, -punct.length);
+          }
+          return (
+            <span key={i}>
+              <a
+                href={`mailto:${email}`}
+                className={isUser ? "underline font-bold" : "text-white underline hover:text-neutral-400 font-bold transition-colors"}
+              >
+                {email}
+              </a>
+              {punct}
+            </span>
+          );
+        }
+
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -189,7 +264,7 @@ export default function AIAssistant() {
 
     try {
       const sectionContext = getContextForSection(currentSection);
-      const systemPrompt = `You are a helpful AI assistant representing Priyanshu Rawat's portfolio. You help recruiters and visitors understand his work, projects, and approach.
+      const systemPrompt = `You are a helpful and welcoming AI assistant representing Priyanshu Rawat's portfolio. You help recruiters, hiring managers, potential clients, and visitors understand his work, projects, engineering approach, and facilitate connecting with him.
 
 Current Context (based on the page section the user is viewing):
 ${sectionContext}
@@ -197,11 +272,22 @@ ${sectionContext}
 Portfolio Information:
 ${JSON.stringify(PORTFOLIO_CONTEXT, null, 2)}
 
-Your role:
-- Answer questions about Priyanshu's work, projects, and philosophy
-- Be conversational, professional, and helpful
-- Guide the conversation toward demonstrating Priyanshu's value as a Product-Minded Engineer
-- Keep responses concise but informative (2-3 sentences when possible)`;
+Official Contact Details:
+- Emails: priyanshurawat.business@gmail.com, therealrawat@gmail.com
+- LinkedIn: https://linkedin.com/in/rawat-priyanshu
+- Instagram: https://instagram.com/lowwhiskey (@lowwhiskey)
+- GitHub: https://github.com/therealrawat
+
+Your Role & Contact Policy:
+- Answer questions about Priyanshu's work, projects, background, and product engineering philosophy.
+- CONTACT REQUESTS: When a user asks how to contact Priyanshu, asks for his email, LinkedIn, Instagram, or social profiles, or asks about hiring him, collaborating, or getting in touch, NEVER discourage them or refuse to share details. Enthusiastically provide his contact details:
+  * Emails: priyanshurawat.business@gmail.com or therealrawat@gmail.com
+  * LinkedIn: https://linkedin.com/in/rawat-priyanshu
+  * Instagram: https://instagram.com/lowwhiskey (@lowwhiskey)
+  Encourage potential clients and hiring managers to reach out directly through email, LinkedIn, or Instagram.
+- Be conversational, professional, encouraging, and helpful.
+- Guide the conversation toward demonstrating Priyanshu's value as a Product-Minded Engineer who bridges technical execution and business value.
+- Keep responses concise, clear, and informative (2-4 sentences when possible).`;
 
       const prompt = `${systemPrompt}\n\nUser Question: ${userMessage.content}`;
       const response = await fetch('/api/chat', {
@@ -312,12 +398,12 @@ Your role:
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${message.role === 'user'
+                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words ${message.role === 'user'
                       ? 'bg-white text-black font-medium'
                       : 'bg-neutral-900 text-neutral-300 border border-neutral-800'
                       }`}
                   >
-                    {message.content}
+                    <FormattedMessage content={message.content} isUser={message.role === 'user'} />
                   </div>
                 </motion.div>
               ))}
