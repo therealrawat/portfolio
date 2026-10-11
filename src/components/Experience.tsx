@@ -35,7 +35,7 @@ const phases = [
     location: 'Chandigarh, IN',
     description: 'Driving end-to-end delivery of client-facing projects while building AI-powered internal products that shape org capability. Delivered multiple client projects earning individual and team recognition for quality and impact.',
     number: '01',
-    tags: ['AI Orchestration', 'Microservices', 'Product Strategy', 'SQL Server']
+    tags: ['.NET Core', 'Microservices', 'Product Strategy', 'SQL Server', 'AI Orchestration']
   },
   {
     icon: 'https://dkk4qeqny48s0.cloudfront.net/wp-content/uploads/2025/02/logo-updated.png',
@@ -44,7 +44,7 @@ const phases = [
     location: 'Dehradun, IN',
     description: 'Delivered high-performance backend modules for EHR systems, ensuring compliance and scalability. Refined system architecture for real-time data processing.',
     number: '02',
-    tags: ['.NET Core', 'Microservices', 'EHR Systems', 'ReactJS']
+    tags: ['.NET Core', 'Microservices', 'Entity Framework', 'ReactJS']
   },
   {
     icon: RitesLogo,
@@ -53,7 +53,7 @@ const phases = [
     location: 'Remote',
     description: 'Developed technical documentation and gained hands-on experience in professional software life cycles and system design.',
     number: '03',
-    tags: ['System Design', 'Documentation']
+    tags: ['.NET', 'Angular', 'Razor Pages', 'Documentation']
   },
 ];
 

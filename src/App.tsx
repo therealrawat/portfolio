@@ -1,5 +1,6 @@
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
+import BrandTicker from './components/BrandTicker';
 import ValueProp from './components/ValueProp';
 import Preloader from './components/Preloader';
 import { lazy, Suspense, useEffect, useState } from 'react';
@@ -38,6 +39,7 @@ function App() {
       <main className={`transition-opacity duration-1000 ${loading ? 'opacity-0' : 'opacity-100'}`}>
         <Navigation />
         <Hero />
+        <BrandTicker />
         <ValueProp />
         <Suspense fallback={null}>
           <Projects />

@@ -40,7 +40,16 @@ export const PORTFOLIO_CONTEXT = {
     instagram: "https://instagram.com/lowwhiskey",
     github: "https://github.com/therealrawat",
     availability: "Actively open to software engineering, product roles, consulting, and client collaborations."
-  }
+  },
+
+  companies_and_clients: [
+    { name: "Intermex", role: "Fintech & Money Transfer Remittance", type: "Client Project" },
+    { name: "S&S Activewear", role: "Logistics, Wholesale Apparel & Distribution", type: "Client Project" },
+    { name: "Premium Health US", role: "Urgent Care & Healthcare EHR Systems", type: "Client Project" },
+    { name: "TestingXperts", role: "Digital Assurance, Microservices & AI Products", type: "Employer" },
+    { name: "smartData Enterprises", role: "Enterprise Backend Modules & Healthcare Systems", type: "Employer" },
+    { name: "RITES Ltd", role: "Transport Infrastructure & Professional Life Cycle", type: "Internship" }
+  ]
 };
 
 export type SectionContext =
