@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 
 const TestingXpertsLogo = () => (
   <svg className="w-full h-full p-2 opacity-50 group-hover:opacity-100 transition-opacity" viewBox="0 0 58 52" xmlns="http://www.w3.org/2000/svg">
@@ -58,7 +58,7 @@ const phases = [
 ];
 
 export default function Experience() {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -66,12 +66,12 @@ export default function Experience() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 30, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as any },
+      transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const },
     },
   };
 

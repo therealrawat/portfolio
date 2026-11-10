@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Brain, FileText, Code2 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ const competencies = [
 /* ─── Component ─────────────────────────────────────────────────────────────── */
 
 export default function ValueProp() {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -187,12 +187,12 @@ export default function ValueProp() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as any },
+      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as const },
     },
   };
 

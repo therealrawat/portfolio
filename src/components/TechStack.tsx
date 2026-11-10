@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Code2, Cloud, Database, Layers, Sparkles, Terminal } from 'lucide-react';
 
 const techCategories = [
@@ -35,7 +35,7 @@ const techCategories = [
 ];
 
 export default function TechStack() {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -43,12 +43,12 @@ export default function TechStack() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as any },
+      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as const },
     },
   };
 
@@ -90,14 +90,16 @@ export default function TechStack() {
                   <div className="w-10 h-10 border border-neutral-800 flex items-center justify-center group-hover:bg-white group-hover:border-white transition-all duration-500">
                     <Icon className="w-4 h-4 text-neutral-500 group-hover:text-black transition-colors duration-500" />
                   </div>
-                  <h3 className="text-xl font-black text-white tracking-tight uppercase">{category.category}</h3>
+                  <h3 className="text-xl font-black text-white tracking-tight uppercase group-hover:text-orange-200 transition-colors duration-300">
+                    {category.category}
+                  </h3>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
                   {category.technologies.map((tech) => (
                     <span
                       key={tech}
-                      className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold hover:text-white transition-colors cursor-default"
+                      className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold hover:text-orange-300 transition-colors cursor-default"
                     >
                       {tech}
                     </span>

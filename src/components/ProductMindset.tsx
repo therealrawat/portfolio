@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    FIG. 2  Discovery — magnifier slowly scans back and forth over the doc
@@ -288,20 +288,20 @@ export default function ProductMindset() {
     },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 40 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.7, ease: [0.76, 0, 0.24, 1] as any },
+      transition: { duration: 0.7, ease: [0.76, 0, 0.24, 1] as const },
     },
   };
 
   return (
     <section id="mindset" className="py-32 px-8 md:px-20 bg-black relative overflow-hidden">
-      {/* Ambient glow */}
+      {/* Ambient warm glow */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="w-[600px] h-[300px] rounded-full bg-white/[0.015] blur-[120px]" />
+        <div className="w-[600px] h-[300px] rounded-full bg-orange-500/[0.025] blur-[120px]" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">

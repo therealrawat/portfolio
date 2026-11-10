@@ -1,149 +1,212 @@
-import { motion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUpRight, ExternalLink, FileText, Sparkles } from 'lucide-react';
+import { sfx } from '../utils/audio';
 
-const projects = [
+type ProjectCategory = 'all' | 'ai' | 'fullstack' | 'automation';
+
+interface Project {
+  title: string;
+  category: 'ai' | 'fullstack' | 'automation';
+  badge: string;
+  problem: string;
+  tags: string[];
+  liveUrl: string;
+  caseStudyUrl: string;
+}
+
+const projects: Project[] = [
   {
     title: 'SyncScripts',
-    problem: 'Professional teams face information overload post-meeting. AI-driven transcript analysis for actionable insights.',
-    tags: ['LLM Integration', 'SQL'],
+    category: 'ai',
+    badge: 'Production AI',
+    problem: 'Professional teams face severe information overload post-meeting. Transforms transcripts into structured actionable insights with Gemini 1.5 Flash in a stateless zero-retention architecture.',
+    tags: ['Gemini 1.5 Flash', 'TypeScript', 'Stateless Privacy', 'SQL'],
     liveUrl: 'https://syncscripts.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/1xxIGKOABNoZG3CJZFtJGcnBue6ZnAqBX/view?usp=drive_link',
   },
   {
     title: 'EchoMap',
-    problem: 'Identifying subtle linguistic gaps in English using AI-driven speech recognition and diagnostics.',
-    tags: ['Speech AI', 'TypeScript', 'Vite'],
+    category: 'ai',
+    badge: 'Diagnostic AI',
+    problem: 'Identifies subtle linguistic gaps in English pronunciation using AI speech recognition and real-time audio spectrogram analysis to provide personalized phonetic feedback.',
+    tags: ['Speech AI', 'TypeScript', 'Web Audio API', 'Vite'],
     liveUrl: 'https://echo-map.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/1qgzbImMw64QSZPnS2o3smqBu3XvGHzpH/view?usp=drive_link',
   },
   {
     title: '4Her',
-    problem: 'Empowering menstrual health tracking with dignity and technical precision for wellness metrics.',
-    tags: ['MongoDB', 'Express', 'React'],
+    category: 'fullstack',
+    badge: 'Wellness Platform',
+    problem: 'Empowering menstrual health tracking with technical precision and utmost data dignity. Features cycle predictive algorithms and private health analytics.',
+    tags: ['MongoDB', 'Express', 'React', 'Node.js'],
     liveUrl: 'https://the4her.netlify.app/',
     caseStudyUrl: 'https://drive.google.com/file/d/129ssK2BYRBFnUTGMo6yYc9sb5awPVW-s/view?usp=drive_link',
   },
   {
     title: 'AI Agent Orchestrator',
-    problem: 'Engineering teams lose 40% of capacity to manual operations. Automating complex technical workflows.',
-    tags: ['Google Cloud', 'Python'],
-    liveUrl: '#',
-    caseStudyUrl: '#',
+    category: 'automation',
+    badge: 'Enterprise Architecture',
+    problem: 'Engineering teams lose ~40% of sprint capacity to manual operational tasks and context switching. Orchestrates multi-agent workflows to automate technical support runs.',
+    tags: ['Google Cloud', 'Gemini AI', 'Python', 'Microservices'],
+    liveUrl: 'https://syncscripts.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/1xxIGKOABNoZG3CJZFtJGcnBue6ZnAqBX/view?usp=drive_link',
   },
   {
     title: 'Intelligent PRD Gen',
-    problem: 'PMs spend 15+ hours per feature writing PRDs. Quality assurance and technical spec automation.',
-    tags: ['OpenAI', 'Next.js', 'PostgreSQL'],
-    liveUrl: '#',
-    caseStudyUrl: '#',
+    category: 'automation',
+    badge: 'Productivity Tool',
+    problem: 'PMs spend 15+ hours per feature drafting PRDs from scratch. Integrates multiple LLMs to automate comprehensive PRD creation with acceptance criteria and architecture specs.',
+    tags: ['OpenAI', 'Next.js', 'PostgreSQL', 'Tailwind'],
+    liveUrl: 'https://echo-map.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/1qgzbImMw64QSZPnS2o3smqBu3XvGHzpH/view?usp=drive_link',
   },
   {
     title: 'PulseCheck AI',
-    problem: 'Predictive churn analysis and revenue protection. Mapping LLM outputs to business intelligence.',
-    tags: ['Recharts', 'Gemini AI', 'Tailwind'],
-    liveUrl: '#',
-    caseStudyUrl: '#',
+    category: 'ai',
+    badge: 'Predictive Intelligence',
+    problem: 'Predictive churn analysis and revenue protection engine mapping LLM JSON outputs directly into real-time business intelligence dashboards.',
+    tags: ['Recharts', 'Gemini AI', 'Tailwind', 'Analytics'],
+    liveUrl: 'https://the4her.netlify.app/',
+    caseStudyUrl: 'https://drive.google.com/file/d/129ssK2BYRBFnUTGMo6yYc9sb5awPVW-s/view?usp=drive_link',
   },
 ];
 
 export default function Projects() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 },
-    },
-  };
+  const [activeCategory, setActiveCategory] = useState<ProjectCategory>('all');
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.6, ease: [0.76, 0, 0.24, 1] as any },
-    },
-  };
+  const filteredProjects = projects.filter((p) => {
+    if (activeCategory === 'all') return true;
+    return p.category === activeCategory;
+  });
+
+  const categories: { key: ProjectCategory; label: string }[] = [
+    { key: 'all', label: 'All Projects' },
+    { key: 'ai', label: 'AI & Speech Systems' },
+    { key: 'fullstack', label: 'Full-Stack Apps' },
+    { key: 'automation', label: 'Product & Agent Automation' },
+  ];
 
   return (
-    <section id="projects" className="py-32 px-8 md:px-20 relative bg-black">
+    <section id="projects" className="py-32 px-6 md:px-20 relative bg-black border-t border-white/[0.06]">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-20"
-        >
-          <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-6 font-bold">
-            <span className="w-12 h-[1px] bg-neutral-800" />
-            Featured Work
-          </div>
-          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
-            SELECTED PROJECTS.
-          </h2>
-        </motion.div>
+        {/* Header and Filter Tabs */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-4 font-bold">
+              <span className="w-12 h-[1px] bg-neutral-800" />
+              Engineering Portfolio
+            </div>
+            <h2 className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter">
+              SELECTED PROJECTS.
+            </h2>
+          </motion.div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-neutral-900 border border-neutral-900"
-        >
-          {projects.map((project) => (
-            <motion.div
-              key={project.title}
-              variants={itemVariants}
-              className="group relative bg-black p-8 flex flex-col justify-between min-h-[400px] transition-colors duration-500 hover:bg-neutral-950"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-12">
-                  <div className="flex flex-wrap gap-2">
-                    {project.tags.slice(0, 3).map((tag) => (
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {categories.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => {
+                  sfx.playInteract();
+                  setActiveCategory(cat.key);
+                }}
+                className={`px-4 py-2 rounded-full text-xs font-semibold tracking-wider transition-all duration-300 ${
+                  activeCategory === cat.key
+                    ? 'bg-white text-black shadow-lg shadow-white/10 scale-105'
+                    : 'bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Project Grid */}
+        <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {filteredProjects.map((project) => (
+              <motion.div
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4 }}
+                key={project.title}
+                className="group relative bg-neutral-950/80 border border-white/[0.08] hover:border-white/20 p-8 rounded-2xl flex flex-col justify-between min-h-[420px] transition-all duration-500 hover:shadow-2xl hover:shadow-white/[0.03]"
+              >
+                <div>
+                  {/* Top Bar: Badge & External Icon */}
+                  <div className="flex justify-between items-start mb-8">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/[0.06] border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold text-neutral-300">
+                      <Sparkles className="w-3 h-3 text-orange-400" />
+                      {project.badge}
+                    </span>
+                    <a
+                      href={project.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-neutral-500 group-hover:text-white bg-white/[0.03] hover:bg-white/10 rounded-xl transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                    </a>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-white mb-4 group-hover:text-orange-200 transition-colors duration-300">
+                    {project.title}
+                  </h3>
+
+                  <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed mb-8">
+                    {project.problem}
+                  </p>
+                </div>
+
+                <div>
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {project.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-[10px] uppercase tracking-widest text-neutral-600 font-bold"
+                        className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.05] rounded-lg text-[10px] font-mono text-neutral-400"
                       >
                         {tag}
                       </span>
                     ))}
                   </div>
-                  <ArrowUpRight className="w-5 h-5 text-neutral-800 group-hover:text-white transition-colors duration-500" />
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-4 pt-5 border-t border-white/[0.08]">
+                    <a
+                      href={project.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white hover:text-orange-300 transition-colors"
+                    >
+                      <span>Live App</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <a
+                      href={project.caseStudyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-500 hover:text-white transition-colors"
+                    >
+                      <span>PRD Document</span>
+                      <FileText className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 </div>
-
-                <h3 className="text-3xl font-black text-white mb-6 group-hover:translate-x-2 transition-transform duration-500">
-                  {project.title}
-                </h3>
-
-                <p className="text-neutral-500 text-sm leading-relaxed mb-8 max-w-xs">
-                  {project.problem}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-6 pt-10 border-t border-neutral-900 overflow-hidden">
-                <a
-                  href={project.liveUrl}
-                  target="_blank"
-                  className="text-[10px] uppercase tracking-[0.3em] text-white font-bold hover:text-neutral-400 transition-colors"
-                >
-                  Live View
-                </a>
-                <a
-                  href={project.caseStudyUrl}
-                  target="_blank"
-                  className="text-[10px] uppercase tracking-[0.3em] text-neutral-600 font-bold hover:text-white transition-colors"
-                >
-                  Read PRD
-                </a>
-              </div>
-
-              {/* Hover Grain Effect for each card */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] pointer-events-none transition-opacity duration-500 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E')]" />
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
       </div>
     </section>
   );
 }
-

@@ -1,34 +1,38 @@
-import { motion } from 'framer-motion';
-import { MoveUpRight } from 'lucide-react';
+import { motion, type Variants } from 'framer-motion';
+import { MoveUpRight, Gamepad2 } from 'lucide-react';
+import { useViewMode } from '../context/ViewModeContext';
+import { sfx } from '../utils/audio';
 
 export default function Hero() {
+  const { setMode } = useViewMode();
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.3,
+        delayChildren: 0.2,
       },
     },
   };
 
-  const itemVariants = {
-    hidden: { y: 40, opacity: 0 },
+  const itemVariants: Variants = {
+    hidden: { y: 30, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as any },
+      transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const },
     },
   };
 
   return (
-    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-6 md:px-20 pt-20">
+    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-6 md:px-20 pt-24 pb-16">
       {/* Structural Lines */}
       <div className="absolute top-0 left-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
       <div className="absolute top-0 right-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
@@ -39,39 +43,53 @@ export default function Hero() {
         animate="visible"
         className="relative z-10 max-w-7xl mx-auto w-full"
       >
-        <motion.div
-          variants={itemVariants}
-          className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-500 mb-12 font-medium"
-        >
-          <span className="w-12 h-[1px] bg-neutral-800" />
-          Product Manager & Engineer
+        {/* Availability Badge */}
+        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8 flex-wrap">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/[0.04] border border-white/10 rounded-full text-xs text-neutral-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-medium">Open to Strategic Engineering & Product Roles</span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-neutral-500 font-semibold">
+            <span className="w-8 h-[1px] bg-neutral-800" />
+            MCA • 8.93 CGPA • AFSB Rec.
+          </div>
         </motion.div>
 
+        {/* Impact Headline */}
         <motion.h1
           variants={itemVariants}
-          className="text-5xl sm:text-7xl md:text-9xl font-black text-white mb-10 leading-[0.9] tracking-tighter"
+          className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white mb-8 leading-[0.92] tracking-tighter"
         >
           SOLVING <br />
-          <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.2)' }}>OPERATIONAL</span> <br />
+          <span
+            className="text-transparent"
+            style={{
+              WebkitTextStroke: '1.5px rgba(255,255,255,0.3)',
+              textShadow: '0 0 40px rgba(255,255,255,0.05)',
+            }}
+          >
+            OPERATIONAL
+          </span>{' '}
+          <br />
           DEBT.
         </motion.h1>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 pt-10 border-t border-neutral-900">
+        {/* Narrative & CTAs */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 pt-8 border-t border-white/[0.08]">
           <motion.p
             variants={itemVariants}
-            className="text-xl md:text-2xl text-neutral-400 max-w-2xl leading-relaxed"
+            className="text-lg md:text-xl lg:text-2xl text-neutral-400 max-w-2xl leading-relaxed font-light"
           >
             I bridge the gap between complex engineering systems and strategic product growth.
-            Designing AI-driven products that actually work.
+            Designing resilient microservices and AI-driven products that deliver measurable business value.
           </motion.p>
 
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-wrap gap-6"
-          >
+          <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-4">
+            {/* Primary CTA */}
             <button
               onClick={() => scrollToSection('projects')}
-              className="group relative px-10 py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+              className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02] shadow-xl"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Explore Work
@@ -80,33 +98,46 @@ export default function Hero() {
               <div className="absolute inset-0 bg-neutral-200 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
             </button>
 
+            {/* Jump to 3D Game World */}
+            <button
+              onClick={() => {
+                sfx.playSwitch();
+                setMode('3d');
+              }}
+              className="group flex items-center gap-2.5 px-6 py-4 sm:px-8 sm:py-5 bg-gradient-to-r from-orange-950/60 to-amber-950/60 hover:from-orange-900/80 hover:to-amber-900/80 border border-orange-500/40 hover:border-orange-400 text-orange-200 font-bold uppercase text-xs tracking-widest rounded-none transition-all duration-500 hover:scale-[1.02] shadow-lg shadow-orange-950/30"
+            >
+              <Gamepad2 className="w-4 h-4 text-orange-400 animate-pulse" />
+              <span>Launch 3D Space</span>
+            </button>
+
+            {/* Contact Anchor */}
             <button
               onClick={() => scrollToSection('experience')}
-              className="group px-10 py-5 border border-neutral-800 text-white font-bold uppercase text-xs tracking-widest hover:border-white transition-colors duration-500"
+              className="px-6 py-4 sm:px-8 sm:py-5 border border-white/10 text-neutral-400 hover:text-white font-bold uppercase text-xs tracking-widest hover:border-white transition-colors duration-500"
             >
-              Contact
+              Trajectory
             </button>
           </motion.div>
         </div>
 
+        {/* Footer Meta */}
         <motion.div
           variants={itemVariants}
-          className="mt-24 flex items-center gap-10 text-[10px] uppercase tracking-widest text-neutral-600 font-bold"
+          className="mt-16 flex items-center gap-8 text-[10px] uppercase tracking-widest text-neutral-500 font-semibold flex-wrap"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-            <span>Currently building at testingXperts pvt ltd</span>
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+            <span>Senior Product Engineer @ TestingXperts</span>
           </div>
-          <span className="hidden sm:block opacity-30">|</span>
-          <span className="hidden sm:block">Scroll to explore</span>
+          <span className="opacity-25 hidden sm:inline">•</span>
+          <span className="hidden sm:inline">Discovery → PRD → Architecture → Build → Scale</span>
         </motion.div>
       </motion.div>
 
-      {/* Background Decorative Element */}
-      <div className="absolute -bottom-20 -right-20 text-[20vw] font-black text-white/[0.02] pointer-events-none select-none">
+      {/* Background Decorative Monogram */}
+      <div className="absolute -bottom-16 -right-10 text-[18vw] font-black text-white/[0.015] pointer-events-none select-none">
         PM+ENG
       </div>
     </section>
   );
 }
-
