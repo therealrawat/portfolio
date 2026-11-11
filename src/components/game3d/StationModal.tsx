@@ -50,12 +50,12 @@ export default function StationModal({ station, onClose, onOpenAI }: StationModa
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-neutral-950/95 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl text-white scrollbar-thin scrollbar-thumb-white/20"
+          className="relative z-10 w-full max-w-2xl max-h-[92dvh] overflow-y-auto bg-neutral-950/95 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl text-white scrollbar-thin scrollbar-thumb-white/20"
         >
           {/* Header Bar */}
-          <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+          <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3 sm:pb-5">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1 sm:mb-2">
                 <span
                   className="inline-block w-2.5 h-2.5 rounded-full animate-pulse"
                   style={{ backgroundColor: station.color }}
@@ -64,7 +64,7 @@ export default function StationModal({ station, onClose, onOpenAI }: StationModa
                   Corporate HQ :: {station.category.toUpperCase()}
                 </span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">{station.content.title}</h2>
+              <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white">{station.content.title}</h2>
               <p className="text-xs sm:text-sm text-neutral-400 mt-1">{station.content.subtitle}</p>
             </div>
 
@@ -81,25 +81,27 @@ export default function StationModal({ station, onClose, onOpenAI }: StationModa
           </div>
 
           {/* Description */}
-          <div className="py-5 text-sm sm:text-base text-neutral-300 leading-relaxed">
+          <div className="py-3 sm:py-5 text-xs sm:text-base text-neutral-300 leading-relaxed">
             {station.content.description}
           </div>
 
           {/* Highlights */}
           {station.content.highlights && (
-            <div className="space-y-2.5 my-4">
+            <div className="my-2 sm:my-4">
               <span className="text-[10px] uppercase tracking-[0.25em] text-neutral-500 font-semibold block mb-2">
                 Impact, Metrics &amp; Highlights
               </span>
-              {station.content.highlights.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs sm:text-sm text-neutral-300"
-                >
-                  <Sparkles className="w-4 h-4 text-neutral-400 mt-0.5 shrink-0" style={{ color: station.color }} />
-                  <span className="leading-snug">{item}</span>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {station.content.highlights.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2.5 p-2.5 sm:p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-neutral-300"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-neutral-400 mt-0.5 shrink-0" style={{ color: station.color }} />
+                    <span className="leading-snug">{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

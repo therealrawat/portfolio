@@ -16,10 +16,18 @@ import {
   Package,
   Activity,
   Briefcase,
+  Maximize2,
+  Minimize2,
+  Bot,
 } from 'lucide-react';
 import { STATIONS, type StationData } from '../../data/stationsData';
 import { useViewMode } from '../../context/ViewModeContext';
 import { sfx } from '../../utils/audio';
+import {
+  exitFullscreenSafe,
+  requestHorizontalFullscreen,
+  useViewportState,
+} from '../../utils/mobileViewport';
 import { type ActionPrompt } from './ThreeEngine';
 import { type AvatarEmoteName } from './AvatarController';
 
@@ -39,6 +47,7 @@ interface GameHUDProps {
   avatarLoaded?: boolean;
   activeEmote?: AvatarEmoteName | null;
   onTriggerEmote?: (emote: AvatarEmoteName) => void;
+  onOpenAI?: () => void;
 }
 
 export default function GameHUD({
@@ -57,16 +66,15 @@ export default function GameHUD({
   avatarLoaded = true,
   activeEmote = null,
   onTriggerEmote,
+  onOpenAI,
 }: GameHUDProps) {
   const { mode, setMode } = useViewMode();
+  const viewport = useViewportState();
+  const { showTouchControls, isCompactLandscape, isLandscape, isFullscreen } = viewport;
   const [isMuted, setIsMuted] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showRadar, setShowRadar] = useState(true);
   const [showMoves, setShowMoves] = useState(false);
-  const [touchActive] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  });
 
   // Virtual Joystick State
   const [joystickThumbPos, setJoystickThumbPos] = useState({ x: 0, y: 0 });
@@ -104,6 +112,7 @@ export default function GameHUD({
 
   // Touch Joystick Handlers
   const handleJoystickTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     setIsDragging(true);
@@ -111,8 +120,9 @@ export default function GameHUD({
 
   const handleJoystickTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
+    e.stopPropagation();
     const touch = e.touches[0];
-    const maxRadius = 45;
+    const maxRadius = isCompactLandscape ? 36 : 45;
 
     let dx = touch.clientX - touchStartPos.current.x;
     let dy = touch.clientY - touchStartPos.current.y;
@@ -127,10 +137,20 @@ export default function GameHUD({
     onJoystickMove(dx / maxRadius, dy / maxRadius);
   };
 
-  const handleJoystickTouchEnd = () => {
+  const handleJoystickTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
     setIsDragging(false);
     setJoystickThumbPos({ x: 0, y: 0 });
     onJoystickMove(0, 0);
+  };
+
+  const toggleFullscreen = () => {
+    sfx.playInteract();
+    if (isFullscreen) {
+      void exitFullscreenSafe();
+    } else {
+      void requestHorizontalFullscreen();
+    }
   };
 
   // HQ Map calculations (scaled for enclosed 58m x 54m tiled corporate floorplan)
@@ -139,25 +159,307 @@ export default function GameHUD({
   const radarPlayerY = 50 + playerPos.z * radarScale;
   const playerDeg = (playerPos.rotation * 180) / Math.PI;
 
+  const fireTouchButton = (e: React.PointerEvent<HTMLButtonElement>, action?: () => void) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.blur();
+    action?.();
+  };
+
+  const renderMovesTray = () => (
+    <AnimatePresence>
+      {showMoves && !isDriving && (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.95 }}
+          transition={{ duration: 0.16 }}
+          className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-neutral-950/90 backdrop-blur-2xl border border-orange-500/35 rounded-2xl shadow-2xl shadow-orange-950/50 max-w-full overflow-x-auto scrollbar-none"
+        >
+          {[
+            { id: 'punch' as AvatarEmoteName, label: 'Punch', key: 'Q' },
+            { id: 'kick' as AvatarEmoteName, label: 'Kick', key: 'X' },
+            { id: 'kick_punch' as AvatarEmoteName, label: 'Combo', key: 'C' },
+            { id: 'pushups' as AvatarEmoteName, label: 'Push-ups', key: 'V' },
+          ].map((move) => {
+            const isActive = activeEmote === move.id;
+            return (
+              <button
+                key={move.id}
+                type="button"
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  onTriggerEmote?.(move.id);
+                }}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shrink-0 ${
+                  isActive
+                    ? 'bg-orange-500 text-black shadow-md shadow-orange-500/40'
+                    : 'bg-white/5 hover:bg-white/15 text-neutral-200'
+                }`}
+              >
+                <span className="text-[10px] sm:text-[11px]">{move.label}</span>
+                {!showTouchControls && (
+                  <span
+                    className={`px-1 py-0.5 rounded text-[9px] font-mono ${
+                      isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-orange-300'
+                    }`}
+                  >
+                    {move.key}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  const renderZoneDock = (includeDesktopActions: boolean) => (
+    <div className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-neutral-950/85 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-x-auto max-w-full scrollbar-none">
+      {!isCompactLandscape && (
+        <span className="text-[9px] uppercase font-mono tracking-widest text-neutral-500 px-2.5 hidden sm:inline shrink-0">
+          Zones:
+        </span>
+      )}
+      {[
+        { id: 'spawn', label: 'Overview', icon: Compass },
+        { id: 'projects', label: 'Case Studies', icon: FolderGit2 },
+        { id: 'tech', label: 'Stack', icon: Cpu },
+        { id: 'experience', label: 'Track Record', icon: Award },
+        { id: 'contact', label: 'Hire Me', icon: Radio },
+      ].map((item) => {
+        const Icon = item.icon;
+        const isNearbyZone = nearbyStation?.id === item.id;
+        return (
+          <button
+            type="button"
+            key={item.id}
+            onClick={(e) => {
+              e.currentTarget.blur();
+              sfx.playInteract();
+              if (isNearbyZone && nearbyStation) {
+                onInspectStation(nearbyStation);
+              } else {
+                onTeleport(item.id);
+              }
+            }}
+            title={isNearbyZone && nearbyStation ? `Open ${nearbyStation.name} Brief [E]` : `Jump to ${item.label}`}
+            className={`flex items-center gap-1 sm:gap-1.5 ${
+              isCompactLandscape ? 'px-2 py-1 text-[10px]' : 'px-2.5 sm:px-3 py-1.5 text-xs'
+            } rounded-xl font-semibold transition-all hover:scale-105 active:scale-95 shrink-0 ${
+              isNearbyZone
+                ? 'bg-orange-500/20 border border-orange-400/70 text-white shadow-md shadow-orange-500/20'
+                : 'bg-white/5 hover:bg-white/15 border border-transparent text-neutral-300 hover:text-white'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+            <span className="text-[10px] sm:text-[11px] whitespace-nowrap">{item.label}</span>
+            {isNearbyZone && (
+              <span className="px-1 py-0.5 bg-white text-black rounded text-[9px] font-mono font-bold leading-none">
+                {showTouchControls ? 'OPEN' : 'E'}
+              </span>
+            )}
+          </button>
+        );
+      })}
+
+      {includeDesktopActions && (
+        <>
+          <div className="w-[1px] h-4 bg-white/10 mx-1 hidden sm:block shrink-0" />
+
+          {/* Drive Rover / Exit Button in Dock */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onToggleRover?.();
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-md shrink-0 ${
+              isDriving
+                ? 'bg-orange-500/30 border border-orange-400 text-orange-200 shadow-orange-500/30 animate-pulse'
+                : actionPrompt?.type === 'enter_rover'
+                  ? 'bg-amber-500/25 border border-amber-400/75 text-amber-100 shadow-amber-500/25'
+                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
+            }`}
+            title={actionPrompt?.type === 'enter_rover' ? `${actionPrompt.label} [R]` : 'Enter or Exit Executive Rover [R]'}
+          >
+            {isDriving ? (
+              <>
+                <LogOut className="w-3.5 h-3.5 text-orange-400" />
+                <span className="text-[11px]">Exit [R]</span>
+              </>
+            ) : (
+              <>
+                <Car className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px]">Rover [R]</span>
+              </>
+            )}
+          </button>
+
+          {/* Pick Up / Throw Prop Button in Dock */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onTogglePickThrow?.();
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 shrink-0 ${
+              actionPrompt?.type === 'throw'
+                ? 'bg-amber-500/30 border border-amber-400 text-amber-100 shadow-md shadow-amber-500/25'
+                : actionPrompt?.type === 'pickup'
+                  ? 'bg-orange-500/25 border border-orange-400/75 text-orange-100 shadow-md shadow-orange-500/20'
+                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
+            }`}
+            title={
+              actionPrompt?.type === 'pickup' || actionPrompt?.type === 'throw'
+                ? `${actionPrompt.label} [G]`
+                : 'Pick Up or Throw Office Object [G]'
+            }
+          >
+            <Package className="w-3.5 h-3.5 text-orange-400" />
+            <span className="text-[11px] hidden sm:inline">
+              {actionPrompt?.type === 'throw' ? 'Throw [G]' : 'Grab/Throw [G]'}
+            </span>
+          </button>
+
+          {/* Jump Action Trigger in Dock */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onJump();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-md shadow-amber-500/20 shrink-0"
+            title="Jump [Space]"
+          >
+            <ArrowUp className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-[11px]">Jump [Space]</span>
+          </button>
+
+          {/* Character Moves / Emotes Tray Toggle */}
+          {!isDriving && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                sfx.playInteract();
+                setShowMoves((v) => !v);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shrink-0 ${
+                showMoves || activeEmote
+                  ? 'bg-orange-500/25 border border-orange-400/60 text-orange-200'
+                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
+              }`}
+              title="Toggle Character Moves & Emotes (Punch, Kick, Combo, Push-ups)"
+            >
+              <Activity className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-[11px] hidden sm:inline">Moves</span>
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  const renderJoystick = () => (
+    <div
+      onTouchStart={handleJoystickTouchStart}
+      onTouchMove={handleJoystickTouchMove}
+      onTouchEnd={handleJoystickTouchEnd}
+      className={`pointer-events-auto relative shrink-0 rounded-full bg-white/5 border border-white/20 backdrop-blur-md flex items-center justify-center touch-none ${
+        isCompactLandscape ? 'w-20 h-20' : 'w-24 h-24'
+      }`}
+    >
+      <div
+        className={`rounded-full bg-orange-500/80 shadow-lg shadow-orange-500/50 ${
+          isCompactLandscape ? 'w-8 h-8' : 'w-10 h-10'
+        }`}
+        style={{
+          transform: `translate(${joystickThumbPos.x}px, ${joystickThumbPos.y}px)`,
+          transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+        }}
+      />
+    </div>
+  );
+
+  const renderTouchButtons = () => {
+    const btnSize = isCompactLandscape ? 'w-12 h-12' : 'w-13 h-13';
+    const jumpSize = isCompactLandscape ? 'w-12 h-12' : 'w-14 h-14';
+    return (
+      <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 shrink-0 touch-none">
+        <button
+          type="button"
+          onPointerDown={(e) => fireTouchButton(e, onTogglePickThrow)}
+          className={`${btnSize} rounded-full border flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg ${
+            actionPrompt?.type === 'throw'
+              ? 'bg-amber-500/35 border-amber-300 shadow-amber-500/30'
+              : actionPrompt?.type === 'pickup'
+                ? 'bg-orange-500/35 border-orange-300 shadow-orange-500/30'
+                : 'bg-orange-500/20 active:bg-orange-500/60 border-orange-400/50 shadow-orange-500/20'
+          }`}
+          title="Pick Up or Throw"
+        >
+          <Package className="w-4 h-4 text-orange-300" />
+          <span className="text-[7px] font-mono uppercase font-bold tracking-wider">
+            {actionPrompt?.type === 'throw' ? 'THROW' : 'GRAB'}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onPointerDown={(e) => fireTouchButton(e, onToggleRover)}
+          className={`${btnSize} rounded-full flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg ${
+            isDriving
+              ? 'bg-red-500/30 border border-red-400 text-red-200'
+              : actionPrompt?.type === 'enter_rover'
+                ? 'bg-amber-500/35 border border-amber-300 shadow-amber-500/30'
+                : 'bg-amber-500/20 active:bg-amber-500/60 border border-amber-400/50'
+          }`}
+          title="Drive or Exit Rover"
+        >
+          {isDriving ? <LogOut className="w-4 h-4 text-red-300" /> : <Car className="w-4 h-4 text-amber-300" />}
+          <span className="text-[7px] font-mono uppercase font-bold tracking-wider">
+            {isDriving ? 'EXIT' : 'ROVER'}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onPointerDown={(e) => fireTouchButton(e, onJump)}
+          className={`${jumpSize} rounded-full bg-orange-500/20 active:bg-orange-500/60 border border-orange-400/50 flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg shadow-orange-500/25`}
+          title="Jump"
+        >
+          <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-orange-300" />
+          <span className="text-[7px] sm:text-[8px] font-mono uppercase font-bold tracking-wider">JUMP</span>
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <div className="pointer-events-none fixed inset-0 z-40 flex flex-col justify-between p-4 sm:p-6 select-none font-sans">
+    <div
+      className={`pointer-events-none fixed inset-0 z-40 flex flex-col justify-between select-none font-sans [padding-left:max(0.75rem,env(safe-area-inset-left))] [padding-right:max(0.75rem,env(safe-area-inset-right))] [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] ${
+        isCompactLandscape || showTouchControls ? 'py-2 sm:py-3' : 'py-4 sm:py-6 sm:px-6'
+      }`}
+    >
       {/* --- TOP BAR --- */}
-      <header className="pointer-events-auto flex items-center justify-between gap-4 w-full max-w-7xl mx-auto">
+      <header className="pointer-events-auto flex items-center justify-between gap-2 sm:gap-4 w-full max-w-7xl mx-auto">
         {/* Brand & View Switcher */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl shrink-0">
             <span className="text-sm font-black tracking-tighter text-white">PR.</span>
             <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center p-1 bg-black/80 backdrop-blur-xl border border-white/15 rounded-full shadow-2xl">
+          <div className="flex items-center p-0.5 sm:p-1 bg-black/80 backdrop-blur-xl border border-white/15 rounded-full shadow-2xl shrink-0">
             <button
               onClick={() => {
                 sfx.playSwitch();
                 setMode('2d');
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all ${
                 mode === '2d'
                   ? 'bg-white text-black shadow-md'
                   : 'text-neutral-400 hover:text-white hover:bg-white/5'
@@ -170,7 +472,7 @@ export default function GameHUD({
                 sfx.playSwitch();
                 setMode('3d');
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all ${
                 mode === '3d'
                   ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
                   : 'text-neutral-400 hover:text-white hover:bg-white/5'
@@ -185,11 +487,11 @@ export default function GameHUD({
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-2 px-3 py-1 bg-black/75 border border-orange-500/40 text-orange-300 rounded-full text-xs font-mono"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-black/75 border border-orange-500/40 text-orange-300 rounded-full text-[11px] font-mono shrink-0"
             >
               <div className="w-2.5 h-2.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-              <span className="hidden sm:inline">Loading 3D Character...</span>
-              <span className="sm:hidden">Loading...</span>
+              <span className="hidden lg:inline">Loading 3D Character...</span>
+              <span className="lg:hidden">Loading...</span>
             </motion.div>
           )}
 
@@ -198,7 +500,7 @@ export default function GameHUD({
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-full text-xs font-mono font-bold shadow-lg shadow-amber-500/20 animate-pulse"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-full text-[11px] font-mono font-bold shadow-lg shadow-amber-500/20 animate-pulse shrink-0"
             >
               <Car className="w-3.5 h-3.5 text-amber-400" />
               <span>ROVER ACTIVE</span>
@@ -206,8 +508,16 @@ export default function GameHUD({
           )}
         </div>
 
-        {/* Right Quick Action, Audio & Help */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Quick Actions, Speedometer (compact/touch), Audio, Fullscreen & Help */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {(showTouchControls || isCompactLandscape) && (
+            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl text-[10px] font-mono text-neutral-300">
+              <span>{isDriving ? 'ROVER' : 'PACE'}</span>
+              <span className="text-white font-bold tabular-nums">{speed}</span>
+              <span className="text-neutral-500">KM/H</span>
+            </div>
+          )}
+
           {/* Quick Executive Brief / Hire Trigger */}
           <button
             type="button"
@@ -216,27 +526,78 @@ export default function GameHUD({
               sfx.playInteract();
               onInspectStation(STATIONS[0]);
             }}
-            className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl border bg-orange-500/15 hover:bg-orange-500/25 border-orange-500/40 text-orange-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border bg-orange-500/15 hover:bg-orange-500/25 border-orange-500/40 text-orange-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
             title="Open Priyanshu's Executive Brief & Hiring Summary"
           >
             <Briefcase className="w-3.5 h-3.5 text-orange-400" />
-            <span>Hire / Brief</span>
+            <span className="hidden md:inline">Hire / Brief</span>
           </button>
+
+          {/* Touch/Compact Moves Emote Trigger in Header */}
+          {(showTouchControls || isCompactLandscape) && !isDriving && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                sfx.playInteract();
+                setShowMoves((v) => !v);
+              }}
+              className={`p-1.5 sm:p-2 backdrop-blur-xl border rounded-xl transition-colors ${
+                showMoves || activeEmote
+                  ? 'bg-orange-500/25 border-orange-400/60 text-orange-200'
+                  : 'bg-black/60 border-white/10 hover:border-white/20 text-neutral-300 hover:text-white'
+              }`}
+              title="Toggle Character Moves & Emotes"
+              aria-label="Toggle Character Moves"
+            >
+              <Activity className="w-4 h-4 text-orange-400" />
+            </button>
+          )}
+
+          {/* Compact AI Assistant Trigger (replaces overlapping corner orb on mobile/compact 3D) */}
+          {(showTouchControls || isCompactLandscape) && onOpenAI && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                sfx.playInteract();
+                onOpenAI();
+              }}
+              className="p-1.5 sm:p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-200 hover:text-white transition-colors"
+              title="Open AI Assistant"
+              aria-label="Open AI Assistant"
+            >
+              <Bot className="w-4 h-4 text-orange-400" />
+            </button>
+          )}
 
           {/* HQ Map Toggle */}
           <button
             onClick={() => setShowRadar(!showRadar)}
-            className="p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
+            className="hidden sm:flex p-1.5 sm:p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
             title={showRadar ? 'Hide HQ Map' : 'Show HQ Map'}
             aria-label="Toggle HQ Map"
           >
             <Compass className={`w-4 h-4 ${showRadar ? 'text-orange-400' : 'text-neutral-500'}`} />
           </button>
 
+          {/* Landscape Fullscreen Toggle */}
+          {(showTouchControls || isCompactLandscape) && (
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="p-1.5 sm:p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Horizontal Fullscreen'}
+              aria-label="Toggle Fullscreen"
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4 text-orange-400" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+          )}
+
           {/* Audio Toggle */}
           <button
             onClick={toggleSound}
-            className="p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
             title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
             aria-label="Toggle Audio"
           >
@@ -249,7 +610,7 @@ export default function GameHUD({
               sfx.playInteract();
               setShowHelp(true);
             }}
-            className="p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
             title="Controls & Help"
             aria-label="Controls and Help"
           >
@@ -260,8 +621,16 @@ export default function GameHUD({
 
       {/* --- EXECUTIVE HQ FLOORPLAN MINIMAP (TOP RIGHT) --- */}
       {showRadar && (
-        <div className="pointer-events-auto absolute top-20 right-6 hidden md:block select-none">
-          <div className="relative w-28 h-28 rounded-full bg-black/85 backdrop-blur-2xl border border-orange-500/30 p-1 shadow-2xl shadow-orange-950/40">
+        <div
+          className={`pointer-events-auto absolute hidden sm:block select-none ${
+            isCompactLandscape ? 'top-13 right-3' : 'top-20 right-6'
+          }`}
+        >
+          <div
+            className={`relative rounded-full bg-black/85 backdrop-blur-2xl border border-orange-500/30 p-1 shadow-2xl shadow-orange-950/40 ${
+              isCompactLandscape ? 'w-20 h-20' : 'w-28 h-28'
+            }`}
+          >
             <svg viewBox="0 0 100 100" className="w-full h-full">
               {/* HQ Floorplan Grid Rings */}
               <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(249, 115, 22, 0.2)" strokeWidth="1" />
@@ -346,358 +715,120 @@ export default function GameHUD({
         </div>
       )}
 
-      {/* --- BOTTOM SECTION (DOCK & CONTROLS) --- */}
-      <footer className="w-full max-w-7xl mx-auto flex flex-col items-center gap-3">
-        {/* Optional Compact Moves / Emotes Tray */}
-        <AnimatePresence>
-          {showMoves && !isDriving && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              transition={{ duration: 0.16 }}
-              className="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-neutral-950/90 backdrop-blur-2xl border border-orange-500/35 rounded-2xl shadow-2xl shadow-orange-950/50"
-            >
-              {[
-                { id: 'punch' as AvatarEmoteName, label: 'Punch', key: 'Q' },
-                { id: 'kick' as AvatarEmoteName, label: 'Kick', key: 'X' },
-                { id: 'kick_punch' as AvatarEmoteName, label: 'Combo', key: 'C' },
-                { id: 'pushups' as AvatarEmoteName, label: 'Push-ups', key: 'V' },
-              ].map((move) => {
-                const isActive = activeEmote === move.id;
-                return (
-                  <button
-                    key={move.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.currentTarget.blur();
-                      onTriggerEmote?.(move.id);
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 ${
-                      isActive
-                        ? 'bg-orange-500 text-black shadow-md shadow-orange-500/40'
-                        : 'bg-white/5 hover:bg-white/15 text-neutral-200'
-                    }`}
-                  >
-                    <span className="text-[11px]">{move.label}</span>
-                    <span
-                      className={`px-1 py-0.5 rounded text-[9px] font-mono ${
-                        isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-orange-300'
-                      }`}
-                    >
-                      {move.key}
-                    </span>
-                  </button>
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* HQ Zone Jump Dock */}
-        <div className="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-neutral-950/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-x-auto max-w-full scrollbar-none">
-          <span className="text-[9px] uppercase font-mono tracking-widest text-neutral-500 px-2.5 hidden sm:inline">
-            Zones:
-          </span>
-          {[
-            { id: 'spawn', label: 'Overview', icon: Compass },
-            { id: 'projects', label: 'Case Studies', icon: FolderGit2 },
-            { id: 'tech', label: 'Stack', icon: Cpu },
-            { id: 'experience', label: 'Track Record', icon: Award },
-            { id: 'contact', label: 'Hire Me', icon: Radio },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isNearbyZone = nearbyStation?.id === item.id;
-            return (
-              <button
-                type="button"
-                key={item.id}
-                onClick={(e) => {
-                  e.currentTarget.blur();
-                  sfx.playInteract();
-                  if (isNearbyZone && nearbyStation) {
-                    onInspectStation(nearbyStation);
-                  } else {
-                    onTeleport(item.id);
-                  }
-                }}
-                title={isNearbyZone && nearbyStation ? `Open ${nearbyStation.name} Brief [E]` : `Jump to ${item.label}`}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 ${
-                  isNearbyZone
-                    ? 'bg-orange-500/20 border border-orange-400/70 text-white shadow-md shadow-orange-500/20'
-                    : 'bg-white/5 hover:bg-white/15 border border-transparent text-neutral-300 hover:text-white'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 text-orange-400" />
-                <span className="text-[11px]">{item.label}</span>
-                {isNearbyZone && (
-                  <span className="px-1 py-0.5 bg-white text-black rounded text-[9px] font-mono font-bold leading-none">
-                    E
-                  </span>
-                )}
-              </button>
-            );
-          })}
-
-          <div className="w-[1px] h-4 bg-white/10 mx-1 hidden sm:block" />
-
-          {/* Drive Rover / Exit Button in Dock */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onToggleRover?.();
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-md ${
-              isDriving
-                ? 'bg-orange-500/30 border border-orange-400 text-orange-200 shadow-orange-500/30 animate-pulse'
-                : actionPrompt?.type === 'enter_rover'
-                  ? 'bg-amber-500/25 border border-amber-400/75 text-amber-100 shadow-amber-500/25'
-                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
-            }`}
-            title={actionPrompt?.type === 'enter_rover' ? `${actionPrompt.label} [R]` : 'Enter or Exit Executive Rover [R]'}
-          >
-            {isDriving ? (
-              <>
-                <LogOut className="w-3.5 h-3.5 text-orange-400" />
-                <span className="text-[11px]">Exit [R]</span>
-              </>
-            ) : (
-              <>
-                <Car className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[11px]">Rover [R]</span>
-              </>
-            )}
-          </button>
-
-          {/* Pick Up / Throw Prop Button in Dock */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onTogglePickThrow?.();
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 ${
-              actionPrompt?.type === 'throw'
-                ? 'bg-amber-500/30 border border-amber-400 text-amber-100 shadow-md shadow-amber-500/25'
-                : actionPrompt?.type === 'pickup'
-                  ? 'bg-orange-500/25 border border-orange-400/75 text-orange-100 shadow-md shadow-orange-500/20'
-                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
-            }`}
-            title={
-              actionPrompt?.type === 'pickup' || actionPrompt?.type === 'throw'
-                ? `${actionPrompt.label} [G]`
-                : 'Pick Up or Throw Office Object [G]'
-            }
-          >
-            <Package className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-[11px] hidden sm:inline">
-              {actionPrompt?.type === 'throw' ? 'Throw [G]' : 'Grab/Throw [G]'}
-            </span>
-          </button>
-
-          {/* Jump Action Trigger in Dock */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onJump();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-md shadow-amber-500/20"
-            title="Jump [Space]"
-          >
-            <ArrowUp className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[11px]">Jump [Space]</span>
-          </button>
-
-          {/* Character Moves / Emotes Tray Toggle */}
-          {!isDriving && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                sfx.playInteract();
-                setShowMoves((v) => !v);
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 ${
-                showMoves || activeEmote
-                  ? 'bg-orange-500/25 border border-orange-400/60 text-orange-200'
-                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
-              }`}
-              title="Toggle Character Moves & Emotes (Punch, Kick, Combo, Push-ups)"
-            >
-              <Activity className="w-3.5 h-3.5 text-orange-400" />
-              <span className="text-[11px] hidden sm:inline">Moves</span>
-            </button>
-          )}
-        </div>
-
-        {/* Desktop Controls Indicator & Speedometer */}
-        <div className="hidden sm:flex items-center justify-between w-full text-[11px] text-neutral-500 font-mono px-2 select-none">
-          <div className="flex items-center gap-3.5 flex-wrap">
-            <span className="flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">W A S D</span> / <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Arrows</span> Move
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                onToggleRover?.();
-              }}
-              className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Enter or Exit Executive Rover [R]"
-            >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">R</span> Rover
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                onTogglePickThrow?.();
-              }}
-              className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Pick Up or Throw Office Objects [G]"
-            >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">G</span> Grab
-            </button>
-            {!isDriving && (
-              <>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.blur();
-                    onTriggerEmote?.('punch');
-                  }}
-                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                  title="Punch Attack [Q]"
-                >
-                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Q</span> Punch
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.blur();
-                    onTriggerEmote?.('kick');
-                  }}
-                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                  title="Kick Attack [X]"
-                >
-                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">X</span> Kick
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.blur();
-                    onTriggerEmote?.('pushups');
-                  }}
-                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                  title="Push-ups Workout Emote [V]"
-                >
-                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">V</span> Push-ups
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                onJump();
-              }}
-              className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Click or press Space to Jump"
-            >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Space</span> Jump
-            </button>
-            <span className="hidden lg:flex items-center gap-1.5">
-              <MousePointer className="w-3 h-3 text-neutral-400" /> Click to Move
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-neutral-400">
-              {isDriving ? 'ROVER' : 'PACE'}: <span className="text-white font-bold">{speed}</span> KM/H
-            </span>
-          </div>
-        </div>
-
-        {/* --- MOBILE TOUCH ON-SCREEN CONTROLS --- */}
-        {touchActive && (
-          <div className="pointer-events-auto flex items-center justify-between w-full mt-2 px-2 sm:hidden">
-            {/* Virtual Joystick */}
-            <div
-              onTouchStart={handleJoystickTouchStart}
-              onTouchMove={handleJoystickTouchMove}
-              onTouchEnd={handleJoystickTouchEnd}
-              className="relative w-24 h-24 rounded-full bg-white/5 border border-white/20 backdrop-blur-md flex items-center justify-center touch-none"
-            >
-              <div
-                className="w-10 h-10 rounded-full bg-orange-500/80 shadow-lg shadow-orange-500/50"
-                style={{
-                  transform: `translate(${joystickThumbPos.x}px, ${joystickThumbPos.y}px)`,
-                  transition: isDragging ? 'none' : 'transform 0.15s ease-out',
-                }}
-              />
+      {/* --- BOTTOM SECTION (HORIZONTAL TOUCH COCKPIT OR DESKTOP DOCK) --- */}
+      <footer className="w-full max-w-7xl mx-auto">
+        {showTouchControls ? (
+          isLandscape ? (
+            <div className="flex items-end justify-between gap-2.5 w-full">
+              {renderJoystick()}
+              <div className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
+                {renderMovesTray()}
+                {renderZoneDock(false)}
+              </div>
+              {renderTouchButtons()}
             </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2.5 w-full">
+              {renderMovesTray()}
+              {renderZoneDock(false)}
+              <div className="flex items-center justify-between w-full px-1 pt-1">
+                {renderJoystick()}
+                {renderTouchButtons()}
+              </div>
+            </div>
+          )
+        ) : (
+          <div className="flex flex-col items-center gap-3 w-full">
+            {renderMovesTray()}
+            {renderZoneDock(true)}
 
-            {/* Mobile Action Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.currentTarget.blur();
-                  onTogglePickThrow?.();
-                }}
-                onTouchStart={() => onTogglePickThrow?.()}
-                className={`w-13 h-13 rounded-full border flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg ${
-                  actionPrompt?.type === 'throw'
-                    ? 'bg-amber-500/35 border-amber-300 shadow-amber-500/30'
-                    : actionPrompt?.type === 'pickup'
-                      ? 'bg-orange-500/35 border-orange-300 shadow-orange-500/30'
-                      : 'bg-orange-500/20 active:bg-orange-500/60 border-orange-400/50 shadow-orange-500/20'
-                }`}
-                title="Pick Up or Throw"
-              >
-                <Package className="w-4 h-4 text-orange-300" />
-                <span className="text-[7px] font-mono uppercase font-bold tracking-wider">
-                  {actionPrompt?.type === 'throw' ? 'THROW' : 'GRAB'}
+            {/* Desktop Controls Indicator & Speedometer */}
+            <div className="hidden sm:flex items-center justify-between w-full text-[11px] text-neutral-500 font-mono px-2 select-none">
+              <div className="flex items-center gap-3.5 flex-wrap">
+                <span className="flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">W A S D</span> /{' '}
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Arrows</span> Move
                 </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.currentTarget.blur();
-                  onToggleRover?.();
-                }}
-                onTouchStart={() => onToggleRover?.()}
-                className={`w-13 h-13 rounded-full flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg ${
-                  isDriving
-                    ? 'bg-red-500/30 border border-red-400 text-red-200'
-                    : actionPrompt?.type === 'enter_rover'
-                      ? 'bg-amber-500/35 border border-amber-300 shadow-amber-500/30'
-                      : 'bg-amber-500/20 active:bg-amber-500/60 border border-amber-400/50'
-                }`}
-                title="Drive or Exit Rover"
-              >
-                {isDriving ? <LogOut className="w-4 h-4 text-red-300" /> : <Car className="w-4 h-4 text-amber-300" />}
-                <span className="text-[7px] font-mono uppercase font-bold tracking-wider">
-                  {isDriving ? 'EXIT' : 'ROVER'}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onToggleRover?.();
+                  }}
+                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  title="Enter or Exit Executive Rover [R]"
+                >
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">R</span> Rover
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onTogglePickThrow?.();
+                  }}
+                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  title="Pick Up or Throw Office Objects [G]"
+                >
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">G</span> Grab
+                </button>
+                {!isDriving && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.currentTarget.blur();
+                        onTriggerEmote?.('punch');
+                      }}
+                      className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                      title="Punch Attack [Q]"
+                    >
+                      <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Q</span> Punch
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.currentTarget.blur();
+                        onTriggerEmote?.('kick');
+                      }}
+                      className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                      title="Kick Attack [X]"
+                    >
+                      <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">X</span> Kick
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.currentTarget.blur();
+                        onTriggerEmote?.('pushups');
+                      }}
+                      className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                      title="Push-ups Workout Emote [V]"
+                    >
+                      <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">V</span> Push-ups
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onJump();
+                  }}
+                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  title="Click or press Space to Jump"
+                >
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Space</span> Jump
+                </button>
+                <span className="hidden lg:flex items-center gap-1.5">
+                  <MousePointer className="w-3 h-3 text-neutral-400" /> Click to Move
                 </span>
-              </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.currentTarget.blur();
-                  onJump();
-                }}
-                onTouchStart={onJump}
-                className="w-14 h-14 rounded-full bg-orange-500/20 active:bg-orange-500/60 border border-orange-400/50 flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg shadow-orange-500/25"
-                title="Jump"
-              >
-                <ArrowUp className="w-5 h-5 text-orange-300" />
-                <span className="text-[8px] font-mono uppercase font-bold tracking-wider">JUMP</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-neutral-400">
+                  {isDriving ? 'ROVER' : 'PACE'}: <span className="text-white font-bold">{speed}</span> KM/H
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -706,17 +837,17 @@ export default function GameHUD({
       {/* --- HELP / CONTROLS MODAL OVERLAY --- */}
       <AnimatePresence>
         {showHelp && (
-          <div className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-md bg-neutral-950 border border-white/10 rounded-2xl p-6 shadow-2xl text-white"
+              className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto bg-neutral-950 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl text-white"
             >
-              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3 sm:pb-4 mb-3 sm:mb-4">
                 <div className="flex items-center gap-2">
                   <Compass className="w-5 h-5 text-orange-400" />
-                  <h3 className="text-lg font-bold">Priyanshu&apos;s 3D Corporate HQ — Guide</h3>
+                  <h3 className="text-base sm:text-lg font-bold">Priyanshu&apos;s 3D Corporate HQ — Guide</h3>
                 </div>
                 <button
                   onClick={() => setShowHelp(false)}
@@ -726,56 +857,32 @@ export default function GameHUD({
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs text-neutral-300">
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Walk / Drive</span>
-                  <span className="font-mono font-bold text-white">W A S D or Arrow Keys</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Drive / Exit Executive Rover</span>
-                  <span className="font-mono font-bold text-amber-300">Press [ R ] or Tap Prompt</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Pick Up &amp; Throw Objects</span>
-                  <span className="font-mono font-bold text-orange-400">Press [ G ] (Carry &amp; Throw)</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Punch / Kick / Combo</span>
-                  <span className="font-mono font-bold text-amber-300">[ Q ] / [ X ] / [ C ]</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Push-ups Workout</span>
-                  <span className="font-mono font-bold text-orange-300">Press [ V ] (or Moves tray)</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Jump</span>
-                  <span className="font-mono font-bold text-white">Spacebar</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Sprint / Rover Boost</span>
-                  <span className="font-mono font-bold text-white">Hold [ Shift ]</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Interactive Office Objects</span>
-                  <span className="font-mono font-bold text-white">Swivel Chairs &amp; Book Stacks</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Talk to HR / Open Zone</span>
-                  <span className="font-mono font-bold text-white">Click NPC / Zone or Press [ E ]</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Click to Navigate</span>
-                  <span className="font-mono font-bold text-white">Left Click office tiles</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Quick Jump</span>
-                  <span className="font-mono font-bold text-white">Dock buttons or HQ Map blips</span>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-300">
+                {[
+                  { label: 'Walk / Drive', key: 'Joystick or W A S D', tone: 'text-white' },
+                  { label: 'Drive / Exit Rover', key: 'ROVER btn or [ R ]', tone: 'text-amber-300' },
+                  { label: 'Pick Up & Throw', key: 'GRAB btn or [ G ]', tone: 'text-orange-400' },
+                  { label: 'Jump', key: 'JUMP btn or Spacebar', tone: 'text-white' },
+                  { label: 'Punch / Kick / Combo', key: 'Moves tray or Q / X / C', tone: 'text-amber-300' },
+                  { label: 'Push-ups Workout', key: 'Moves tray or [ V ]', tone: 'text-orange-300' },
+                  { label: 'Sprint / Rover Boost', key: 'Hold [ Shift ]', tone: 'text-white' },
+                  { label: 'Talk to HR / Open Zone', key: 'Tap NPC / Zone or [ E ]', tone: 'text-white' },
+                  { label: 'Tap / Click to Move', key: 'Tap floor tiles directly', tone: 'text-white' },
+                  { label: 'Horizontal Fullscreen', key: 'Fullscreen icon in top bar', tone: 'text-orange-300' },
+                ].map((entry) => (
+                  <div
+                    key={entry.label}
+                    className="flex items-center justify-between gap-2 p-2.5 bg-white/[0.04] rounded-xl"
+                  >
+                    <span className="text-neutral-400">{entry.label}</span>
+                    <span className={`font-mono font-bold text-right ${entry.tone}`}>{entry.key}</span>
+                  </div>
+                ))}
               </div>
 
               <button
                 onClick={() => setShowHelp(false)}
-                className="w-full mt-5 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-neutral-200 transition-colors"
+                className="w-full mt-4 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-neutral-200 transition-colors"
               >
                 Got It, Let’s Tour HQ
               </button>

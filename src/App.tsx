@@ -49,11 +49,11 @@ function MainContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="w-screen h-screen overflow-hidden"
+            className="w-full h-[100dvh] overflow-hidden"
           >
             <Suspense
               fallback={
-                <div className="w-screen h-screen bg-[#090807] flex flex-col items-center justify-center gap-4 text-white">
+                <div className="w-full h-[100dvh] bg-[#090807] flex flex-col items-center justify-center gap-4 text-white">
                   <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs font-mono tracking-widest text-neutral-400 uppercase">
                     Initializing 3D Executive HQ...
@@ -61,7 +61,7 @@ function MainContent() {
                 </div>
               }
             >
-              <GameWorld />
+              <GameWorld onOpenAI={() => window.dispatchEvent(new CustomEvent('open-ai-assistant'))} />
             </Suspense>
 
             {/* AIAssistant available in 3D mode */}

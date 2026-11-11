@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { exitFullscreenSafe, getViewportSnapshot, requestHorizontalFullscreen } from '../utils/mobileViewport';
 
 export type ViewMode = '2d' | '3d';
 
@@ -39,10 +40,19 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
 
   const setMode = (newMode: ViewMode) => {
     setModeState(newMode);
-    if (typeof window !== 'undefined' && newMode === '2d' && window.location.hash.toLowerCase() === '#3d') {
-      const url = new URL(window.location.href);
-      url.hash = '';
-      window.history.replaceState(null, '', url.toString());
+    if (typeof window !== 'undefined') {
+      if (newMode === '3d') {
+        if (getViewportSnapshot().showTouchControls) {
+          void requestHorizontalFullscreen();
+        }
+      } else {
+        void exitFullscreenSafe();
+        if (window.location.hash.toLowerCase() === '#3d') {
+          const url = new URL(window.location.href);
+          url.hash = '';
+          window.history.replaceState(null, '', url.toString());
+        }
+      }
     }
   };
 

@@ -187,7 +187,9 @@ export class ThreeEngine {
     this.renderer.toneMappingExposure = 1.24;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.domElement.style.touchAction = 'none';
 
+    this.updateCameraProjection(width, height);
     this.container.appendChild(this.renderer.domElement);
 
     // 4. Lightweight Base Lights (deferred IBL, tile geometry, and GLB pipeline run asynchronously)
@@ -1773,12 +1775,29 @@ export class ThreeEngine {
     this.keysPressed[e.code] = false;
   };
 
+  private updateCameraProjection(width: number, height: number) {
+    const safeWidth = Math.max(1, width);
+    const safeHeight = Math.max(1, height);
+    const aspect = safeWidth / safeHeight;
+
+    // Expand vertical FOV slightly on ultra-wide short landscape phones and narrow portrait fallbacks
+    let targetFov = 45;
+    if (aspect < 1) {
+      targetFov = THREE.MathUtils.clamp(45 / Math.pow(aspect, 0.42), 45, 66);
+    } else if (aspect > 1.85 && safeHeight <= 540) {
+      targetFov = 49;
+    }
+
+    this.camera.aspect = aspect;
+    this.camera.fov = targetFov;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(safeWidth, safeHeight);
+  }
+
   private handleResize = () => {
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.updateCameraProjection(width, height);
   };
 
   private handlePointerDown = (e: PointerEvent) => {
@@ -2785,6 +2804,9 @@ export class ThreeEngine {
     }
 
     this.isDrivingRover = true;
+    this.isJumping = false;
+    this.verticalVelocity = 0;
+    this.playerGroup.position.y = 0;
     this.characterRoot.visible = false;
     this.contactShadow.visible = false;
     this.rover.speed = 0;
@@ -2830,29 +2852,32 @@ export class ThreeEngine {
   private updateCamera() {
     if (this.isTeleporting) return;
 
+    const viewHeight = this.container.clientHeight || window.innerHeight;
+    const viewWidth = this.container.clientWidth || window.innerWidth;
+    const compactLandscape = viewWidth > viewHeight && viewHeight <= 540;
+
     if (this.isDrivingRover) {
       // Dynamic vehicle chase cam
-      const roverCamOffset = new THREE.Vector3(0, 4.8, 8.6).applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        this.rover.rotation
-      );
+      const roverCamOffset = (
+        compactLandscape ? new THREE.Vector3(0, 5.4, 9.4) : new THREE.Vector3(0, 4.8, 8.6)
+      ).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rover.rotation);
       const targetCamPos = this.rover.pos.clone().add(roverCamOffset);
       this.camera.position.lerp(targetCamPos, 0.12);
 
       const lookTarget = this.rover.pos
         .clone()
-        .add(new THREE.Vector3(0, 1.2, -1.8).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rover.rotation));
+        .add(new THREE.Vector3(0, compactLandscape ? 1.05 : 1.2, -1.8).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rover.rotation));
       this.camera.lookAt(lookTarget);
       return;
     }
 
     const playerPos = this.playerGroup.position;
-    const camOffset = new THREE.Vector3(0, 5.2, 8.2);
+    const camOffset = compactLandscape ? new THREE.Vector3(0, 5.7, 9.0) : new THREE.Vector3(0, 5.2, 8.2);
     const targetCamPos = playerPos.clone().add(camOffset);
 
     this.camera.position.lerp(targetCamPos, 0.08);
 
-    const lookTarget = playerPos.clone().add(new THREE.Vector3(0, 1.35, -1.2));
+    const lookTarget = playerPos.clone().add(new THREE.Vector3(0, compactLandscape ? 1.15 : 1.35, -1.2));
     this.camera.lookAt(lookTarget);
   }
 
