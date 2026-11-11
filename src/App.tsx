@@ -53,10 +53,10 @@ function MainContent() {
           >
             <Suspense
               fallback={
-                <div className="w-screen h-screen bg-[#070605] flex flex-col items-center justify-center gap-4 text-white">
+                <div className="w-screen h-screen bg-[#090807] flex flex-col items-center justify-center gap-4 text-white">
                   <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs font-mono tracking-widest text-neutral-400 uppercase">
-                    Initializing 3D Cyber Core...
+                    Initializing 3D Executive HQ...
                   </span>
                 </div>
               }

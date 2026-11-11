@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { STATIONS, type StationData } from '../../data/stationsData';
 import { sfx } from '../../utils/audio';
 import { AvatarController, type AvatarEmoteName } from './AvatarController';
@@ -21,6 +21,12 @@ export interface ActionPrompt {
   key: string;
 }
 
+export interface LoadProgressState {
+  progress: number;
+  stage: string;
+  ready: boolean;
+}
+
 export interface EngineCallbacks {
   onNearbyStation: (station: StationData | null) => void;
   onInspectStation?: (station: StationData) => void;
@@ -31,6 +37,7 @@ export interface EngineCallbacks {
   onDriveState?: (isDriving: boolean) => void;
   onAvatarLoaded?: () => void;
   onEmoteChange?: (emote: AvatarEmoteName | null) => void;
+  onLoadProgress?: (state: LoadProgressState) => void;
 }
 
 export type PropType = 'chair' | 'exec_chair' | 'books';
@@ -102,6 +109,8 @@ export class ThreeEngine {
   private animFrameId: number | null = null;
   private clock: THREE.Clock;
   private objectLoader = new GLTFLoader();
+  private isReady = false;
+  private disposed = false;
 
   // Player / 3D Character Avatar
   public playerGroup: THREE.Group;
@@ -198,13 +207,7 @@ export class ThreeEngine {
 
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. Corporate Office Lighting & Subtle IBL
-    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-    this.pmremTarget = pmremGenerator.fromScene(new RoomEnvironment(), 0.04);
-    this.scene.environment = this.pmremTarget.texture;
-    this.scene.environmentIntensity = 0.55;
-    pmremGenerator.dispose();
-
+    // 4. Lightweight Base Lights (deferred IBL, tile geometry, and GLB pipeline run asynchronously)
     const hemiLight = new THREE.HemisphereLight(0xfffaf2, 0x8f857b, 1.55);
     this.scene.add(hemiLight);
 
@@ -226,12 +229,7 @@ export class ThreeEngine {
     rimLight.position.set(-20, 18, -22);
     this.scene.add(rimLight);
 
-    // 5. Build Corporate Tiled Room, West Office Suite, Zone Furniture & NPCs
-    this.buildEnvironment();
-    this.buildOfficeBuilding();
-    this.buildOfficeFurnitureAndNPCs();
-
-    // 6. Build Player Character (Real 3D Avatar + Animation Controller)
+    // 5. Build Lightweight Player Rig Placeholder (GLB load deferred to staged preloader)
     const {
       group,
       characterRoot,
@@ -246,39 +244,148 @@ export class ThreeEngine {
     this.avatarController = avatarController;
     this.scene.add(this.playerGroup);
 
-    // 7. Build Executive Department Landmarks & Zone Signage
+    window.addEventListener('resize', this.handleResize);
+    void this.initializeWorldAsync();
+  }
+
+  private yieldToMain(): Promise<void> {
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
+      };
+      requestAnimationFrame(done);
+      setTimeout(done, 40);
+    });
+  }
+
+  private async loadGltfTask(url: string, label: string, onLoaded: (gltf: GLTF) => void): Promise<void> {
+    try {
+      const gltf = await this.objectLoader.loadAsync(url);
+      if (this.disposed) return;
+      onLoaded(gltf);
+    } catch (err) {
+      console.warn(`[ThreeEngine] Failed to load ${label}:`, err);
+    }
+  }
+
+  private async initializeWorldAsync() {
+    const report = (progress: number, stage: string, ready = false) => {
+      if (this.disposed) return;
+      this.callbacks.onLoadProgress?.({ progress, stage, ready });
+    };
+
+    report(3, 'Preparing 3D workspace renderer...');
+    // Yield two paint frames so the loader overlay renders cleanly & StrictMode unmount #1 aborts early
+    await this.yieldToMain();
+    if (this.disposed) return;
+    await this.yieldToMain();
+    if (this.disposed) return;
+
+    // 1. Studio IBL Reflections (PMREM) & Tiled Corporate Environment
+    report(9, 'Generating studio lighting & office floor tiles...');
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    this.pmremTarget = pmremGenerator.fromScene(new RoomEnvironment(), 0.04);
+    this.scene.environment = this.pmremTarget.texture;
+    this.scene.environmentIntensity = 0.55;
+    pmremGenerator.dispose();
+
+    await this.yieldToMain();
+    if (this.disposed) return;
+
+    this.buildEnvironment();
     this.buildStations();
-
-    // 8. Build Drivable Imported 3D Rover & Executive Mobility Bay
-    this.buildDrivableRover();
-
-    // 9. Build Interactive Office Objects ONLY from src/components/game3d/model/objects
-    this.buildDiverseInteractiveProps();
-
-    // 10. Particle Trail System
     this.buildParticleTrails();
-
-    // 11. Kinetic Pulse Ring Mesh
     this.buildShockwaveMesh();
-
-    // 12. Destination Click Marker
     this.destinationMarker = this.buildDestinationMarker();
     if (this.destinationMarker) {
       this.scene.add(this.destinationMarker);
     }
-
-    // 13. Subtle Golden Sunlit Dust Motes
     this.particles = this.buildAtmosphericParticles();
     this.scene.add(this.particles);
-
-    // 14. Teleportation Transition Beam & Rings
     this.buildTeleportFX();
 
-    // 15. Event listeners & Audio startup
-    this.bindEvents();
+    await this.yieldToMain();
+    if (this.disposed) return;
 
-    // 16. Start animation loop
+    // 2. Build Layout Roots, Colliders & Gather Staged GLB Tasks
+    report(16, 'Mapping office wings & interactive landmarks...');
+    const assetTasks: { label: string; run: () => Promise<void> }[] = [
+      {
+        label: 'Loading 3D character & animations...',
+        run: () => this.avatarController.loadAssets(),
+      },
+    ];
+
+    this.buildOfficeBuilding(assetTasks);
+    this.buildOfficeFurnitureAndNPCs(assetTasks);
+    this.buildDrivableRover(assetTasks);
+    this.buildDiverseInteractiveProps(assetTasks);
+
+    await this.yieldToMain();
+    if (this.disposed) return;
+
+    // 3. Stream & parse all GLB models in a 2-worker pool with frame yields to avoid freezing the UI
+    const total = assetTasks.length;
+    let nextIdx = 0;
+    let completed = 0;
+
+    const runWorker = async () => {
+      while (!this.disposed) {
+        const idx = nextIdx++;
+        if (idx >= total) break;
+        const task = assetTasks[idx];
+        report(18 + Math.round((completed / total) * 68), task.label);
+        await task.run();
+        if (this.disposed) break;
+        completed++;
+        report(18 + Math.round((completed / total) * 68), task.label);
+        await this.yieldToMain();
+      }
+    };
+
+    report(18, 'Loading 3D office models & character...');
+    await Promise.all([runWorker(), runWorker()]);
+    if (this.disposed) return;
+
+    // 4. Pre-compile WebGL shaders & upload textures behind the curtain to eliminate first-frame stutter
+    report(90, 'Pre-compiling WebGL shaders & shadows...');
+    await this.yieldToMain();
+    if (this.disposed) return;
+
+    try {
+      if (typeof this.renderer.compileAsync === 'function') {
+        await this.renderer.compileAsync(this.scene, this.camera);
+      } else {
+        this.renderer.compile(this.scene, this.camera);
+      }
+    } catch (err) {
+      console.warn('[ThreeEngine] Async shader compilation fallback:', err);
+      this.renderer.compile(this.scene, this.camera);
+    }
+    if (this.disposed) return;
+
+    report(97, 'Finalizing scene & lighting warmup...');
+    this.camera.position.set(0, 5.2, 14.2);
+    this.camera.lookAt(0, 1.35, 4.8);
+    await this.yieldToMain();
+    if (this.disposed) return;
+
+    // Execute one hidden warm-up frame so GPU shadow maps & textures settle before reveal
+    this.renderer.render(this.scene, this.camera);
+    await this.yieldToMain();
+    if (this.disposed) return;
+
+    // 5. Reveal scene, enable input controls, start animation loop & play avatar entry landing
+    this.clock.getDelta();
+    this.isReady = true;
+    this.bindEvents();
+    report(100, 'Executive HQ ready', true);
     this.animate();
+    this.avatarController.playLandingEntry();
   }
 
   // --- Procedural Porcelain Office Floor Tiles Texture ---
@@ -556,7 +663,7 @@ export class ThreeEngine {
   }
 
   // --- Imported Real 3D Corporate Office Building Wing ---
-  private buildOfficeBuilding() {
+  private buildOfficeBuilding(assetTasks: { label: string; run: () => Promise<void> }[]) {
     // Colliders for West Glass Suite (X = -25.5.. -16.8, Z = -23.7.. +24.0) & Atrium Pillars
     this.officeColliders = [
       // West glass facade outer wall
@@ -587,34 +694,31 @@ export class ThreeEngine {
       this.scene.add(wash);
     });
 
-    this.objectLoader.load(
-      officeRoomUrl,
-      (gltf) => {
-        const officeScene = gltf.scene;
-        officeScene.scale.setScalar(0.0254);
-        officeScene.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-            const isGlass = Boolean(mat?.transparent || (mat?.opacity !== undefined && mat.opacity < 0.99));
-            mesh.castShadow = !isGlass;
-            mesh.receiveShadow = true;
-            if (mat && 'envMapIntensity' in mat) {
-              (mat as THREE.MeshStandardMaterial).envMapIntensity = 0.65;
+    assetTasks.push({
+      label: 'Building West Glass Executive Suite...',
+      run: () =>
+        this.loadGltfTask(officeRoomUrl, 'office-room-opt.glb', (gltf) => {
+          const officeScene = gltf.scene;
+          officeScene.scale.setScalar(0.0254);
+          officeScene.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+              const isGlass = Boolean(mat?.transparent || (mat?.opacity !== undefined && mat.opacity < 0.99));
+              mesh.castShadow = !isGlass;
+              mesh.receiveShadow = true;
+              if (mat && 'envMapIntensity' in mat) {
+                (mat as THREE.MeshStandardMaterial).envMapIntensity = 0.65;
+              }
             }
-          }
-        });
-        officeRoot.add(officeScene);
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load office-room-opt.glb:', err);
-      }
-    );
+          });
+          officeRoot.add(officeScene);
+        }),
+    });
   }
 
   // --- Organized Corporate Department Desks, Bookcases & Interactive NPCs ---
-  private buildOfficeFurnitureAndNPCs() {
+  private buildOfficeFurnitureAndNPCs(assetTasks: { label: string; run: () => Promise<void> }[]) {
     const normalizeMeshShadows = (obj: THREE.Object3D) => {
       obj.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
@@ -651,26 +755,23 @@ export class ThreeEngine {
       });
     });
 
-    this.objectLoader.load(
-      officeDeskUrl,
-      (gltf) => {
-        const template = new THREE.Group();
-        const inner = gltf.scene;
-        // Center raw desk [-1.233..0.413] -> center X=+0.410, Z=+0.002, flush at y=0
-        inner.position.set(0.41, 0, 0.002);
-        normalizeMeshShadows(inner);
-        template.add(inner);
-        template.scale.setScalar(1.08);
+    assetTasks.push({
+      label: 'Installing department executive desks...',
+      run: () =>
+        this.loadGltfTask(officeDeskUrl, 'office_desk_with_drawers.glb', (gltf) => {
+          const template = new THREE.Group();
+          const inner = gltf.scene;
+          // Center raw desk [-1.233..0.413] -> center X=+0.410, Z=+0.002, flush at y=0
+          inner.position.set(0.41, 0, 0.002);
+          normalizeMeshShadows(inner);
+          template.add(inner);
+          template.scale.setScalar(1.08);
 
-        deskRoots.forEach((root) => {
-          root.add(template.clone());
-        });
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load office_desk_with_drawers.glb:', err);
-      }
-    );
+          deskRoots.forEach((root) => {
+            root.add(template.clone());
+          });
+        }),
+    });
 
     // 2. Ordered Wooden Bookcases & Interactive Book Stacks (parsed once from wooden_bookcases_with_books.glb)
     const tallPlacements: { pos: [number, number, number]; rotY: number; halfX: number; halfZ: number }[] = [
@@ -715,75 +816,72 @@ export class ThreeEngine {
       });
     });
 
-    this.objectLoader.load(
-      bookcasesUrl,
-      (gltf) => {
-        gltf.scene.updateMatrixWorld(true);
-        const tallTemplate = new THREE.Group();
-        const smallTemplate = new THREE.Group();
-        const bookStackTemplate = new THREE.Group();
+    assetTasks.push({
+      label: 'Organizing library bookcases & volumes...',
+      run: () =>
+        this.loadGltfTask(bookcasesUrl, 'wooden_bookcases_with_books.glb', (gltf) => {
+          gltf.scene.updateMatrixWorld(true);
+          const tallTemplate = new THREE.Group();
+          const smallTemplate = new THREE.Group();
+          const bookStackTemplate = new THREE.Group();
 
-        gltf.scene.traverse((child) => {
-          if (!(child as THREE.Mesh).isMesh) return;
-          const mesh = child as THREE.Mesh;
+          gltf.scene.traverse((child) => {
+            if (!(child as THREE.Mesh).isMesh) return;
+            const mesh = child as THREE.Mesh;
 
-          // Clone baked world-space geometry cleanly so Sketchfab parent scales/rotations never misalign
-          const bakedGeom = mesh.geometry.clone();
-          bakedGeom.applyMatrix4(mesh.matrixWorld);
+            // Clone baked world-space geometry cleanly so Sketchfab parent scales/rotations never misalign
+            const bakedGeom = mesh.geometry.clone();
+            bakedGeom.applyMatrix4(mesh.matrixWorld);
 
-          if (mesh.name.startsWith('Victorian_Bookcase_Tall')) {
-            bakedGeom.translate(0, 0, -0.01);
-            const m = new THREE.Mesh(bakedGeom, mesh.material);
-            m.castShadow = true;
-            m.receiveShadow = true;
-            tallTemplate.add(m);
+            if (mesh.name.startsWith('Victorian_Bookcase_Tall')) {
+              bakedGeom.translate(0, 0, -0.01);
+              const m = new THREE.Mesh(bakedGeom, mesh.material);
+              m.castShadow = true;
+              m.receiveShadow = true;
+              tallTemplate.add(m);
 
-            // Also build an interactive tabletop/floor Book Stack from Books_1 & Books_4
-            if (mesh.name.includes('_Books_1_') || mesh.name.includes('_Books_4_')) {
-              const stackGeom = mesh.geometry.clone();
-              stackGeom.applyMatrix4(mesh.matrixWorld);
-              stackGeom.computeBoundingBox();
-              const b = stackGeom.boundingBox!;
-              const cx = (b.min.x + b.max.x) * 0.5;
-              const cz = (b.min.z + b.max.z) * 0.5;
-              const targetMinY = mesh.name.includes('_Books_1_') ? 0 : 0.24;
-              stackGeom.translate(-cx, -b.min.y + targetMinY, -cz);
-              const bm = new THREE.Mesh(stackGeom, mesh.material);
-              bm.castShadow = true;
-              bm.receiveShadow = true;
-              bookStackTemplate.add(bm);
+              // Also build an interactive tabletop/floor Book Stack from Books_1 & Books_4
+              if (mesh.name.includes('_Books_1_') || mesh.name.includes('_Books_4_')) {
+                const stackGeom = mesh.geometry.clone();
+                stackGeom.applyMatrix4(mesh.matrixWorld);
+                stackGeom.computeBoundingBox();
+                const b = stackGeom.boundingBox!;
+                const cx = (b.min.x + b.max.x) * 0.5;
+                const cz = (b.min.z + b.max.z) * 0.5;
+                const targetMinY = mesh.name.includes('_Books_1_') ? 0 : 0.24;
+                stackGeom.translate(-cx, -b.min.y + targetMinY, -cz);
+                const bm = new THREE.Mesh(stackGeom, mesh.material);
+                bm.castShadow = true;
+                bm.receiveShadow = true;
+                bookStackTemplate.add(bm);
+              }
+            } else if (mesh.name.startsWith('Victorian_Bookcase_Small')) {
+              bakedGeom.translate(-1.01, 0, -0.35);
+              const m = new THREE.Mesh(bakedGeom, mesh.material);
+              m.castShadow = true;
+              m.receiveShadow = true;
+              smallTemplate.add(m);
             }
-          } else if (mesh.name.startsWith('Victorian_Bookcase_Small')) {
-            bakedGeom.translate(-1.01, 0, -0.35);
-            const m = new THREE.Mesh(bakedGeom, mesh.material);
-            m.castShadow = true;
-            m.receiveShadow = true;
-            smallTemplate.add(m);
-          }
-        });
+          });
 
-        tallTemplate.scale.setScalar(1.15);
-        tallRoots.forEach((root) => root.add(tallTemplate.clone()));
+          tallTemplate.scale.setScalar(1.15);
+          tallRoots.forEach((root) => root.add(tallTemplate.clone()));
 
-        smallTemplate.scale.setScalar(1.12);
-        smallRoots.forEach((root) => root.add(smallTemplate.clone()));
+          smallTemplate.scale.setScalar(1.12);
+          smallRoots.forEach((root) => root.add(smallTemplate.clone()));
 
-        bookStackTemplate.scale.setScalar(1.3);
-        this.bookPropEntries.forEach((entry) => {
-          const ph = entry.group.children[0] as THREE.Mesh | undefined;
-          if (ph) {
-            entry.group.remove(ph);
-            ph.geometry?.dispose();
-            if (ph.material) (ph.material as THREE.Material).dispose();
-          }
-          entry.group.add(bookStackTemplate.clone());
-        });
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load wooden_bookcases_with_books.glb:', err);
-      }
-    );
+          bookStackTemplate.scale.setScalar(1.3);
+          this.bookPropEntries.forEach((entry) => {
+            const ph = entry.group.children[0] as THREE.Mesh | undefined;
+            if (ph) {
+              entry.group.remove(ph);
+              ph.geometry?.dispose();
+              if (ph.material) (ph.material as THREE.Material).dispose();
+            }
+            entry.group.add(bookStackTemplate.clone());
+          });
+        }),
+    });
 
     // 3. Interactive HR Representative (hr-lady.glb) in the "Hire-Me Zone" (South [0, 0, +20])
     const spawnNpcLabel = (text: string, accent: string): THREE.Sprite => {
@@ -838,21 +936,18 @@ export class ThreeEngine {
     hrBadge.position.set(0, 2.18, 0);
     hrRoot.add(hrBadge);
 
-    this.objectLoader.load(
-      hrLadyUrl,
-      (gltf) => {
-        const model = gltf.scene;
-        // Raw cm unit -> 0.01m = 1.73m tall; center [0.254, 86.5, 4.2]
-        model.scale.setScalar(0.01);
-        model.position.set(-0.0025, 0.001, -0.042);
-        normalizeMeshShadows(model);
-        hrPivot.add(model);
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load hr-lady.glb:', err);
-      }
-    );
+    assetTasks.push({
+      label: 'Welcoming HR Partner to Hire-Me zone...',
+      run: () =>
+        this.loadGltfTask(hrLadyUrl, 'hr-lady.glb', (gltf) => {
+          const model = gltf.scene;
+          // Raw cm unit -> 0.01m = 1.73m tall; center [0.254, 86.5, 4.2]
+          model.scale.setScalar(0.01);
+          model.position.set(-0.0025, 0.001, -0.042);
+          normalizeMeshShadows(model);
+          hrPivot.add(model);
+        }),
+    });
 
     this.officeColliders.push({ minX: -2.25, maxX: -1.25, minZ: 19.7, maxZ: 20.7 });
     this.officeNpcs.push({ root: hrRoot, bodyPivot: hrPivot, baseRotY: Math.PI, stationId: 'contact' });
@@ -879,18 +974,15 @@ export class ThreeEngine {
     partnerBadge.position.set(0, 2.18, 0);
     partnerRoot.add(partnerBadge);
 
-    this.objectLoader.load(
-      personNpcUrl,
-      (gltf) => {
-        const model = gltf.scene;
-        normalizeMeshShadows(model);
-        partnerPivot.add(model);
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load person-opt.glb:', err);
-      }
-    );
+    assetTasks.push({
+      label: 'Welcoming Client Advisor to reception...',
+      run: () =>
+        this.loadGltfTask(personNpcUrl, 'person-opt.glb', (gltf) => {
+          const model = gltf.scene;
+          normalizeMeshShadows(model);
+          partnerPivot.add(model);
+        }),
+    });
 
     this.officeColliders.push({ minX: 1.9, maxX: 2.8, minZ: -3.05, maxZ: -2.15 });
     this.officeNpcs.push({ root: partnerRoot, bodyPivot: partnerPivot, baseRotY: -0.25, stationId: 'spawn' });
@@ -989,26 +1081,30 @@ export class ThreeEngine {
     thrusterLight.position.set(0, 0.35, 0.25);
     characterRoot.add(thrusterLight);
 
-    const avatarController = new AvatarController(characterRoot, {
-      onLoaded: () => {
-        this.callbacks.onAvatarLoaded?.();
+    const avatarController = new AvatarController(
+      characterRoot,
+      {
+        onLoaded: () => {
+          this.callbacks.onAvatarLoaded?.();
+        },
+        onEntryLand: () => {
+          // Trigger subtle orange impact shockwave ring when hero drops onto spawn pad
+          if (this.shockwaveRing) {
+            this.shockwaveRing.position.set(this.playerGroup.position.x, 0.08, this.playerGroup.position.z);
+            this.shockwaveRing.visible = true;
+            this.shockwaveRadius = 0.4;
+            this.shockwaveActive = true;
+          }
+        },
+        onStrikeImpact: (kind) => {
+          this.applyStrikeImpulse(kind);
+        },
+        onEmoteChange: (emote) => {
+          this.callbacks.onEmoteChange?.(emote);
+        },
       },
-      onEntryLand: () => {
-        // Trigger subtle orange impact shockwave ring when hero drops onto spawn pad
-        if (this.shockwaveRing) {
-          this.shockwaveRing.position.set(this.playerGroup.position.x, 0.08, this.playerGroup.position.z);
-          this.shockwaveRing.visible = true;
-          this.shockwaveRadius = 0.4;
-          this.shockwaveActive = true;
-        }
-      },
-      onStrikeImpact: (kind) => {
-        this.applyStrikeImpulse(kind);
-      },
-      onEmoteChange: (emote) => {
-        this.callbacks.onEmoteChange?.(emote);
-      },
-    });
+      { deferLoad: true, deferEntry: true }
+    );
 
     return {
       group,
@@ -1020,7 +1116,7 @@ export class ThreeEngine {
   }
 
   public triggerAvatarEmote(emote: AvatarEmoteName) {
-    if (this.isTeleporting || this.isDrivingRover) return;
+    if (!this.isReady || this.isTeleporting || this.isDrivingRover) return;
     // Cancel ground destination when performing stationary/combat action
     this.targetDestination = null;
     if (this.destinationMarker) this.destinationMarker.visible = false;
@@ -1071,7 +1167,7 @@ export class ThreeEngine {
   }
 
   // --- Drivable Imported 3D Rover & Executive Parking Bay ---
-  private buildDrivableRover() {
+  private buildDrivableRover(assetTasks: { label: string; run: () => Promise<void> }[]) {
     // 1. Marked Indoor EV Parking Bay on tiled South-East floor [17, 0, 16]
     const padGroup = new THREE.Group();
     padGroup.position.set(17, 0, 16);
@@ -1131,44 +1227,41 @@ export class ThreeEngine {
     placeholder.position.y = 0.75;
     roverBody.add(placeholder);
 
-    this.objectLoader.load(
-      roverModelUrl,
-      (gltf) => {
-        roverBody.remove(placeholder);
-        placeholder.geometry.dispose();
-        (placeholder.material as THREE.Material).dispose();
+    assetTasks.push({
+      label: 'Parking Executive Rover in mobility bay...',
+      run: () =>
+        this.loadGltfTask(roverModelUrl, 'rover-opt.glb', (gltf) => {
+          roverBody.remove(placeholder);
+          placeholder.geometry.dispose();
+          (placeholder.material as THREE.Material).dispose();
 
-        const model = gltf.scene;
-        // Raw model front is -X: rotate -PI/2 around Y so front points -Z forward
-        model.rotation.y = -Math.PI / 2;
-        model.scale.setScalar(0.00265);
-        model.updateMatrixWorld(true);
+          const model = gltf.scene;
+          // Raw model front is -X: rotate -PI/2 around Y so front points -Z forward
+          model.rotation.y = -Math.PI / 2;
+          model.scale.setScalar(0.00265);
+          model.updateMatrixWorld(true);
 
-        const box = new THREE.Box3().setFromObject(model);
-        const ctr = box.getCenter(new THREE.Vector3());
-        model.position.x -= ctr.x;
-        model.position.z -= ctr.z;
-        model.position.y -= box.min.y;
+          const box = new THREE.Box3().setFromObject(model);
+          const ctr = box.getCenter(new THREE.Vector3());
+          model.position.x -= ctr.x;
+          model.position.z -= ctr.z;
+          model.position.y -= box.min.y;
 
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-            if (mat && 'envMapIntensity' in mat) {
-              (mat as THREE.MeshStandardMaterial).envMapIntensity = 0.85;
+          model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+              const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+              if (mat && 'envMapIntensity' in mat) {
+                (mat as THREE.MeshStandardMaterial).envMapIntensity = 0.85;
+              }
             }
-          }
-        });
+          });
 
-        roverBody.add(model);
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load rover-opt.glb:', err);
-      }
-    );
+          roverBody.add(model);
+        }),
+    });
 
     // Warm Amber Rear Taillight Glow
     const thrusterLight = new THREE.PointLight(0xf97316, 1.6, 6);
@@ -1200,7 +1293,7 @@ export class ThreeEngine {
   }
 
   // --- Interactive Office Objects ONLY from src/components/game3d/model/objects ---
-  private buildDiverseInteractiveProps() {
+  private buildDiverseInteractiveProps(assetTasks: { label: string; run: () => Promise<void> }[]) {
     let propId = 0;
 
     // 1. 4 Executive Swivel Chairs (office_chair.glb — faces +Z) placed behind department desks
@@ -1245,37 +1338,34 @@ export class ThreeEngine {
       execChairEntries.push(entry);
     });
 
-    this.objectLoader.load(
-      officeChairExecUrl,
-      (gltf) => {
-        const template = new THREE.Group();
-        const inner = gltf.scene;
-        inner.scale.setScalar(0.01);
-        inner.position.set(0.065, 0.001, -0.103);
-        inner.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-          }
-        });
-        template.add(inner);
+    assetTasks.push({
+      label: 'Setting executive leather seating...',
+      run: () =>
+        this.loadGltfTask(officeChairExecUrl, 'office_chair.glb', (gltf) => {
+          const template = new THREE.Group();
+          const inner = gltf.scene;
+          inner.scale.setScalar(0.01);
+          inner.position.set(0.065, 0.001, -0.103);
+          inner.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+            }
+          });
+          template.add(inner);
 
-        execChairEntries.forEach((entry) => {
-          const ph = entry.group.children[0] as THREE.Mesh | undefined;
-          if (ph) {
-            entry.group.remove(ph);
-            ph.geometry?.dispose();
-            if (ph.material) (ph.material as THREE.Material).dispose();
-          }
-          entry.group.add(template.clone());
-        });
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load office_chair.glb:', err);
-      }
-    );
+          execChairEntries.forEach((entry) => {
+            const ph = entry.group.children[0] as THREE.Mesh | undefined;
+            if (ph) {
+              entry.group.remove(ph);
+              ph.geometry?.dispose();
+              if (ph.material) (ph.material as THREE.Material).dispose();
+            }
+            entry.group.add(template.clone());
+          });
+        }),
+    });
 
     // 2. 6 Ergonomic Mesh Task Chairs (office-chair-opt.glb — faces +X) arranged neatly at desks & lounges
     const taskChairConfigs: { pos: [number, number, number]; rotY: number; name: string }[] = [
@@ -1321,32 +1411,29 @@ export class ThreeEngine {
       taskChairEntries.push(entry);
     });
 
-    this.objectLoader.load(
-      officeChairOptUrl,
-      (gltf) => {
-        const template = gltf.scene;
-        template.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-          }
-        });
-        taskChairEntries.forEach((entry) => {
-          const ph = entry.group.children[0] as THREE.Mesh | undefined;
-          if (ph) {
-            entry.group.remove(ph);
-            ph.geometry?.dispose();
-            if (ph.material) (ph.material as THREE.Material).dispose();
-          }
-          entry.group.add(template.clone());
-        });
-      },
-      undefined,
-      (err) => {
-        console.warn('[ThreeEngine] Failed to load office-chair-opt.glb:', err);
-      }
-    );
+    assetTasks.push({
+      label: 'Placing ergonomic workstation & visitor chairs...',
+      run: () =>
+        this.loadGltfTask(officeChairOptUrl, 'office-chair-opt.glb', (gltf) => {
+          const template = gltf.scene;
+          template.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+            }
+          });
+          taskChairEntries.forEach((entry) => {
+            const ph = entry.group.children[0] as THREE.Mesh | undefined;
+            if (ph) {
+              entry.group.remove(ph);
+              ph.geometry?.dispose();
+              if (ph.material) (ph.material as THREE.Material).dispose();
+            }
+            entry.group.add(template.clone());
+          });
+        }),
+    });
 
     // 3. 4 Reference Book Stacks (extracted from wooden_bookcases_with_books.glb in buildOfficeFurnitureAndNPCs)
     const bookConfigs: { pos: [number, number, number]; rotY: number; name: string }[] = [
@@ -1427,6 +1514,7 @@ export class ThreeEngine {
   }
 
   public triggerShockwave() {
+    if (!this.isReady) return;
     this.shockwaveActive = true;
     this.shockwaveRadius = 1;
     const blastOrigin = this.isDrivingRover ? this.rover.pos : this.playerGroup.position;
@@ -1706,7 +1794,6 @@ export class ThreeEngine {
   private bindEvents() {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
-    window.addEventListener('resize', this.handleResize);
 
     const dom = this.renderer.domElement;
     dom.addEventListener('pointerdown', this.handlePointerDown);
@@ -1722,6 +1809,7 @@ export class ThreeEngine {
   }
 
   private handleKeyDown = (e: KeyboardEvent) => {
+    if (!this.isReady) return;
     const active = document.activeElement as HTMLElement | null;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
       return;
@@ -1800,7 +1888,7 @@ export class ThreeEngine {
   };
 
   private handlePointerDown = (e: PointerEvent) => {
-    if (this.isTeleporting) return;
+    if (!this.isReady || this.isTeleporting) return;
 
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     if (e.target !== this.renderer.domElement) return;
@@ -1943,7 +2031,7 @@ export class ThreeEngine {
 
   // --- Public Controls for Mobile / React UI ---
   public setJoystickVector(x: number, y: number) {
-    if (this.isTeleporting) return;
+    if (!this.isReady || this.isTeleporting) return;
     this.joystickVector = { x, y };
     if (Math.abs(x) > 0.05 || Math.abs(y) > 0.05) {
       this.targetDestination = null;
@@ -1953,7 +2041,7 @@ export class ThreeEngine {
   }
 
   public setBoost(active: boolean) {
-    if (this.isTeleporting) return;
+    if (!this.isReady || this.isTeleporting) return;
     this.isBoosting = active;
     if (active) {
       if (!this.isDrivingRover && !this.isJumping) {
@@ -1965,7 +2053,7 @@ export class ThreeEngine {
   }
 
   public teleportToStation(stationId: string) {
-    if (this.isTeleporting) return;
+    if (!this.isReady || this.isTeleporting) return;
     const targetStation = STATIONS.find((s) => s.id === stationId);
     if (!targetStation) return;
 
@@ -2126,6 +2214,7 @@ export class ThreeEngine {
 
   // --- Main Animation Loop ---
   private animate = () => {
+    if (this.disposed) return;
     this.animFrameId = requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.1);
     const time = this.clock.getElapsedTime();
@@ -2788,7 +2877,7 @@ export class ThreeEngine {
 
   // --- Interactive Actions: Pick Up & Throw ---
   public togglePickThrow() {
-    if (this.isTeleporting || this.isDrivingRover) return;
+    if (!this.isReady || this.isTeleporting || this.isDrivingRover) return;
 
     if (this.heldProp) {
       this.throwHeldProp();
@@ -2868,7 +2957,7 @@ export class ThreeEngine {
 
   // --- Interactive Actions: Drive Cyber Rover ---
   public toggleRoverDrive() {
-    if (this.isTeleporting) return;
+    if (!this.isReady || this.isTeleporting) return;
 
     if (this.isDrivingRover) {
       this.exitRover();
@@ -2983,6 +3072,8 @@ export class ThreeEngine {
 
   // --- Destruction & Cleanup ---
   public destroy() {
+    this.disposed = true;
+    this.isReady = false;
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
     }

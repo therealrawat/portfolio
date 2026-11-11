@@ -68,12 +68,22 @@ export class AvatarController {
   private readonly tmpQuatB = new THREE.Quaternion();
   private readonly tmpQuatDelta = new THREE.Quaternion();
 
-  constructor(root: THREE.Group, callbacks: AvatarControllerCallbacks = {}) {
+  private loadPromise: Promise<void> | null = null;
+  private deferEntry: boolean;
+
+  constructor(
+    root: THREE.Group,
+    callbacks: AvatarControllerCallbacks = {},
+    options: { deferLoad?: boolean; deferEntry?: boolean } = {}
+  ) {
     this.root = root;
     this.callbacks = callbacks;
+    this.deferEntry = Boolean(options.deferEntry);
 
     this.buildLoadingPlaceholder();
-    void this.loadAssets();
+    if (!options.deferLoad) {
+      void this.loadAssets();
+    }
   }
 
   public get loaded(): boolean {
@@ -126,7 +136,14 @@ export class AvatarController {
     this.loadingGroup = null;
   }
 
-  private async loadAssets() {
+  public loadAssets(): Promise<void> {
+    if (!this.loadPromise) {
+      this.loadPromise = this.performLoadAssets();
+    }
+    return this.loadPromise;
+  }
+
+  private async performLoadAssets() {
     const loader = new GLTFLoader();
     try {
       const [avatarGltf, animsGltf] = await Promise.all([
@@ -191,8 +208,13 @@ export class AvatarController {
       this.root.add(scene);
       this.isLoaded = true;
 
-      // Start with superhero entry drop-in!
-      if (this.actions.has('entry')) {
+      // Play idle pose cleanly while preloader finishes; trigger entry drop-in on reveal
+      if (this.deferEntry) {
+        if (this.actions.has('idle')) {
+          this.playClipImmediate('idle');
+        }
+        mixer.update(0);
+      } else if (this.actions.has('entry')) {
         this.playClipImmediate('entry');
         this.entryElapsed = 0;
         this.entryLanded = false;
