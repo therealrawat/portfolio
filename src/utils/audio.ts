@@ -345,6 +345,58 @@ class SoundEffects {
     }
   }
 
+  // --- Melee / Athletic Action Swoosh & Impact ---
+  public playActionStrike(kind: 'punch' | 'kick' | 'land' = 'punch') {
+    if (this.muted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Air whoosh via filtered noise
+      const dur = kind === 'land' ? 0.16 : 0.14;
+      const bufSize = Math.floor(ctx.sampleRate * dur);
+      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.45));
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(kind === 'kick' ? 620 : kind === 'land' ? 220 : 880, now);
+      filter.frequency.exponentialRampToValueAtTime(kind === 'land' ? 80 : 280, now + dur);
+      filter.Q.value = 1.6;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(kind === 'land' ? 0.1 : 0.08, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(now);
+
+      // Sub punchy impact body
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(kind === 'kick' ? 135 : kind === 'land' ? 110 : 175, now);
+      osc.frequency.exponentialRampToValueAtTime(38, now + 0.12);
+      oscGain.gain.setValueAtTime(kind === 'land' ? 0.14 : 0.09, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    } catch {
+      // Handled
+    }
+  }
+
   public playOrbBounce() {
     if (this.muted) return;
     const ctx = this.getContext();

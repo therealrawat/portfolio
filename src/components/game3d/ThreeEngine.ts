@@ -1,6 +1,17 @@
 import * as THREE from 'three';
-import { STATIONS, DATA_CORES, type StationData } from '../../data/stationsData';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { STATIONS, type StationData } from '../../data/stationsData';
 import { sfx } from '../../utils/audio';
+import { AvatarController, type AvatarEmoteName } from './AvatarController';
+import officeRoomUrl from './model/objects/office-room-opt.glb?url';
+import roverModelUrl from './model/objects/rover-opt.glb?url';
+import officeChairOptUrl from './model/objects/office-chair-opt.glb?url';
+import officeChairExecUrl from './model/objects/office_chair.glb?url';
+import officeDeskUrl from './model/objects/office_desk_with_drawers.glb?url';
+import bookcasesUrl from './model/objects/wooden_bookcases_with_books.glb?url';
+import hrLadyUrl from './model/objects/hr-lady.glb?url';
+import personNpcUrl from './model/objects/person-opt.glb?url';
 
 export type ActionType = 'pickup' | 'throw' | 'enter_rover' | 'exit_rover';
 
@@ -12,15 +23,17 @@ export interface ActionPrompt {
 
 export interface EngineCallbacks {
   onNearbyStation: (station: StationData | null) => void;
-  onCollectCore: (coreId: number, totalCollected: number) => void;
+  onInspectStation?: (station: StationData) => void;
   onSpeedChange: (speed: number) => void;
   onPlayerState?: (x: number, z: number, rotation: number) => void;
   onTeleportState?: (isTeleporting: boolean) => void;
   onActionPrompt?: (prompt: ActionPrompt | null) => void;
   onDriveState?: (isDriving: boolean) => void;
+  onAvatarLoaded?: () => void;
+  onEmoteChange?: (emote: AvatarEmoteName | null) => void;
 }
 
-export type PropType = 'cube' | 'sphere' | 'cylinder' | 'pyramid';
+export type PropType = 'chair' | 'exec_chair' | 'books';
 
 export interface InteractiveProp {
   id: number;
@@ -40,12 +53,9 @@ export interface InteractiveProp {
 
 interface DrivableRover {
   group: THREE.Group;
-  body: THREE.Mesh;
-  frontWheels: THREE.Group[];
-  rearWheels: THREE.Mesh[];
+  body: THREE.Group;
   headlights: THREE.SpotLight[];
   thrusterLight: THREE.PointLight;
-  shadow: THREE.Mesh;
   pos: THREE.Vector3;
   velocity: THREE.Vector3;
   rotation: number;
@@ -53,11 +63,24 @@ interface DrivableRover {
   speed: number;
 }
 
-interface BoostPad {
-  mesh: THREE.Group;
-  pos: THREE.Vector3;
-  direction: THREE.Vector3;
-  cooldown: number;
+interface OfficeCollider {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
+interface OfficeNpc {
+  root: THREE.Group;
+  bodyPivot: THREE.Group;
+  baseRotY: number;
+  stationId: string;
+}
+
+interface ClickableZoneTarget {
+  root: THREE.Object3D;
+  stationId: string;
+  approachOffset: THREE.Vector3;
 }
 
 interface TrailParticle {
@@ -78,28 +101,22 @@ export class ThreeEngine {
   private renderer: THREE.WebGLRenderer;
   private animFrameId: number | null = null;
   private clock: THREE.Clock;
+  private objectLoader = new GLTFLoader();
 
-  // Player / Cyber Explorer Character
+  // Player / 3D Character Avatar
   public playerGroup: THREE.Group;
   private characterRoot: THREE.Group;
-  private torsoGroup: THREE.Group;
-  private headGroup: THREE.Group;
-  private leftArmGroup: THREE.Group;
-  private rightArmGroup: THREE.Group;
-  private leftLegGroup: THREE.Group;
-  private rightLegGroup: THREE.Group;
+  private avatarController!: AvatarController;
+  private pmremTarget: THREE.WebGLRenderTarget | null = null;
   private thrusterGlow: THREE.PointLight;
   private contactShadow: THREE.Mesh;
   private playerVelocity = new THREE.Vector3();
   private playerRotation = 0;
+  private lastTurnInput = 0;
   private isBoosting = false;
-  private isOverdrive = false;
   private isJumping = false;
   private verticalVelocity = 0;
   private gravity = 22;
-  private walkCycle = 0;
-  private prevStepSin = 0;
-  private gestureTimer = 0;
 
   // Click to move target
   private targetDestination: THREE.Vector3 | null = null;
@@ -110,22 +127,22 @@ export class ThreeEngine {
   private joystickVector = { x: 0, y: 0 };
 
   // World objects
-  private stationMeshes: { data: StationData; group: THREE.Group; beacon: THREE.Mesh; light: THREE.PointLight; platformRing: THREE.Mesh }[] = [];
-  private coreMeshes: { id: number; mesh: THREE.Group; collected: boolean }[] = [];
-  private collectedCoreIds = new Set<number>();
+  private stationMeshes: { data: StationData; group: THREE.Group; light: THREE.PointLight }[] = [];
+  private officeColliders: OfficeCollider[] = [];
+  private officeNpcs: OfficeNpc[] = [];
+  private clickableTargets: ClickableZoneTarget[] = [];
+  private pendingInspectStationId: string | null = null;
   private particles!: THREE.Points;
-  private gridHelper!: THREE.GridHelper;
 
   // Realistic Diverse Interactive Elements & Carrying System
   private interactiveProps: InteractiveProp[] = [];
+  private bookPropEntries: InteractiveProp[] = [];
   public heldProp: InteractiveProp | null = null;
   private currentActionPrompt: ActionPrompt | null = null;
 
-  // Drivable Cyber Rover Vehicle
+  // Drivable Executive Rover Vehicle
   public isDrivingRover = false;
   private rover!: DrivableRover;
-  private roverDockPad!: THREE.Group;
-  private boostPads: BoostPad[] = [];
   private trailParticles: TrailParticle[] = [];
   private trailPoints!: THREE.Points;
   private trailPositions!: Float32Array;
@@ -159,90 +176,89 @@ export class ThreeEngine {
     this.callbacks = callbacks;
     this.clock = new THREE.Clock();
 
-    // 1. Scene setup
+    // 1. Scene setup (Architectural Corporate Interior & Dusk Exterior Backdrop)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x070605);
-    this.scene.fog = new THREE.FogExp2(0x070605, 0.016);
+    this.scene.background = new THREE.Color(0x232830);
+    this.scene.fog = new THREE.FogExp2(0x232830, 0.0045);
 
     // 2. Camera setup
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
     this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 250);
-    this.camera.position.set(0, 6.5, 14.5);
+    this.camera.position.set(0, 6.2, 14.5);
 
     // 3. Renderer setup
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
+    this.renderer.toneMappingExposure = 1.24;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. Lights
-    const ambientLight = new THREE.AmbientLight(0xfff7ed, 0.85);
-    this.scene.add(ambientLight);
+    // 4. Corporate Office Lighting & Subtle IBL
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    this.pmremTarget = pmremGenerator.fromScene(new RoomEnvironment(), 0.04);
+    this.scene.environment = this.pmremTarget.texture;
+    this.scene.environmentIntensity = 0.55;
+    pmremGenerator.dispose();
 
-    const dirLight = new THREE.DirectionalLight(0xffedd5, 1.7);
-    dirLight.position.set(25, 45, 25);
+    const hemiLight = new THREE.HemisphereLight(0xfffaf2, 0x8f857b, 1.55);
+    this.scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfff5e4, 1.9);
+    dirLight.position.set(22, 38, 24);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.bias = -0.0004;
     dirLight.shadow.camera.near = 0.5;
     dirLight.shadow.camera.far = 120;
-    dirLight.shadow.camera.left = -50;
-    dirLight.shadow.camera.right = 50;
-    dirLight.shadow.camera.top = 50;
-    dirLight.shadow.camera.bottom = -50;
+    dirLight.shadow.camera.left = -42;
+    dirLight.shadow.camera.right = 42;
+    dirLight.shadow.camera.top = 42;
+    dirLight.shadow.camera.bottom = -42;
     this.scene.add(dirLight);
 
-    // 5. Build Environment (Terrain, pathways, boundary)
-    this.buildEnvironment();
+    const rimLight = new THREE.DirectionalLight(0xffe8cc, 0.72);
+    rimLight.position.set(-20, 18, -22);
+    this.scene.add(rimLight);
 
-    // 6. Build Player Character (Cyber Explorer)
+    // 5. Build Corporate Tiled Room, West Office Suite, Zone Furniture & NPCs
+    this.buildEnvironment();
+    this.buildOfficeBuilding();
+    this.buildOfficeFurnitureAndNPCs();
+
+    // 6. Build Player Character (Real 3D Avatar + Animation Controller)
     const {
       group,
       characterRoot,
-      torsoGroup,
-      headGroup,
-      leftArmGroup,
-      rightArmGroup,
-      leftLegGroup,
-      rightLegGroup,
       thrusterLight,
       shadow,
-    } = this.buildHumanCharacter();
+      avatarController,
+    } = this.buildCharacterRig();
     this.playerGroup = group;
     this.characterRoot = characterRoot;
-    this.torsoGroup = torsoGroup;
-    this.headGroup = headGroup;
-    this.leftArmGroup = leftArmGroup;
-    this.rightArmGroup = rightArmGroup;
-    this.leftLegGroup = leftLegGroup;
-    this.rightLegGroup = rightLegGroup;
     this.thrusterGlow = thrusterLight;
     this.contactShadow = shadow;
+    this.avatarController = avatarController;
     this.scene.add(this.playerGroup);
 
-    // 7. Build Stations & Gateway Portals
+    // 7. Build Executive Department Landmarks & Zone Signage
     this.buildStations();
 
-    // 8. Build Collectible Cores
-    this.buildDataCores();
-
-    // 9. Build Drivable Rover & Charging Pad
+    // 8. Build Drivable Imported 3D Rover & Executive Mobility Bay
     this.buildDrivableRover();
 
-    // 10. Build Diverse Interactive Props & Launch Pads
+    // 9. Build Interactive Office Objects ONLY from src/components/game3d/model/objects
     this.buildDiverseInteractiveProps();
-    this.buildLaunchPads();
 
-    // 10. Particle Exhaust & Skid Trail System
+    // 10. Particle Trail System
     this.buildParticleTrails();
 
-    // 11. Shockwave Effect Mesh
+    // 11. Kinetic Pulse Ring Mesh
     this.buildShockwaveMesh();
 
     // 12. Destination Click Marker
@@ -251,11 +267,11 @@ export class ThreeEngine {
       this.scene.add(this.destinationMarker);
     }
 
-    // 13. Floating Atmospheric Embers
+    // 13. Subtle Golden Sunlit Dust Motes
     this.particles = this.buildAtmosphericParticles();
     this.scene.add(this.particles);
 
-    // 14. Quantum Teleportation Portal Beam & Rings
+    // 14. Teleportation Transition Beam & Rings
     this.buildTeleportFX();
 
     // 15. Event listeners & Audio startup
@@ -265,113 +281,695 @@ export class ThreeEngine {
     this.animate();
   }
 
-  // --- Environment Construction ---
+  // --- Procedural Porcelain Office Floor Tiles Texture ---
+  private createOfficeTileTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d')!;
+
+    // Commercial stone grout base
+    ctx.fillStyle = '#978f86';
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    const tiles = 4;
+    const tileSize = 1024 / tiles;
+    const grout = 5;
+    const shades = ['#d7d0c7', '#cfc8bf', '#d3ccc3', '#cbc3b9'];
+
+    for (let gx = 0; gx < tiles; gx++) {
+      for (let gy = 0; gy < tiles; gy++) {
+        const x = gx * tileSize + grout;
+        const y = gy * tileSize + grout;
+        const w = tileSize - grout * 2;
+        const h = tileSize - grout * 2;
+
+        ctx.fillStyle = shades[(gx + gy) % shades.length];
+        ctx.fillRect(x, y, w, h);
+
+        // Subtle stone fleck grain for realism
+        for (let s = 0; s < 28; s++) {
+          const sx = x + ((s * 97 + gx * 53) % (w - 8));
+          const sy = y + ((s * 61 + gy * 89) % (h - 8));
+          ctx.fillStyle = s % 2 === 0 ? 'rgba(255,255,255,0.14)' : 'rgba(90,82,74,0.08)';
+          ctx.fillRect(sx, sy, 3, 3);
+        }
+
+        // Crisp architectural bevel highlight along top & left of each tile
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.24)';
+        ctx.fillRect(x, y, w, 3);
+        ctx.fillRect(x, y, 3, h);
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(20, 18);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+    return texture;
+  }
+
+  // --- Enclosed Corporate Office Room, Floor Tiles & Architecture ---
   private buildEnvironment() {
-    // Large Main Ground Disc
-    const floorGeo = new THREE.CircleGeometry(58, 64);
+    // 1. Commercial Porcelain Tile Floor Slab (60m x 56m covering X ∈ [-28, 32], Z ∈ [-28, 28])
+    const tileTexture = this.createOfficeTileTexture();
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0a08,
-      roughness: 0.82,
-      metalness: 0.25,
+      map: tileTexture,
+      roughness: 0.52,
+      metalness: 0.06,
     });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 56), floorMat);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.01;
+    floor.position.set(2, -0.005, 0);
     floor.receiveShadow = true;
     this.scene.add(floor);
 
-    // Primary Cyber Grid
-    this.gridHelper = new THREE.GridHelper(116, 58, 0xf97316, 0x24170d);
-    this.gridHelper.position.y = 0.01;
-    this.scene.add(this.gridHelper);
-
-    // 4 Architectural Runway Highways connecting Center to Sectors
-    const runwayWidth = 4.2;
-    const runwayLength = 54;
-    const runwayMat = new THREE.MeshStandardMaterial({
-      color: 0x140f0b,
-      roughness: 0.5,
-      metalness: 0.6,
+    // 2. Formal Woven Executive Corridor Carpets & Department Trim
+    const corridorMat = new THREE.MeshStandardMaterial({
+      color: 0x3a342f,
+      roughness: 0.92,
+      metalness: 0.04,
+    });
+    const carpetBorderMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      roughness: 0.7,
+      metalness: 0.15,
     });
 
-    // North-South Highway
-    const nsHighway = new THREE.Mesh(new THREE.PlaneGeometry(runwayWidth, runwayLength), runwayMat);
-    nsHighway.rotation.x = -Math.PI / 2;
-    nsHighway.position.set(0, 0.02, 0);
-    nsHighway.receiveShadow = true;
-    this.scene.add(nsHighway);
+    const addCarpetStrip = (cx: number, cz: number, w: number, d: number) => {
+      const matMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), corridorMat);
+      matMesh.rotation.x = -Math.PI / 2;
+      matMesh.position.set(cx, 0.006, cz);
+      matMesh.receiveShadow = true;
+      this.scene.add(matMesh);
 
-    // East-West Highway
-    const ewHighway = new THREE.Mesh(new THREE.PlaneGeometry(runwayLength, runwayWidth), runwayMat);
-    ewHighway.rotation.x = -Math.PI / 2;
-    ewHighway.position.set(0, 0.02, 0);
-    ewHighway.receiveShadow = true;
-    this.scene.add(ewHighway);
+      const trimMesh = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.16, d + 0.16), carpetBorderMat);
+      trimMesh.rotation.x = -Math.PI / 2;
+      trimMesh.position.set(cx, 0.003, cz);
+      this.scene.add(trimMesh);
+    };
 
-    // Neon Highway Guide Lines
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0xf97316, opacity: 0.6, transparent: true });
-    [-1.8, 1.8].forEach((offset) => {
-      // NS lines
-      const nsLine = new THREE.Mesh(new THREE.PlaneGeometry(0.08, runwayLength), lineMat);
-      nsLine.rotation.x = -Math.PI / 2;
-      nsLine.position.set(offset, 0.025, 0);
-      this.scene.add(nsLine);
+    // North-South & East-West Hallway Runners
+    addCarpetStrip(0, 0, 3.6, 36);
+    addCarpetStrip(3.5, 0, 29, 3.6);
 
-      // EW lines
-      const ewLine = new THREE.Mesh(new THREE.PlaneGeometry(runwayLength, 0.08), lineMat);
-      ewLine.rotation.x = -Math.PI / 2;
-      ewLine.position.set(0, 0.025, offset);
-      this.scene.add(ewLine);
-    });
-
-    // Outer Boundary Glow Ring
-    const ringGeo = new THREE.RingGeometry(57.5, 58.2, 64);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xf97316,
-      side: THREE.DoubleSide,
+    // 3. Enclosed Architectural Room Perimeter Walls & Panoramic Window Bays
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xe6dfd6, roughness: 0.78, metalness: 0.05 });
+    const plinthMat = new THREE.MeshStandardMaterial({ color: 0x3b332d, roughness: 0.65, metalness: 0.2 });
+    const oakTrimMat = new THREE.MeshStandardMaterial({ color: 0x7c5438, roughness: 0.62, metalness: 0.08 });
+    const mullionMat = new THREE.MeshStandardMaterial({ color: 0x2a2521, metalness: 0.68, roughness: 0.35 });
+    const windowGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x8ea4b8,
       transparent: true,
-      opacity: 0.5,
-    });
-    const boundaryRing = new THREE.Mesh(ringGeo, ringMat);
-    boundaryRing.rotation.x = -Math.PI / 2;
-    boundaryRing.position.y = 0.05;
-    this.scene.add(boundaryRing);
-
-    // Perimeter boundary pillars & beacons
-    const pillarCount = 28;
-    const pillarGeo = new THREE.CylinderGeometry(0.25, 0.35, 2.8, 8);
-    const pillarMat = new THREE.MeshStandardMaterial({
-      color: 0x221810,
-      emissive: 0xea580c,
-      emissiveIntensity: 0.5,
-      metalness: 0.8,
-      roughness: 0.2,
+      opacity: 0.22,
+      roughness: 0.12,
+      metalness: 0.15,
+      side: THREE.DoubleSide,
     });
 
-    for (let i = 0; i < pillarCount; i++) {
-      const angle = (i / pillarCount) * Math.PI * 2;
-      const x = Math.cos(angle) * 57.5;
-      const z = Math.sin(angle) * 57.5;
-      const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-      pillar.position.set(x, 1.4, z);
-      this.scene.add(pillar);
+    const buildWindowedWall = (x: number, z: number, length: number, rotY: number) => {
+      const wallGroup = new THREE.Group();
+      wallGroup.position.set(x, 0, z);
+      wallGroup.rotation.y = rotY;
 
-      // Tip beacon sphere
-      const tipGeo = new THREE.SphereGeometry(0.18, 8, 8);
-      const tipMat = new THREE.MeshBasicMaterial({ color: 0xfb923c });
-      const tip = new THREE.Mesh(tipGeo, tipMat);
-      tip.position.set(x, 2.9, z);
-      this.scene.add(tip);
+      // Low wainscoting concrete sill (0.95m tall)
+      const sill = new THREE.Mesh(new THREE.BoxGeometry(length, 0.95, 0.38), plinthMat);
+      sill.position.y = 0.475;
+      sill.castShadow = true;
+      sill.receiveShadow = true;
+      wallGroup.add(sill);
+
+      // Oak window ledge
+      const ledge = new THREE.Mesh(new THREE.BoxGeometry(length, 0.08, 0.44), oakTrimMat);
+      ledge.position.y = 0.98;
+      wallGroup.add(ledge);
+
+      // Panoramic window glazing
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(length - 0.8, 2.55, 0.06), windowGlassMat);
+      glass.position.y = 2.28;
+      wallGroup.add(glass);
+
+      // Top soffit beam
+      const header = new THREE.Mesh(new THREE.BoxGeometry(length, 0.35, 0.42), wallMat);
+      header.position.y = 3.72;
+      header.castShadow = true;
+      wallGroup.add(header);
+
+      // Vertical architectural mullions every 4m
+      const bays = Math.max(2, Math.floor(length / 4));
+      for (let i = 0; i <= bays; i++) {
+        const mx = -length / 2 + (i / bays) * length;
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.88, 0.44), mullionMat);
+        post.position.set(mx, 1.94, 0);
+        post.castShadow = true;
+        wallGroup.add(post);
+      }
+
+      this.scene.add(wallGroup);
+    };
+
+    // North Wall (Z = -27.6, X = -28..+32 -> center X=2, len=60)
+    buildWindowedWall(2, -27.6, 60, 0);
+    // East Wall (X = +31.6, Z = -27.6..+27.6 -> center Z=0, len=55.2)
+    buildWindowedWall(31.6, 0, 55.2, Math.PI / 2);
+
+    // West corner closure walls flanking the existing office-room-opt.glb suite (Z ∈ [-27.6..-23.7] & [+24.0..+27.6])
+    [
+      [-27.5, -25.6, 4.2],
+      [-27.5, 25.8, 4.0],
+    ].forEach(([wx, wz, wl]) => {
+      const endWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.85, wl), wallMat);
+      endWall.position.set(wx, 1.925, wz);
+      endWall.castShadow = true;
+      endWall.receiveShadow = true;
+      this.scene.add(endWall);
+    });
+
+    // South Waist-High Glass Partition (Z = +27.6) — keeps camera views 100% clear!
+    const southSill = new THREE.Mesh(new THREE.BoxGeometry(60, 0.72, 0.36), plinthMat);
+    southSill.position.set(2, 0.36, 27.6);
+    southSill.receiveShadow = true;
+    this.scene.add(southSill);
+    const southGlass = new THREE.Mesh(new THREE.BoxGeometry(59.6, 0.42, 0.06), windowGlassMat);
+    southGlass.position.set(2, 0.93, 27.6);
+    this.scene.add(southGlass);
+
+    // 4. Four Architectural Interior Support Columns Framing Central Atrium
+    const colPositions: [number, number][] = [
+      [-10.5, -10.5],
+      [10.5, -10.5],
+      [-10.5, 10.5],
+      [10.5, 10.5],
+    ];
+    colPositions.forEach(([cx, cz]) => {
+      const colGroup = new THREE.Group();
+      colGroup.position.set(cx, 0, cz);
+
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.28, 0.86), plinthMat);
+      base.position.y = 0.14;
+      colGroup.add(base);
+
+      const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.68, 3.7, 0.68), wallMat);
+      shaft.position.y = 2.05;
+      shaft.castShadow = true;
+      shaft.receiveShadow = true;
+      colGroup.add(shaft);
+
+      const woodBelt = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.25, 0.74), oakTrimMat);
+      woodBelt.position.y = 3.55;
+      colGroup.add(woodBelt);
+
+      this.scene.add(colGroup);
+    });
+
+    // 5. Metropolitan City Skyline Outside the Office Windows
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0x1a1e24, roughness: 0.75, metalness: 0.3 });
+    const windowGlowMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.28 });
+    const towerCount = 24;
+    for (let i = 0; i < towerCount; i++) {
+      const angle = (i / towerCount) * Math.PI * 2 + (i % 2) * 0.08;
+      const radius = 66 + (i % 3) * 12;
+      const w = 6 + (i % 4) * 2.2;
+      const d = 6 + ((i + 1) % 3) * 2.5;
+      const h = 20 + (i % 5) * 7;
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), towerMat);
+      tower.position.set(Math.cos(angle) * radius, h * 0.5 - 6, Math.sin(angle) * radius);
+      tower.rotation.y = -angle;
+      this.scene.add(tower);
+
+      for (let f = 1; f <= 3; f++) {
+        const band = new THREE.Mesh(new THREE.BoxGeometry(w * 0.86, 0.35, d * 1.02), windowGlowMat);
+        band.position.y = f * 4.0 - h * 0.15;
+        tower.add(band);
+      }
+    }
+
+    // 6. Indoor Office Planters Flanking Main Corridors & Reception
+    const planterPositions: [number, number, number][] = [
+      [-4.2, 0, -4.0],
+      [4.2, 0, -4.0],
+      [-14.5, 0, 5.4],
+      [-14.5, 0, -5.8],
+      [4.8, 0, -23.4],
+      [-4.8, 0, -23.4],
+      [-4.6, 0, 23.4],
+      [4.8, 0, 23.4],
+    ];
+    const potMat = new THREE.MeshStandardMaterial({ color: 0x2b2520, roughness: 0.55, metalness: 0.2 });
+    const soilMat = new THREE.MeshStandardMaterial({ color: 0x1b130d, roughness: 0.95 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.72 });
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0x4a3525, roughness: 0.85 });
+
+    planterPositions.forEach(([x, y, z]) => {
+      const planter = new THREE.Group();
+      planter.position.set(x, y, z);
+
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.38, 0.65, 16), potMat);
+      pot.position.y = 0.325;
+      pot.castShadow = true;
+      pot.receiveShadow = true;
+      planter.add(pot);
+
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.04, 16), soilMat);
+      soil.position.y = 0.64;
+      planter.add(soil);
+
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.85, 8), stemMat);
+      stem.position.y = 1.0;
+      planter.add(stem);
+
+      [
+        [0, 1.48, 0, 0.42],
+        [0.2, 1.32, 0.16, 0.28],
+        [-0.2, 1.35, -0.14, 0.3],
+      ].forEach(([lx, ly, lz, r]) => {
+        const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), leafMat);
+        crown.position.set(lx, ly, lz);
+        crown.castShadow = true;
+        planter.add(crown);
+      });
+
+      this.scene.add(planter);
+    });
+  }
+
+  // --- Imported Real 3D Corporate Office Building Wing ---
+  private buildOfficeBuilding() {
+    // Colliders for West Glass Suite (X = -25.5.. -16.8, Z = -23.7.. +24.0) & Atrium Pillars
+    this.officeColliders = [
+      // West glass facade outer wall
+      { minX: -26.2, maxX: -25.0, minZ: -24.2, maxZ: 24.6 },
+      // Conference table bay 1 (South Wing)
+      { minX: -23.2, maxX: -20.5, minZ: 17.5, maxZ: 22.8 },
+      // Conference table bay 2 (North Wing)
+      { minX: -23.2, maxX: -20.5, minZ: -7.5, maxZ: -2.2 },
+      // Workstation cluster 1
+      { minX: -23.8, maxX: -20.3, minZ: 5.0, maxZ: 13.8 },
+      // Workstation cluster 2
+      { minX: -23.8, maxX: -20.3, minZ: -19.2, maxZ: -10.8 },
+      // 4 Structural Interior Columns framing central atrium
+      { minX: -11.0, maxX: -10.0, minZ: -11.0, maxZ: -10.0 },
+      { minX: 10.0, maxX: 11.0, minZ: -11.0, maxZ: -10.0 },
+      { minX: -11.0, maxX: -10.0, minZ: 10.0, maxZ: 11.0 },
+      { minX: 10.0, maxX: 11.0, minZ: 10.0, maxZ: 11.0 },
+    ];
+
+    const officeRoot = new THREE.Group();
+    officeRoot.position.set(-25.5, -0.055, 24.0);
+    this.scene.add(officeRoot);
+
+    // Warm interior ceiling-wash lighting so desks, chairs, and partitions glow clearly
+    [-12, 0, 12].forEach((zOff) => {
+      const wash = new THREE.PointLight(0xffedd5, 2.2, 18);
+      wash.position.set(-21.2, 2.85, zOff);
+      this.scene.add(wash);
+    });
+
+    this.objectLoader.load(
+      officeRoomUrl,
+      (gltf) => {
+        const officeScene = gltf.scene;
+        officeScene.scale.setScalar(0.0254);
+        officeScene.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+            const isGlass = Boolean(mat?.transparent || (mat?.opacity !== undefined && mat.opacity < 0.99));
+            mesh.castShadow = !isGlass;
+            mesh.receiveShadow = true;
+            if (mat && 'envMapIntensity' in mat) {
+              (mat as THREE.MeshStandardMaterial).envMapIntensity = 0.65;
+            }
+          }
+        });
+        officeRoot.add(officeScene);
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load office-room-opt.glb:', err);
+      }
+    );
+  }
+
+  // --- Organized Corporate Department Desks, Bookcases & Interactive NPCs ---
+  private buildOfficeFurnitureAndNPCs() {
+    const normalizeMeshShadows = (obj: THREE.Object3D) => {
+      obj.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+        }
+      });
+    };
+
+    // 1. Ordered Office Desks with Drawers (office_desk_with_drawers.glb — front drawer pulls +Z)
+    const deskSpecs: { pos: [number, number, number]; rotY: number; halfX: number; halfZ: number }[] = [
+      { pos: [0, 0, -3.2], rotY: 0, halfX: 1.0, halfZ: 0.5 }, // Executive Brief Reception
+      { pos: [0, 0, -20.5], rotY: 0, halfX: 1.0, halfZ: 0.5 }, // Case Studies Briefing
+      { pos: [21.8, 0, -2.3], rotY: -Math.PI / 2, halfX: 0.5, halfZ: 1.0 }, // Capabilities Pod N
+      { pos: [21.8, 0, 2.3], rotY: -Math.PI / 2, halfX: 0.5, halfZ: 1.0 }, // Capabilities Pod S
+      { pos: [-15.0, 0, -3.6], rotY: Math.PI / 2, halfX: 0.5, halfZ: 1.0 }, // Track Record Check-In
+      { pos: [0, 0, 21.5], rotY: Math.PI, halfX: 1.0, halfZ: 0.5 }, // Hire-Me HR Desk
+    ];
+
+    const deskRoots: THREE.Group[] = [];
+    deskSpecs.forEach((spec) => {
+      const root = new THREE.Group();
+      root.position.set(...spec.pos);
+      root.rotation.y = spec.rotY;
+      this.scene.add(root);
+      deskRoots.push(root);
+
+      this.officeColliders.push({
+        minX: spec.pos[0] - spec.halfX,
+        maxX: spec.pos[0] + spec.halfX,
+        minZ: spec.pos[2] - spec.halfZ,
+        maxZ: spec.pos[2] + spec.halfZ,
+      });
+    });
+
+    this.objectLoader.load(
+      officeDeskUrl,
+      (gltf) => {
+        const template = new THREE.Group();
+        const inner = gltf.scene;
+        // Center raw desk [-1.233..0.413] -> center X=+0.410, Z=+0.002, flush at y=0
+        inner.position.set(0.41, 0, 0.002);
+        normalizeMeshShadows(inner);
+        template.add(inner);
+        template.scale.setScalar(1.08);
+
+        deskRoots.forEach((root) => {
+          root.add(template.clone());
+        });
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load office_desk_with_drawers.glb:', err);
+      }
+    );
+
+    // 2. Ordered Wooden Bookcases & Interactive Book Stacks (parsed once from wooden_bookcases_with_books.glb)
+    const tallPlacements: { pos: [number, number, number]; rotY: number; halfX: number; halfZ: number }[] = [
+      { pos: [-1.5, 0, -23.6], rotY: Math.PI, halfX: 0.65, halfZ: 0.32 },
+      { pos: [0, 0, -23.6], rotY: Math.PI, halfX: 0.65, halfZ: 0.32 },
+      { pos: [1.5, 0, -23.6], rotY: Math.PI, halfX: 0.65, halfZ: 0.32 },
+      { pos: [24.2, 0, 0], rotY: Math.PI / 2, halfX: 0.32, halfZ: 0.65 },
+      { pos: [3.0, 0, 23.2], rotY: 0, halfX: 0.65, halfZ: 0.32 },
+    ];
+    const tallRoots: THREE.Group[] = [];
+    tallPlacements.forEach((spec) => {
+      const root = new THREE.Group();
+      root.position.set(...spec.pos);
+      root.rotation.y = spec.rotY;
+      this.scene.add(root);
+      tallRoots.push(root);
+      this.officeColliders.push({
+        minX: spec.pos[0] - spec.halfX,
+        maxX: spec.pos[0] + spec.halfX,
+        minZ: spec.pos[2] - spec.halfZ,
+        maxZ: spec.pos[2] + spec.halfZ,
+      });
+    });
+
+    const smallPlacements: { pos: [number, number, number]; rotY: number; radius: number }[] = [
+      { pos: [-3.2, 0, -22.2], rotY: Math.PI * 0.85, radius: 0.65 },
+      { pos: [3.2, 0, -22.2], rotY: -Math.PI * 0.85, radius: 0.65 },
+      { pos: [-15.2, 0, 3.6], rotY: Math.PI * 0.5, radius: 0.65 },
+    ];
+    const smallRoots: THREE.Group[] = [];
+    smallPlacements.forEach((spec) => {
+      const root = new THREE.Group();
+      root.position.set(...spec.pos);
+      root.rotation.y = spec.rotY;
+      this.scene.add(root);
+      smallRoots.push(root);
+      this.officeColliders.push({
+        minX: spec.pos[0] - spec.radius,
+        maxX: spec.pos[0] + spec.radius,
+        minZ: spec.pos[2] - spec.radius,
+        maxZ: spec.pos[2] + spec.radius,
+      });
+    });
+
+    this.objectLoader.load(
+      bookcasesUrl,
+      (gltf) => {
+        gltf.scene.updateMatrixWorld(true);
+        const tallTemplate = new THREE.Group();
+        const smallTemplate = new THREE.Group();
+        const bookStackTemplate = new THREE.Group();
+
+        gltf.scene.traverse((child) => {
+          if (!(child as THREE.Mesh).isMesh) return;
+          const mesh = child as THREE.Mesh;
+
+          // Clone baked world-space geometry cleanly so Sketchfab parent scales/rotations never misalign
+          const bakedGeom = mesh.geometry.clone();
+          bakedGeom.applyMatrix4(mesh.matrixWorld);
+
+          if (mesh.name.startsWith('Victorian_Bookcase_Tall')) {
+            bakedGeom.translate(0, 0, -0.01);
+            const m = new THREE.Mesh(bakedGeom, mesh.material);
+            m.castShadow = true;
+            m.receiveShadow = true;
+            tallTemplate.add(m);
+
+            // Also build an interactive tabletop/floor Book Stack from Books_1 & Books_4
+            if (mesh.name.includes('_Books_1_') || mesh.name.includes('_Books_4_')) {
+              const stackGeom = mesh.geometry.clone();
+              stackGeom.applyMatrix4(mesh.matrixWorld);
+              stackGeom.computeBoundingBox();
+              const b = stackGeom.boundingBox!;
+              const cx = (b.min.x + b.max.x) * 0.5;
+              const cz = (b.min.z + b.max.z) * 0.5;
+              const targetMinY = mesh.name.includes('_Books_1_') ? 0 : 0.24;
+              stackGeom.translate(-cx, -b.min.y + targetMinY, -cz);
+              const bm = new THREE.Mesh(stackGeom, mesh.material);
+              bm.castShadow = true;
+              bm.receiveShadow = true;
+              bookStackTemplate.add(bm);
+            }
+          } else if (mesh.name.startsWith('Victorian_Bookcase_Small')) {
+            bakedGeom.translate(-1.01, 0, -0.35);
+            const m = new THREE.Mesh(bakedGeom, mesh.material);
+            m.castShadow = true;
+            m.receiveShadow = true;
+            smallTemplate.add(m);
+          }
+        });
+
+        tallTemplate.scale.setScalar(1.15);
+        tallRoots.forEach((root) => root.add(tallTemplate.clone()));
+
+        smallTemplate.scale.setScalar(1.12);
+        smallRoots.forEach((root) => root.add(smallTemplate.clone()));
+
+        bookStackTemplate.scale.setScalar(1.3);
+        this.bookPropEntries.forEach((entry) => {
+          const ph = entry.group.children[0] as THREE.Mesh | undefined;
+          if (ph) {
+            entry.group.remove(ph);
+            ph.geometry?.dispose();
+            if (ph.material) (ph.material as THREE.Material).dispose();
+          }
+          entry.group.add(bookStackTemplate.clone());
+        });
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load wooden_bookcases_with_books.glb:', err);
+      }
+    );
+
+    // 3. Interactive HR Representative (hr-lady.glb) in the "Hire-Me Zone" (South [0, 0, +20])
+    const spawnNpcLabel = (text: string, accent: string): THREE.Sprite => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 480;
+      canvas.height = 84;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = 'rgba(20, 17, 15, 0.9)';
+      ctx.roundRect(8, 8, 464, 68, 18);
+      ctx.fill();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.roundRect(8, 8, 464, 68, 18);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 240, 42);
+      const tex = new THREE.CanvasTexture(canvas);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+      sp.scale.set(2.4, 0.42, 1);
+      return sp;
+    };
+
+    const hrRoot = new THREE.Group();
+    hrRoot.position.set(-1.75, 0, 20.2);
+    hrRoot.rotation.y = Math.PI; // Faces -Z North toward incoming visitors
+    this.scene.add(hrRoot);
+
+    const hrPivot = new THREE.Group();
+    hrRoot.add(hrPivot);
+
+    const hrShadow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.58, 24),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 })
+    );
+    hrShadow.rotation.x = -Math.PI / 2;
+    hrShadow.position.y = 0.015;
+    hrRoot.add(hrShadow);
+
+    // Subtle green hiring spotlight ring around HR Representative
+    const hrRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.7, 0.8, 32),
+      new THREE.MeshBasicMaterial({ color: 0x10b981, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
+    );
+    hrRing.rotation.x = -Math.PI / 2;
+    hrRing.position.y = 0.02;
+    hrRoot.add(hrRing);
+
+    const hrBadge = spawnNpcLabel('HR PARTNER • CLICK OR [E]', '#10b981');
+    hrBadge.position.set(0, 2.18, 0);
+    hrRoot.add(hrBadge);
+
+    this.objectLoader.load(
+      hrLadyUrl,
+      (gltf) => {
+        const model = gltf.scene;
+        // Raw cm unit -> 0.01m = 1.73m tall; center [0.254, 86.5, 4.2]
+        model.scale.setScalar(0.01);
+        model.position.set(-0.0025, 0.001, -0.042);
+        normalizeMeshShadows(model);
+        hrPivot.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load hr-lady.glb:', err);
+      }
+    );
+
+    this.officeColliders.push({ minX: -2.25, maxX: -1.25, minZ: 19.7, maxZ: 20.7 });
+    this.officeNpcs.push({ root: hrRoot, bodyPivot: hrPivot, baseRotY: Math.PI, stationId: 'contact' });
+    this.clickableTargets.push({ root: hrRoot, stationId: 'contact', approachOffset: new THREE.Vector3(0.4, 0, -2.2) });
+
+    // 4. Interactive Client & Advisory Lead (person-opt.glb) beside Reception Lobby ([0, 0, 0])
+    const partnerRoot = new THREE.Group();
+    partnerRoot.position.set(2.35, 0, -2.6);
+    partnerRoot.rotation.y = -0.25;
+    this.scene.add(partnerRoot);
+
+    const partnerPivot = new THREE.Group();
+    partnerRoot.add(partnerPivot);
+
+    const partnerShadow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.55, 24),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 })
+    );
+    partnerShadow.rotation.x = -Math.PI / 2;
+    partnerShadow.position.y = 0.015;
+    partnerRoot.add(partnerShadow);
+
+    const partnerBadge = spawnNpcLabel('CLIENT ADVISOR • [E]', '#f97316');
+    partnerBadge.position.set(0, 2.18, 0);
+    partnerRoot.add(partnerBadge);
+
+    this.objectLoader.load(
+      personNpcUrl,
+      (gltf) => {
+        const model = gltf.scene;
+        normalizeMeshShadows(model);
+        partnerPivot.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load person-opt.glb:', err);
+      }
+    );
+
+    this.officeColliders.push({ minX: 1.9, maxX: 2.8, minZ: -3.05, maxZ: -2.15 });
+    this.officeNpcs.push({ root: partnerRoot, bodyPivot: partnerPivot, baseRotY: -0.25, stationId: 'spawn' });
+    this.clickableTargets.push({
+      root: partnerRoot,
+      stationId: 'spawn',
+      approachOffset: new THREE.Vector3(-0.35, 0, 2.1),
+    });
+  }
+
+  private clampToOfficeRoom(pos: THREE.Vector3, radius: number, bounceVel?: { x: number; z: number }, extraMinX?: number) {
+    const minX = extraMinX !== undefined ? Math.max(extraMinX, -26.8 + radius) : -26.8 + radius;
+    const maxX = 30.8 - radius;
+    const minZ = -26.8 + radius;
+    const maxZ = 26.8 - radius;
+
+    let bumped = false;
+    if (pos.x < minX) {
+      pos.x = minX;
+      if (bounceVel) bounceVel.x = Math.abs(bounceVel.x) * 0.45;
+      bumped = true;
+    } else if (pos.x > maxX) {
+      pos.x = maxX;
+      if (bounceVel) bounceVel.x = -Math.abs(bounceVel.x) * 0.45;
+      bumped = true;
+    }
+    if (pos.z < minZ) {
+      pos.z = minZ;
+      if (bounceVel) bounceVel.z = Math.abs(bounceVel.z) * 0.45;
+      bumped = true;
+    } else if (pos.z > maxZ) {
+      pos.z = maxZ;
+      if (bounceVel) bounceVel.z = -Math.abs(bounceVel.z) * 0.45;
+      bumped = true;
+    }
+    return bumped;
+  }
+
+  private applyOfficeCollisions(pos: THREE.Vector3, radius: number, extraMinX?: number) {
+    if (extraMinX !== undefined && pos.x < extraMinX) {
+      pos.x = extraMinX;
+    }
+
+    for (const box of this.officeColliders) {
+      const closestX = Math.max(box.minX, Math.min(pos.x, box.maxX));
+      const closestZ = Math.max(box.minZ, Math.min(pos.z, box.maxZ));
+      const dx = pos.x - closestX;
+      const dz = pos.z - closestZ;
+      const distSq = dx * dx + dz * dz;
+
+      if (distSq < radius * radius) {
+        if (distSq > 0.00001) {
+          const dist = Math.sqrt(distSq);
+          const push = radius - dist;
+          pos.x += (dx / dist) * push;
+          pos.z += (dz / dist) * push;
+        } else {
+          // Inside box: push out toward nearest face
+          const dLeft = Math.abs(pos.x - box.minX);
+          const dRight = Math.abs(box.maxX - pos.x);
+          const dBack = Math.abs(pos.z - box.minZ);
+          const dFront = Math.abs(box.maxZ - pos.z);
+          const minEdge = Math.min(dLeft, dRight, dBack, dFront);
+          if (minEdge === dLeft) pos.x = box.minX - radius;
+          else if (minEdge === dRight) pos.x = box.maxX + radius;
+          else if (minEdge === dBack) pos.z = box.minZ - radius;
+          else pos.z = box.maxZ + radius;
+        }
+      }
     }
   }
 
-  // --- Cyber Explorer Humanoid Character Construction ---
-  private buildHumanCharacter() {
+  // --- Real 3D Character Rig + Animation Controller ---
+  private buildCharacterRig() {
     const group = new THREE.Group();
     group.position.set(0, 0, 6);
 
     // Contact shadow underneath feet
-    const shadowGeo = new THREE.CircleGeometry(0.7, 24);
+    const shadowGeo = new THREE.CircleGeometry(0.68, 24);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
@@ -382,509 +980,217 @@ export class ThreeEngine {
     shadow.position.y = 0.02;
     group.add(shadow);
 
-    // Root node for character kinematics (bobbing, banking, stance)
+    // Root node for loaded GLB character, teleport scale, and lean
     const characterRoot = new THREE.Group();
     group.add(characterRoot);
 
-    // High-tech suit materials
-    const suitMat = new THREE.MeshStandardMaterial({
-      color: 0x14100d,
-      roughness: 0.45,
-      metalness: 0.65,
+    // Warm cybernetic aura / boost glow at feet
+    const thrusterLight = new THREE.PointLight(0xf97316, 1.4, 5.5);
+    thrusterLight.position.set(0, 0.35, 0.25);
+    characterRoot.add(thrusterLight);
+
+    const avatarController = new AvatarController(characterRoot, {
+      onLoaded: () => {
+        this.callbacks.onAvatarLoaded?.();
+      },
+      onEntryLand: () => {
+        // Trigger subtle orange impact shockwave ring when hero drops onto spawn pad
+        if (this.shockwaveRing) {
+          this.shockwaveRing.position.set(this.playerGroup.position.x, 0.08, this.playerGroup.position.z);
+          this.shockwaveRing.visible = true;
+          this.shockwaveRadius = 0.4;
+          this.shockwaveActive = true;
+        }
+      },
+      onStrikeImpact: (kind) => {
+        this.applyStrikeImpulse(kind);
+      },
+      onEmoteChange: (emote) => {
+        this.callbacks.onEmoteChange?.(emote);
+      },
     });
-    const armorMat = new THREE.MeshStandardMaterial({
-      color: 0x221812,
-      roughness: 0.25,
-      metalness: 0.85,
-    });
-    const accentMat = new THREE.MeshStandardMaterial({
-      color: 0xf97316,
-      roughness: 0.2,
-      metalness: 0.8,
-      emissive: 0xf97316,
-      emissiveIntensity: 0.4,
-    });
-    const glowMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-    const visorMat = new THREE.MeshStandardMaterial({
-      color: 0x070503,
-      emissive: 0xf97316,
-      emissiveIntensity: 0.95,
-      roughness: 0.1,
-      metalness: 0.95,
-    });
-
-    // 1. Pelvis / Utility Belt (at hip height ~0.88)
-    const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.16, 0.32), armorMat);
-    pelvis.position.y = 0.88;
-    pelvis.castShadow = true;
-    characterRoot.add(pelvis);
-
-    const beltBuckle = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.04), glowMat);
-    beltBuckle.position.set(0, 0.88, -0.17);
-    characterRoot.add(beltBuckle);
-
-    // 2. Torso Group (Pivoting at waist)
-    const torsoGroup = new THREE.Group();
-    torsoGroup.position.set(0, 0.96, 0);
-    characterRoot.add(torsoGroup);
-
-    // Main Chest Armor
-    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.54, 0.36), armorMat);
-    chest.position.set(0, 0.27, 0);
-    chest.castShadow = true;
-    torsoGroup.add(chest);
-
-    // Inner Tech Body Suit
-    const underSuit = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.5, 0.32), suitMat);
-    underSuit.position.set(0, 0.25, 0);
-    torsoGroup.add(underSuit);
-
-    // Arc Reactor / Power Core (Chest Emblem)
-    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 16), glowMat);
-    core.rotation.x = Math.PI / 2;
-    core.position.set(0, 0.32, -0.185);
-    torsoGroup.add(core);
-
-    const coreRing = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.02, 8, 16), accentMat);
-    coreRing.position.set(0, 0.32, -0.18);
-    torsoGroup.add(coreRing);
-
-    // Jetpack Unit on back
-    const jetpackBody = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.18), armorMat);
-    jetpackBody.position.set(0, 0.28, 0.23);
-    jetpackBody.castShadow = true;
-    torsoGroup.add(jetpackBody);
-
-    // Dual Micro-Thruster Nozzles
-    [-0.12, 0.12].forEach((offset) => {
-      const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.16, 12), accentMat);
-      nozzle.position.set(offset, 0.08, 0.26);
-      torsoGroup.add(nozzle);
-
-      const nozzleGlow = new THREE.Mesh(new THREE.CircleGeometry(0.06, 12), glowMat);
-      nozzleGlow.rotation.x = Math.PI / 2;
-      nozzleGlow.position.set(offset, 0.0, 0.26);
-      torsoGroup.add(nozzleGlow);
-    });
-
-    const thrusterLight = new THREE.PointLight(0xf97316, 2.2, 5.5);
-    thrusterLight.position.set(0, 0.06, 0.32);
-    torsoGroup.add(thrusterLight);
-
-    // Forward Spotlight / Headlamp from shoulder
-    const headlampTarget = new THREE.Object3D();
-    headlampTarget.position.set(0, 0.2, -8);
-    torsoGroup.add(headlampTarget);
-
-    const shoulderLight = new THREE.SpotLight(0xffedd5, 3.2, 20, Math.PI / 5, 0.4);
-    shoulderLight.position.set(0.24, 0.54, -0.12);
-    shoulderLight.target = headlampTarget;
-    torsoGroup.add(shoulderLight);
-
-    // 3. Head Group (Pivoting at neck)
-    const headGroup = new THREE.Group();
-    headGroup.position.set(0, 0.56, 0);
-    torsoGroup.add(headGroup);
-
-    // Neck
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.12, 12), suitMat);
-    neck.position.set(0, 0.05, 0);
-    headGroup.add(neck);
-
-    // Cyber Helmet
-    const helmet = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.38), armorMat);
-    helmet.position.set(0, 0.23, -0.02);
-    helmet.castShadow = true;
-    headGroup.add(helmet);
-
-    // Curved Panoramic Cyber Visor
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.16), visorMat);
-    visor.position.set(0, 0.24, -0.18);
-    headGroup.add(visor);
-
-    // Helmet Crest Stripe
-    const crest = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.32), accentMat);
-    crest.position.set(0, 0.42, -0.02);
-    headGroup.add(crest);
-
-    // Side Earpiece Sensors
-    [-0.19, 0.19].forEach((offset) => {
-      const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 12), accentMat);
-      ear.rotation.z = Math.PI / 2;
-      ear.position.set(offset, 0.23, -0.02);
-      headGroup.add(ear);
-    });
-
-    // 4. Arms (Pivoting at shoulders)
-    // Left Arm
-    const leftArmGroup = new THREE.Group();
-    leftArmGroup.position.set(-0.35, 0.5, 0);
-    torsoGroup.add(leftArmGroup);
-
-    const leftShoulder = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), armorMat);
-    leftArmGroup.add(leftShoulder);
-
-    const leftUpperArm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.26, 0.13), suitMat);
-    leftUpperArm.position.set(-0.02, -0.13, 0);
-    leftArmGroup.add(leftUpperArm);
-
-    const leftGauntlet = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.24, 0.15), armorMat);
-    leftGauntlet.position.set(-0.02, -0.36, 0);
-    leftGauntlet.castShadow = true;
-    leftArmGroup.add(leftGauntlet);
-
-    const leftFist = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), suitMat);
-    leftFist.position.set(-0.02, -0.5, 0);
-    leftArmGroup.add(leftFist);
-
-    // Right Arm (Equipped with Kinetic Repulsor Gauntlet)
-    const rightArmGroup = new THREE.Group();
-    rightArmGroup.position.set(0.35, 0.5, 0);
-    torsoGroup.add(rightArmGroup);
-
-    const rightShoulder = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), armorMat);
-    rightArmGroup.add(rightShoulder);
-
-    const rightUpperArm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.26, 0.13), suitMat);
-    rightUpperArm.position.set(0.02, -0.13, 0);
-    rightArmGroup.add(rightUpperArm);
-
-    const rightGauntlet = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.26, 0.16), armorMat);
-    rightGauntlet.position.set(0.02, -0.36, 0);
-    rightGauntlet.castShadow = true;
-    rightArmGroup.add(rightGauntlet);
-
-    const repulsorCore = new THREE.Mesh(new THREE.CircleGeometry(0.045, 12), glowMat);
-    repulsorCore.position.set(0.02, -0.36, -0.085);
-    rightArmGroup.add(repulsorCore);
-
-    const rightFist = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), suitMat);
-    rightFist.position.set(0.02, -0.5, 0);
-    rightArmGroup.add(rightFist);
-
-    // 5. Legs (Pivoting at hips)
-    // Left Leg
-    const leftLegGroup = new THREE.Group();
-    leftLegGroup.position.set(-0.17, 0.88, 0);
-    characterRoot.add(leftLegGroup);
-
-    const leftThigh = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.38, 0.18), suitMat);
-    leftThigh.position.set(0, -0.19, 0);
-    leftThigh.castShadow = true;
-    leftLegGroup.add(leftThigh);
-
-    const leftKnee = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.11, 0.08), armorMat);
-    leftKnee.position.set(0, -0.38, -0.09);
-    leftLegGroup.add(leftKnee);
-
-    const leftShin = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.36, 0.17), suitMat);
-    leftShin.position.set(0, -0.56, 0);
-    leftShin.castShadow = true;
-    leftLegGroup.add(leftShin);
-
-    const leftBoot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.15, 0.28), armorMat);
-    leftBoot.position.set(0, -0.8, -0.04);
-    leftBoot.castShadow = true;
-    leftLegGroup.add(leftBoot);
-
-    const leftSole = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.28), glowMat);
-    leftSole.position.set(0, -0.87, -0.04);
-    leftLegGroup.add(leftSole);
-
-    // Right Leg
-    const rightLegGroup = new THREE.Group();
-    rightLegGroup.position.set(0.17, 0.88, 0);
-    characterRoot.add(rightLegGroup);
-
-    const rightThigh = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.38, 0.18), suitMat);
-    rightThigh.position.set(0, -0.19, 0);
-    rightThigh.castShadow = true;
-    rightLegGroup.add(rightThigh);
-
-    const rightKnee = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.11, 0.08), armorMat);
-    rightKnee.position.set(0, -0.38, -0.09);
-    rightLegGroup.add(rightKnee);
-
-    const rightShin = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.36, 0.17), suitMat);
-    rightShin.position.set(0, -0.56, 0);
-    rightShin.castShadow = true;
-    rightLegGroup.add(rightShin);
-
-    const rightBoot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.15, 0.28), armorMat);
-    rightBoot.position.set(0, -0.8, -0.04);
-    rightBoot.castShadow = true;
-    rightLegGroup.add(rightBoot);
-
-    const rightSole = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.28), glowMat);
-    rightSole.position.set(0, -0.87, -0.04);
-    rightLegGroup.add(rightSole);
 
     return {
       group,
       characterRoot,
-      torsoGroup,
-      headGroup,
-      leftArmGroup,
-      rightArmGroup,
-      leftLegGroup,
-      rightLegGroup,
       thrusterLight,
       shadow,
+      avatarController,
     };
   }
 
-  // --- Drivable Cyber Rover & Charging Pad Construction ---
+  public triggerAvatarEmote(emote: AvatarEmoteName) {
+    if (this.isTeleporting || this.isDrivingRover) return;
+    // Cancel ground destination when performing stationary/combat action
+    this.targetDestination = null;
+    if (this.destinationMarker) this.destinationMarker.visible = false;
+    this.playerVelocity.multiplyScalar(0.25);
+
+    this.avatarController.triggerEmote(emote);
+  }
+
+  private applyStrikeImpulse(kind: 'punch' | 'kick') {
+    const pPos = this.playerGroup.position;
+    const forwardDir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.playerRotation);
+
+    // If holding an object, punch/kick launches it forward with kinetic force!
+    if (this.heldProp) {
+      this.throwHeldProp(kind === 'kick' ? 24 : 20);
+      return;
+    }
+
+    // Check props in strike cone in front of player (range 3.2m)
+    let hitAny = false;
+    for (const prop of this.interactiveProps) {
+      const toProp = new THREE.Vector3(prop.pos.x - pPos.x, 0, prop.pos.z - pPos.z);
+      const dist = toProp.length();
+      if (dist > 3.2) continue;
+
+      const dot = dist > 0.01 ? toProp.clone().normalize().dot(forwardDir) : 1;
+      if (dot > 0.25 || dist < 1.3) {
+        hitAny = true;
+        const launchPower = (kind === 'kick' ? 22 : 17) / Math.max(0.7, prop.mass);
+        const launchVec = forwardDir.clone().multiplyScalar(launchPower);
+        launchVec.y = kind === 'kick' ? 8.5 / Math.sqrt(prop.mass) : 4.2 / Math.sqrt(prop.mass);
+
+        prop.velocity.add(launchVec);
+        prop.angularVelocity.add(
+          new THREE.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 14)
+        );
+        sfx.playBump();
+      }
+    }
+
+    if (hitAny && this.shockwaveRing) {
+      const impactPt = pPos.clone().addScaledVector(forwardDir, 1.1);
+      this.shockwaveRing.position.set(impactPt.x, 0.08, impactPt.z);
+      this.shockwaveRing.visible = true;
+      this.shockwaveRadius = 0.25;
+      this.shockwaveActive = true;
+    }
+  }
+
+  // --- Drivable Imported 3D Rover & Executive Parking Bay ---
   private buildDrivableRover() {
-    // 1. Futuristic Charging Platform / Docking Pad at [8, 0, 8]
+    // 1. Marked Indoor EV Parking Bay on tiled South-East floor [17, 0, 16]
     const padGroup = new THREE.Group();
-    padGroup.position.set(8, 0, 8);
-    padGroup.rotation.y = Math.PI * 0.75;
+    padGroup.position.set(17, 0, 16);
+    padGroup.rotation.y = Math.PI * 0.78;
     this.scene.add(padGroup);
-    this.roverDockPad = padGroup;
 
-    // Heavy hexagonal charging deck
-    const deckGeo = new THREE.CylinderGeometry(3.5, 3.8, 0.12, 6);
-    const deckMat = new THREE.MeshStandardMaterial({
-      color: 0x16110d,
-      roughness: 0.6,
-      metalness: 0.7,
-    });
-    const deck = new THREE.Mesh(deckGeo, deckMat);
-    deck.position.y = 0.05;
-    deck.receiveShadow = true;
-    padGroup.add(deck);
-
-    // Glowing neon amber boundary ring
-    const borderGeo = new THREE.RingGeometry(3.2, 3.45, 6);
-    const borderMat = new THREE.MeshBasicMaterial({
-      color: 0xf97316,
-      side: THREE.DoubleSide,
-    });
-    const border = new THREE.Mesh(borderGeo, borderMat);
-    border.rotation.x = -Math.PI / 2;
-    border.position.y = 0.12;
-    padGroup.add(border);
-
-    // Energy conduits on charging pad
-    [-1.2, 1.2].forEach((offset) => {
-      const conduit = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 0.02, 3.8),
-        new THREE.MeshBasicMaterial({ color: 0xfba754 })
-      );
-      conduit.position.set(offset, 0.12, 0);
-      padGroup.add(conduit);
-    });
-
-    // Charging Console / Hologram Pylon at rear of pad
-    const pylonGeo = new THREE.BoxGeometry(0.4, 2.0, 0.4);
-    const pylonMat = new THREE.MeshStandardMaterial({ color: 0x221a14, metalness: 0.85, roughness: 0.25 });
-    const pylon = new THREE.Mesh(pylonGeo, pylonMat);
-    pylon.position.set(0, 1.0, 2.8);
-    pylon.castShadow = true;
-    padGroup.add(pylon);
-
-    const pylonLight = new THREE.PointLight(0xf97316, 1.8, 6.0);
-    pylonLight.position.set(0, 2.1, 2.8);
-    padGroup.add(pylonLight);
-
-    const pylonBeacon = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0xffedd5 })
+    // Charcoal rubberized floor mat flush on tiles
+    const matMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(4.2, 5.4),
+      new THREE.MeshStandardMaterial({ color: 0x262320, roughness: 0.85, metalness: 0.1 })
     );
-    pylonBeacon.position.set(0, 2.1, 2.8);
-    padGroup.add(pylonBeacon);
+    matMesh.rotation.x = -Math.PI / 2;
+    matMesh.position.y = 0.012;
+    matMesh.receiveShadow = true;
+    padGroup.add(matMesh);
 
-    // 2. Cyber Rover Vehicle Model
+    // Painted architectural bay stripe border
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.75 });
+    const makeStripe = (w: number, d: number, x: number, z: number) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), lineMat);
+      m.rotation.x = -Math.PI / 2;
+      m.position.set(x, 0.018, z);
+      padGroup.add(m);
+    };
+    makeStripe(4.3, 0.12, 0, 2.7);
+    makeStripe(4.3, 0.12, 0, -2.7);
+    makeStripe(0.12, 5.4, 2.1, 0);
+    makeStripe(0.12, 5.4, -2.1, 0);
+
+    // Subtle EV Charger Bollard beside parking bay
+    const bollard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.26, 1.32, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0x1c1714, metalness: 0.75, roughness: 0.25 })
+    );
+    bollard.position.set(0, 0.66, 3.05);
+    bollard.castShadow = true;
+    padGroup.add(bollard);
+
+    const bollardLight = new THREE.PointLight(0xf97316, 1.2, 4.5);
+    bollardLight.position.set(0, 1.4, 3.05);
+    padGroup.add(bollardLight);
+
+    // 2. Imported 3D Rover Root
     const roverGroup = new THREE.Group();
-    roverGroup.position.set(8, 0, 8);
-    roverGroup.rotation.y = Math.PI * 0.75;
+    roverGroup.position.set(17, 0, 16);
+    roverGroup.rotation.y = Math.PI * 0.78;
     this.scene.add(roverGroup);
 
-    const hullMat = new THREE.MeshStandardMaterial({
-      color: 0x17120e,
-      roughness: 0.28,
-      metalness: 0.85,
-    });
+    const roverBody = new THREE.Group();
+    roverGroup.add(roverBody);
 
-    const accentMat = new THREE.MeshStandardMaterial({
-      color: 0x251a12,
-      roughness: 0.35,
-      metalness: 0.8,
-    });
+    // Sleek wireframe placeholder while rover-opt.glb streams
+    const placeholder = new THREE.Mesh(
+      new THREE.BoxGeometry(2.1, 1.4, 3.4),
+      new THREE.MeshBasicMaterial({ color: 0xf97316, wireframe: true, transparent: true, opacity: 0.55 })
+    );
+    placeholder.position.y = 0.75;
+    roverBody.add(placeholder);
 
-    const glowOrangeMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-    const headlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    this.objectLoader.load(
+      roverModelUrl,
+      (gltf) => {
+        roverBody.remove(placeholder);
+        placeholder.geometry.dispose();
+        (placeholder.material as THREE.Material).dispose();
 
-    // Lower Main Hull
-    const hull = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.42, 3.4), hullMat);
-    hull.position.y = 0.52;
-    hull.castShadow = true;
-    hull.receiveShadow = true;
-    roverGroup.add(hull);
+        const model = gltf.scene;
+        // Raw model front is -X: rotate -PI/2 around Y so front points -Z forward
+        model.rotation.y = -Math.PI / 2;
+        model.scale.setScalar(0.00265);
+        model.updateMatrixWorld(true);
 
-    // Upper Deck Wedge
-    const upperDeck = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.32, 2.4), accentMat);
-    upperDeck.position.set(0, 0.82, -0.1);
-    upperDeck.castShadow = true;
-    roverGroup.add(upperDeck);
+        const box = new THREE.Box3().setFromObject(model);
+        const ctr = box.getCenter(new THREE.Vector3());
+        model.position.x -= ctr.x;
+        model.position.z -= ctr.z;
+        model.position.y -= box.min.y;
 
-    // Cockpit Tinted Canopy
-    const cockpitMat = new THREE.MeshStandardMaterial({
-      color: 0x090705,
-      metalness: 0.95,
-      roughness: 0.12,
-      transparent: true,
-      opacity: 0.82,
-      emissive: 0xf97316,
-      emissiveIntensity: 0.2,
-    });
-    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.48, 1.4), cockpitMat);
-    cockpit.position.set(0, 1.15, -0.2);
-    cockpit.castShadow = true;
-    roverGroup.add(cockpit);
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+            if (mat && 'envMapIntensity' in mat) {
+              (mat as THREE.MeshStandardMaterial).envMapIntensity = 0.85;
+            }
+          }
+        });
 
-    // Exo Roll-Cage Bars
-    [-0.72, 0.72].forEach((x) => {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 1.5), hullMat);
-      bar.position.set(x, 1.15, -0.2);
-      roverGroup.add(bar);
-    });
+        roverBody.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load rover-opt.glb:', err);
+      }
+    );
 
-    // Front Bumper & Aggressive Cyber Splitter
-    const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.22, 0.5), hullMat);
-    bumper.position.set(0, 0.38, -1.8);
-    bumper.castShadow = true;
-    roverGroup.add(bumper);
-
-    // Glowing Neon Side Skirts
-    [-0.98, 0.98].forEach((x) => {
-      const skirt = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 2.6), glowOrangeMat);
-      skirt.position.set(x, 0.45, 0);
-      roverGroup.add(skirt);
-    });
-
-    // Rear High Aero Wing / Spoiler
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.08, 0.5), hullMat);
-    wing.position.set(0, 1.35, 1.6);
-    wing.castShadow = true;
-    roverGroup.add(wing);
-
-    [-0.8, 0.8].forEach((x) => {
-      const strut = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.2), hullMat);
-      strut.position.set(x, 1.08, 1.55);
-      roverGroup.add(strut);
-    });
-
-    // Rear Twin Ion Thruster Nozzles
-    [-0.6, 0.6].forEach((x) => {
-      const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.5, 16), accentMat);
-      nozzle.rotation.x = Math.PI / 2;
-      nozzle.position.set(x, 0.55, 1.8);
-      roverGroup.add(nozzle);
-
-      const thrusterCore = new THREE.Mesh(new THREE.CircleGeometry(0.18, 14), glowOrangeMat);
-      thrusterCore.position.set(x, 0.55, 2.06);
-      roverGroup.add(thrusterCore);
-    });
-
-    // Rear Thruster Point Light
-    const thrusterLight = new THREE.PointLight(0xf97316, 2.2, 7);
-    thrusterLight.position.set(0, 0.55, 2.2);
+    // Warm Amber Rear Taillight Glow
+    const thrusterLight = new THREE.PointLight(0xf97316, 1.6, 6);
+    thrusterLight.position.set(0, 0.7, 2.0);
     roverGroup.add(thrusterLight);
 
-    // Headlight Lens Meshes
+    // Dual Functional Front Headlights
     const headlights: THREE.SpotLight[] = [];
-    [-0.75, 0.75].forEach((x) => {
-      const lens = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.08), headlightMat);
-      lens.position.set(x, 0.42, -1.95);
-      roverGroup.add(lens);
-
-      // Functional SpotLight illuminating terrain
-      const spot = new THREE.SpotLight(0xffedd5, 3.2, 30, 0.52, 0.4, 1.5);
-      spot.position.set(x, 0.45, -1.9);
-      spot.target.position.set(x * 0.3, 0, -22);
+    [-0.68, 0.68].forEach((x) => {
+      const spot = new THREE.SpotLight(0xffedd5, 2.8, 28, 0.52, 0.4, 1.5);
+      spot.position.set(x, 0.72, -1.7);
+      spot.target.position.set(x * 0.3, 0, -20);
       roverGroup.add(spot.target);
       roverGroup.add(spot);
       headlights.push(spot);
     });
 
-    // Wheels (4 All-Terrain Cyber Wheels with high-traction treads)
-    const tireMat = new THREE.MeshStandardMaterial({
-      color: 0x12100f,
-      roughness: 0.9,
-      metalness: 0.3,
-    });
-    const rimMat = new THREE.MeshStandardMaterial({
-      color: 0x2b1e16,
-      metalness: 0.92,
-      roughness: 0.2,
-    });
-
-    const createWheelMesh = () => {
-      const wheel = new THREE.Group();
-      // Outer rubber tire
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.38, 20), tireMat);
-      tire.rotation.z = Math.PI / 2;
-      tire.castShadow = true;
-      wheel.add(tire);
-
-      // Metallic Rim Hub
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.4, 8), rimMat);
-      rim.rotation.z = Math.PI / 2;
-      wheel.add(rim);
-
-      // Glowing Neon Hub Center
-      [-0.205, 0.205].forEach((offset) => {
-        const hubCap = new THREE.Mesh(new THREE.CircleGeometry(0.12, 8), glowOrangeMat);
-        hubCap.rotation.y = offset > 0 ? Math.PI / 2 : -Math.PI / 2;
-        hubCap.position.x = offset;
-        wheel.add(hubCap);
-      });
-
-      return wheel;
-    };
-
-    // Front Left & Right (Steerable Pivots)
-    const frontWheels: THREE.Group[] = [];
-    [-1.25, 1.25].forEach((x) => {
-      const pivot = new THREE.Group();
-      pivot.position.set(x, 0.48, -1.15);
-      roverGroup.add(pivot);
-
-      const wheelMesh = createWheelMesh();
-      pivot.add(wheelMesh);
-      frontWheels.push(pivot);
-    });
-
-    // Rear Left & Right (Fixed Struts)
-    const rearWheels: THREE.Mesh[] = [];
-    [-1.25, 1.25].forEach((x) => {
-      const wheelMesh = createWheelMesh();
-      wheelMesh.position.set(x, 0.48, 1.15);
-      roverGroup.add(wheelMesh);
-      rearWheels.push(wheelMesh as unknown as THREE.Mesh);
-    });
-
-    // Underside Contact Shadow
-    const shadowGeo = new THREE.PlaneGeometry(2.8, 4.4);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.6,
-    });
-    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.y = 0.02;
-    roverGroup.add(shadow);
-
     this.rover = {
       group: roverGroup,
-      body: hull,
-      frontWheels,
-      rearWheels,
+      body: roverBody,
       headlights,
       thrusterLight,
-      shadow,
       pos: roverGroup.position,
       velocity: new THREE.Vector3(),
       rotation: roverGroup.rotation.y,
@@ -893,257 +1199,194 @@ export class ThreeEngine {
     };
   }
 
-  // --- Diverse Interactive Props (Cubes, Plasma Orbs, Pyramids, Cylinders) ---
+  // --- Interactive Office Objects ONLY from src/components/game3d/model/objects ---
   private buildDiverseInteractiveProps() {
     let propId = 0;
 
-    // 1. Kinetic Data Cubes (4 items)
-    const cubePositions: [number, number, number][] = [
-      [6, 0.6, -10],
-      [-6, 0.6, -10],
-      [10, 0.6, 6],
-      [-10, 0.6, 6],
+    // 1. 4 Executive Swivel Chairs (office_chair.glb — faces +Z) placed behind department desks
+    const execChairConfigs: { pos: [number, number, number]; rotY: number; name: string }[] = [
+      { pos: [0, 0, -4.15], rotY: 0, name: 'Reception Exec Chair' },
+      { pos: [0, 0, -21.45], rotY: 0, name: 'Briefing Exec Chair' },
+      { pos: [-15.9, 0, -3.6], rotY: Math.PI / 2, name: 'Suite Exec Chair' },
+      { pos: [0, 0, 22.45], rotY: Math.PI, name: 'HR Desk Chair' },
     ];
-    cubePositions.forEach(([x, y, z], idx) => {
+    const execChairEntries: InteractiveProp[] = [];
+
+    execChairConfigs.forEach((cfg) => {
       const group = new THREE.Group();
-      group.position.set(x, y, z);
+      group.position.set(...cfg.pos);
+      group.rotation.y = cfg.rotY;
 
-      const cubeGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
-      const cubeMat = new THREE.MeshStandardMaterial({
-        color: 0x1f1712,
-        emissive: 0xf97316,
-        emissiveIntensity: 0.35 + (idx % 2) * 0.2,
-        metalness: 0.85,
-        roughness: 0.25,
-      });
-      const mesh = new THREE.Mesh(cubeGeo, cubeMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
-
-      // Inner wireframe glow
-      const wire = new THREE.Mesh(
-        new THREE.BoxGeometry(1.24, 1.24, 1.24),
-        new THREE.MeshBasicMaterial({ color: 0xfdba74, wireframe: true, transparent: true, opacity: 0.45 })
+      const ph = new THREE.Mesh(
+        new THREE.BoxGeometry(0.65, 1.0, 0.65),
+        new THREE.MeshStandardMaterial({ color: 0x3b3530, roughness: 0.75 })
       );
-      group.add(wire);
+      ph.position.y = 0.5;
+      ph.castShadow = true;
+      group.add(ph);
 
       this.scene.add(group);
-
-      this.interactiveProps.push({
+      const entry: InteractiveProp = {
         id: propId++,
-        type: 'cube',
-        name: `Data Cube ${String.fromCharCode(65 + idx)}`,
+        type: 'exec_chair',
+        name: cfg.name,
         group,
         pos: group.position,
         velocity: new THREE.Vector3(),
-        angularVelocity: new THREE.Vector3((Math.random() - 0.5) * 0.6, 0, (Math.random() - 0.5) * 0.6),
-        radius: 0.85,
-        height: 0.6,
-        mass: 1.0,
-        restitution: 0.38,
+        angularVelocity: new THREE.Vector3(),
+        radius: 0.62,
+        height: 0,
+        mass: 1.2,
+        restitution: 0.22,
+        friction: 0.89,
+        baseColor: 0x3b3530,
+      };
+      this.interactiveProps.push(entry);
+      execChairEntries.push(entry);
+    });
+
+    this.objectLoader.load(
+      officeChairExecUrl,
+      (gltf) => {
+        const template = new THREE.Group();
+        const inner = gltf.scene;
+        inner.scale.setScalar(0.01);
+        inner.position.set(0.065, 0.001, -0.103);
+        inner.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          }
+        });
+        template.add(inner);
+
+        execChairEntries.forEach((entry) => {
+          const ph = entry.group.children[0] as THREE.Mesh | undefined;
+          if (ph) {
+            entry.group.remove(ph);
+            ph.geometry?.dispose();
+            if (ph.material) (ph.material as THREE.Material).dispose();
+          }
+          entry.group.add(template.clone());
+        });
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load office_chair.glb:', err);
+      }
+    );
+
+    // 2. 6 Ergonomic Mesh Task Chairs (office-chair-opt.glb — faces +X) arranged neatly at desks & lounges
+    const taskChairConfigs: { pos: [number, number, number]; rotY: number; name: string }[] = [
+      { pos: [-1.1, 0, -1.6], rotY: Math.PI * 0.58, name: 'Lobby Guest Chair L' },
+      { pos: [1.1, 0, -1.6], rotY: Math.PI * 0.42, name: 'Lobby Guest Chair R' },
+      { pos: [-1.8, 0, -19.2], rotY: Math.PI * 0.35, name: 'Library Reading Chair' },
+      { pos: [20.4, 0, -2.3], rotY: 0, name: 'Workstation Chair N' },
+      { pos: [20.4, 0, 2.3], rotY: 0, name: 'Workstation Chair S' },
+      { pos: [0.2, 0, 19.7], rotY: -Math.PI / 2, name: 'Interview Guest Chair' },
+    ];
+    const taskChairEntries: InteractiveProp[] = [];
+
+    taskChairConfigs.forEach((cfg) => {
+      const group = new THREE.Group();
+      group.position.set(...cfg.pos);
+      group.rotation.y = cfg.rotY;
+
+      const ph = new THREE.Mesh(
+        new THREE.BoxGeometry(0.65, 1.0, 0.65),
+        new THREE.MeshStandardMaterial({ color: 0x44403c, roughness: 0.7 })
+      );
+      ph.position.y = 0.5;
+      ph.castShadow = true;
+      group.add(ph);
+
+      this.scene.add(group);
+      const entry: InteractiveProp = {
+        id: propId++,
+        type: 'chair',
+        name: cfg.name,
+        group,
+        pos: group.position,
+        velocity: new THREE.Vector3(),
+        angularVelocity: new THREE.Vector3(),
+        radius: 0.64,
+        height: 0,
+        mass: 1.15,
+        restitution: 0.22,
+        friction: 0.89,
+        baseColor: 0x57534e,
+      };
+      this.interactiveProps.push(entry);
+      taskChairEntries.push(entry);
+    });
+
+    this.objectLoader.load(
+      officeChairOptUrl,
+      (gltf) => {
+        const template = gltf.scene;
+        template.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          }
+        });
+        taskChairEntries.forEach((entry) => {
+          const ph = entry.group.children[0] as THREE.Mesh | undefined;
+          if (ph) {
+            entry.group.remove(ph);
+            ph.geometry?.dispose();
+            if (ph.material) (ph.material as THREE.Material).dispose();
+          }
+          entry.group.add(template.clone());
+        });
+      },
+      undefined,
+      (err) => {
+        console.warn('[ThreeEngine] Failed to load office-chair-opt.glb:', err);
+      }
+    );
+
+    // 3. 4 Reference Book Stacks (extracted from wooden_bookcases_with_books.glb in buildOfficeFurnitureAndNPCs)
+    const bookConfigs: { pos: [number, number, number]; rotY: number; name: string }[] = [
+      { pos: [-2.6, 0, -19.8], rotY: 0.25, name: 'Architecture Book Stack' },
+      { pos: [2.4, 0, -21.0], rotY: -0.4, name: 'Product Strategy Books' },
+      { pos: [23.0, 0, 4.2], rotY: 0.9, name: 'Systems Engineering Books' },
+      { pos: [1.8, 0, 21.8], rotY: -0.2, name: 'Portfolio Reference Stack' },
+    ];
+
+    bookConfigs.forEach((cfg) => {
+      const group = new THREE.Group();
+      group.position.set(...cfg.pos);
+      group.rotation.y = cfg.rotY;
+
+      const ph = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.35, 0.3),
+        new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.75 })
+      );
+      ph.position.y = 0.175;
+      ph.castShadow = true;
+      group.add(ph);
+
+      this.scene.add(group);
+      const entry: InteractiveProp = {
+        id: propId++,
+        type: 'books',
+        name: cfg.name,
+        group,
+        pos: group.position,
+        velocity: new THREE.Vector3(),
+        angularVelocity: new THREE.Vector3(),
+        radius: 0.5,
+        height: 0,
+        mass: 0.7,
+        restitution: 0.25,
         friction: 0.88,
-        baseColor: 0xf97316,
-      });
-    });
-
-    // 2. Hyper-Bounce Plasma Orbs (4 items)
-    const spherePositions: [number, number, number][] = [
-      [14, 0.7, -16],
-      [-14, 0.7, -16],
-      [18, 0.7, 10],
-      [-18, 0.7, 10],
-    ];
-    spherePositions.forEach(([x, y, z], idx) => {
-      const group = new THREE.Group();
-      group.position.set(x, y, z);
-
-      const sphereGeo = new THREE.SphereGeometry(0.7, 24, 24);
-      const sphereMat = new THREE.MeshStandardMaterial({
-        color: 0x2b1507,
-        emissive: 0xf97316,
-        emissiveIntensity: 0.75,
-        metalness: 0.9,
-        roughness: 0.15,
-      });
-      const mesh = new THREE.Mesh(sphereGeo, sphereMat);
-      mesh.castShadow = true;
-      group.add(mesh);
-
-      // Orbiting energy torus
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.85, 0.035, 8, 24),
-        new THREE.MeshBasicMaterial({ color: 0xffedd5 })
-      );
-      ring.rotation.x = Math.PI / 3;
-      group.add(ring);
-
-      const light = new THREE.PointLight(0xf97316, 1.2, 4.5);
-      group.add(light);
-
-      this.scene.add(group);
-
-      this.interactiveProps.push({
-        id: propId++,
-        type: 'sphere',
-        name: `Plasma Orb ${idx + 1}`,
-        group,
-        pos: group.position,
-        velocity: new THREE.Vector3(),
-        angularVelocity: new THREE.Vector3((Math.random() - 0.5) * 1.5, 0, (Math.random() - 0.5) * 1.5),
-        radius: 0.7,
-        height: 0.7,
-        mass: 0.6,
-        restitution: 0.86, // High-bounce!
-        friction: 0.94,
-        baseColor: 0xfb923c,
-      });
-    });
-
-    // 3. Heavy Monolith Pyramids (4 items)
-    const pyramidPositions: [number, number, number][] = [
-      [16, 0.7, -6],
-      [-16, 0.7, -6],
-      [6, 0.7, 22],
-      [-6, 0.7, 22],
-    ];
-    pyramidPositions.forEach(([x, y, z], idx) => {
-      const group = new THREE.Group();
-      group.position.set(x, y, z);
-
-      const coneGeo = new THREE.ConeGeometry(0.85, 1.4, 4);
-      const coneMat = new THREE.MeshStandardMaterial({
-        color: 0x140e0a,
-        emissive: 0xd97706,
-        emissiveIntensity: 0.28,
-        metalness: 0.85,
-        roughness: 0.35,
-      });
-      const mesh = new THREE.Mesh(coneGeo, coneMat);
-      mesh.castShadow = true;
-      group.add(mesh);
-
-      // Glowing Runic Core Ring at base
-      const runic = new THREE.Mesh(
-        new THREE.TorusGeometry(0.7, 0.03, 4, 16),
-        new THREE.MeshBasicMaterial({ color: 0xf59e0b })
-      );
-      runic.rotation.x = Math.PI / 2;
-      runic.position.y = -0.55;
-      group.add(runic);
-
-      this.scene.add(group);
-
-      this.interactiveProps.push({
-        id: propId++,
-        type: 'pyramid',
-        name: `Obsidian Pyramid ${idx + 1}`,
-        group,
-        pos: group.position,
-        velocity: new THREE.Vector3(),
-        angularVelocity: new THREE.Vector3((Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.4),
-        radius: 0.85,
-        height: 0.7,
-        mass: 2.6, // Heavy mass
-        restitution: 0.16, // Low bounce
-        friction: 0.82,
-        baseColor: 0xd97706,
-      });
-    });
-
-    // 4. Rolling Cyber Fuel Cylinders (4 items)
-    const cylinderPositions: [number, number, number][] = [
-      [22, 0.65, 4],
-      [-22, 0.65, 4],
-      [0, 0.65, -24],
-      [0, 0.65, 24],
-    ];
-    cylinderPositions.forEach(([x, y, z], idx) => {
-      const group = new THREE.Group();
-      group.position.set(x, y, z);
-
-      const cylGeo = new THREE.CylinderGeometry(0.55, 0.55, 1.3, 16);
-      const cylMat = new THREE.MeshStandardMaterial({
-        color: 0x1a130e,
-        metalness: 0.88,
-        roughness: 0.3,
-      });
-      const mesh = new THREE.Mesh(cylGeo, cylMat);
-      mesh.rotation.z = Math.PI / 2; // Laid down horizontally for rolling
-      mesh.castShadow = true;
-      group.add(mesh);
-
-      // Neon warning rings around cylinder rims
-      [-0.55, 0.55].forEach((offset) => {
-        const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(0.56, 0.03, 8, 18),
-          new THREE.MeshBasicMaterial({ color: 0xf97316 })
-        );
-        ring.rotation.y = Math.PI / 2;
-        ring.position.x = offset;
-        group.add(ring);
-      });
-
-      this.scene.add(group);
-
-      this.interactiveProps.push({
-        id: propId++,
-        type: 'cylinder',
-        name: `Fuel Cell ${idx + 1}`,
-        group,
-        pos: group.position,
-        velocity: new THREE.Vector3(),
-        angularVelocity: new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, (Math.random() - 0.5) * 0.8),
-        radius: 0.7,
-        height: 0.65,
-        mass: 1.1,
-        restitution: 0.45,
-        friction: 0.91,
-        baseColor: 0xea580c,
-      });
-    });
-  }
-
-  // --- Energy Launch / Jump Boost Pads ---
-  private buildLaunchPads() {
-    const padPositions: { pos: [number, number, number]; dir: [number, number, number] }[] = [
-      { pos: [0, 0.05, -16], dir: [0, 0, -1] },
-      { pos: [0, 0.05, 16], dir: [0, 0, 1] },
-      { pos: [16, 0.05, 0], dir: [1, 0, 0] },
-      { pos: [-16, 0.05, 0], dir: [-1, 0, 0] },
-    ];
-
-    padPositions.forEach(({ pos, dir }) => {
-      const group = new THREE.Group();
-      group.position.set(...pos);
-
-      // Base pad
-      const baseGeo = new THREE.BoxGeometry(3.2, 0.1, 3.2);
-      const baseMat = new THREE.MeshStandardMaterial({ color: 0x24180e, metalness: 0.8, roughness: 0.3 });
-      const base = new THREE.Mesh(baseGeo, baseMat);
-      group.add(base);
-
-      // Glowing pulsing chevron field
-      const fieldGeo = new THREE.PlaneGeometry(2.8, 2.8);
-      const fieldMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
-      const field = new THREE.Mesh(fieldGeo, fieldMat);
-      field.rotation.x = -Math.PI / 2;
-      field.position.y = 0.06;
-      group.add(field);
-
-      // Point light
-      const light = new THREE.PointLight(0xf97316, 1.8, 6);
-      light.position.y = 0.5;
-      group.add(light);
-
-      this.scene.add(group);
-
-      this.boostPads.push({
-        mesh: group,
-        pos: new THREE.Vector3(...pos),
-        direction: new THREE.Vector3(...dir),
-        cooldown: 0,
-      });
+        baseColor: 0x92400e,
+      };
+      this.interactiveProps.push(entry);
+      this.bookPropEntries.push(entry);
     });
   }
 
@@ -1186,8 +1429,11 @@ export class ThreeEngine {
   public triggerShockwave() {
     this.shockwaveActive = true;
     this.shockwaveRadius = 1;
-    this.gestureTimer = 0.55; // Gauntlet blast pose
     const blastOrigin = this.isDrivingRover ? this.rover.pos : this.playerGroup.position;
+
+    if (!this.isDrivingRover && !this.heldProp && this.playerVelocity.length() < 1.2) {
+      this.avatarController.triggerEmote('punch');
+    }
 
     if (this.shockwaveRing) {
       this.shockwaveRing.position.set(blastOrigin.x, 0.1, blastOrigin.z);
@@ -1329,216 +1575,131 @@ export class ThreeEngine {
     return new THREE.Points(geometry, material);
   }
 
-  // --- Build Interactive Stations ---
+  // --- Build Executive Department Rugs & Architectural Directory Signage ---
   private buildStations() {
+    const zoneLayouts: Record<
+      string,
+      {
+        rugOffset: [number, number];
+        rugSize: [number, number];
+        totemOffset: [number, number];
+        totemRotY: number;
+        approachOffset: [number, number, number];
+      }
+    > = {
+      spawn: { rugOffset: [0, -1.6], rugSize: [8.4, 7.2], totemOffset: [-2.7, -3.2], totemRotY: 0.15, approachOffset: [0, 0, 2.5] },
+      projects: { rugOffset: [0, -0.5], rugSize: [9.8, 8.8], totemOffset: [2.7, -0.5], totemRotY: -0.15, approachOffset: [0, 0, 3.0] },
+      tech: { rugOffset: [1.5, 0], rugSize: [9.5, 10.6], totemOffset: [3.2, -4.4], totemRotY: -Math.PI * 0.42, approachOffset: [-3.2, 0, 0] },
+      experience: { rugOffset: [-1.0, 0], rugSize: [7.6, 9.2], totemOffset: [-2.3, -5.3], totemRotY: Math.PI * 0.45, approachOffset: [1.5, 0, 1.5] },
+      contact: { rugOffset: [0, 0.8], rugSize: [9.8, 8.6], totemOffset: [2.7, 0.5], totemRotY: Math.PI - 0.15, approachOffset: [0, 0, -2.8] },
+    };
+
     STATIONS.forEach((station) => {
       const group = new THREE.Group();
       group.position.set(...station.position);
-
+      const layout = zoneLayouts[station.id] ?? zoneLayouts.spawn;
       const colorHex = new THREE.Color(station.color);
 
-      // Elevated Podium Base
-      const padGeo = new THREE.CylinderGeometry(4.4, 4.8, 0.45, 32);
-      const padMat = new THREE.MeshStandardMaterial({
-        color: 0x140f0c,
-        roughness: 0.35,
-        metalness: 0.85,
+      // 1. Woven Department Area Rug on floor tiles (zero glowing UFO cylinders!)
+      const rugTrim = new THREE.Mesh(
+        new THREE.PlaneGeometry(layout.rugSize[0] + 0.18, layout.rugSize[1] + 0.18),
+        new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.48 })
+      );
+      rugTrim.rotation.x = -Math.PI / 2;
+      rugTrim.position.set(layout.rugOffset[0], 0.004, layout.rugOffset[1]);
+      group.add(rugTrim);
+
+      const rug = new THREE.Mesh(
+        new THREE.PlaneGeometry(layout.rugSize[0], layout.rugSize[1]),
+        new THREE.MeshStandardMaterial({ color: 0x2f2a26, roughness: 0.94, metalness: 0.04 })
+      );
+      rug.rotation.x = -Math.PI / 2;
+      rug.position.set(layout.rugOffset[0], 0.008, layout.rugOffset[1]);
+      rug.receiveShadow = true;
+      group.add(rug);
+
+      // 2. Stationary Architectural Oak & Bronze Zone Directory Totem (no floating cones/orbs)
+      const totemGroup = new THREE.Group();
+      totemGroup.position.set(layout.totemOffset[0], 0, layout.totemOffset[1]);
+      totemGroup.rotation.y = layout.totemRotY;
+
+      const plinth = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.12, 0.48),
+        new THREE.MeshStandardMaterial({ color: 0x241f1b, roughness: 0.55, metalness: 0.4 })
+      );
+      plinth.position.y = 0.06;
+      plinth.castShadow = true;
+      totemGroup.add(plinth);
+
+      const pillar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.68, 1.85, 0.14),
+        new THREE.MeshStandardMaterial({ color: 0x4a3525, roughness: 0.62, metalness: 0.12 })
+      );
+      pillar.position.y = 1.04;
+      pillar.castShadow = true;
+      pillar.receiveShadow = true;
+      totemGroup.add(pillar);
+
+      const accentBar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.7, 0.08, 0.16),
+        new THREE.MeshBasicMaterial({ color: colorHex })
+      );
+      accentBar.position.y = 1.98;
+      totemGroup.add(accentBar);
+
+      const billboard = this.createStationBillboard(station.name.toUpperCase(), station.tagline, station.color);
+      billboard.position.set(0, 2.75, 0);
+      totemGroup.add(billboard);
+
+      group.add(totemGroup);
+
+      // Allow visitors to click any Zone Totem directly to navigate & open that zone
+      this.clickableTargets.push({
+        root: totemGroup,
+        stationId: station.id,
+        approachOffset: new THREE.Vector3(...layout.approachOffset),
       });
-      const pad = new THREE.Mesh(padGeo, padMat);
-      pad.position.y = 0.22;
-      pad.receiveShadow = true;
-      group.add(pad);
 
-      // Glowing Pulse Ring around platform
-      const ringGeo = new THREE.RingGeometry(4.4, 4.65, 48);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: colorHex,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.75,
-      });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = -Math.PI / 2;
-      ring.position.y = 0.46;
-      group.add(ring);
-
-      // Central Monument Sculpture
-      let monument: THREE.Mesh;
-      if (station.category === 'spawn') {
-        monument = new THREE.Mesh(
-          new THREE.OctahedronGeometry(1.6, 0),
-          new THREE.MeshStandardMaterial({
-            color: 0xffedd5,
-            emissive: 0xf97316,
-            emissiveIntensity: 0.6,
-            roughness: 0.1,
-            metalness: 0.9,
-          })
-        );
-        monument.position.y = 3.2;
-
-        const innerRing = new THREE.Mesh(
-          new THREE.TorusGeometry(2.4, 0.08, 16, 48),
-          new THREE.MeshBasicMaterial({ color: 0xffedd5 })
-        );
-        innerRing.position.y = 3.2;
-        innerRing.rotation.x = Math.PI / 3;
-        group.add(innerRing);
-      } else if (station.category === 'projects') {
-        monument = new THREE.Mesh(
-          new THREE.BoxGeometry(2, 2.8, 2),
-          new THREE.MeshStandardMaterial({
-            color: 0x1c120c,
-            emissive: 0xea580c,
-            emissiveIntensity: 0.65,
-            roughness: 0.2,
-            metalness: 0.9,
-          })
-        );
-        monument.position.y = 3.4;
-
-        const wireframe = new THREE.Mesh(
-          new THREE.BoxGeometry(2.4, 3.2, 2.4),
-          new THREE.MeshBasicMaterial({ color: 0xf97316, wireframe: true })
-        );
-        wireframe.position.y = 3.4;
-        group.add(wireframe);
-      } else if (station.category === 'tech') {
-        monument = new THREE.Mesh(
-          new THREE.IcosahedronGeometry(1.8, 0),
-          new THREE.MeshStandardMaterial({
-            color: 0x2e1065,
-            emissive: 0xa855f7,
-            emissiveIntensity: 0.7,
-            roughness: 0.2,
-            metalness: 0.8,
-          })
-        );
-        monument.position.y = 3.2;
-
-        const nodeMat = new THREE.MeshBasicMaterial({ color: 0xc084fc });
-        [[-2, 2.8, 0], [2, 3.6, 0], [0, 4.2, 2]].forEach(([nx, ny, nz]) => {
-          const miniNode = new THREE.Mesh(new THREE.OctahedronGeometry(0.4), nodeMat);
-          miniNode.position.set(nx, ny, nz);
-          group.add(miniNode);
-        });
-      } else if (station.category === 'experience') {
-        monument = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.8, 1.4, 4.2, 6),
-          new THREE.MeshStandardMaterial({
-            color: 0x064e3b,
-            emissive: 0x10b981,
-            emissiveIntensity: 0.5,
-            roughness: 0.2,
-            metalness: 0.9,
-          })
-        );
-        monument.position.y = 2.4;
-      } else {
-        monument = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.2, 0.4, 4.8, 8),
-          new THREE.MeshStandardMaterial({
-            color: 0x451a03,
-            emissive: 0xf59e0b,
-            emissiveIntensity: 0.6,
-            roughness: 0.3,
-            metalness: 0.8,
-          })
-        );
-        monument.position.y = 2.6;
-
-        const dish = new THREE.Mesh(
-          new THREE.ConeGeometry(1.4, 0.6, 16, 1, true),
-          new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.8, side: THREE.DoubleSide })
-        );
-        dish.position.set(0, 4.6, 0);
-        dish.rotation.x = Math.PI / 4;
-        group.add(dish);
-      }
-
-      monument.castShadow = true;
-      group.add(monument);
-
-      // Station Point Light
-      const stationLight = new THREE.PointLight(colorHex, 2.4, 16);
-      stationLight.position.set(0, 3.5, 0);
+      const stationLight = new THREE.PointLight(0xfff1dc, 1.35, 13);
+      stationLight.position.set(layout.rugOffset[0], 3.4, layout.rugOffset[1]);
       group.add(stationLight);
 
-      // Text Billboard Banner
-      const billboard = this.createStationBillboard(station.name.toUpperCase(), station.color);
-      billboard.position.set(0, 5.8, 0);
-      group.add(billboard);
-
       this.scene.add(group);
-      this.stationMeshes.push({ data: station, group, beacon: monument, light: stationLight, platformRing: ring });
+      this.stationMeshes.push({ data: station, group, light: stationLight });
     });
   }
 
-  // --- Dynamic Station Billboard Texture ---
-  private createStationBillboard(text: string, color: string): THREE.Sprite {
+  // --- Dynamic Corporate Kiosk Signboard Texture ---
+  private createStationBillboard(title: string, subtitle: string, color: string): THREE.Sprite {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 128;
+    canvas.width = 640;
+    canvas.height = 160;
     const ctx = canvas.getContext('2d')!;
 
-    // Background pill
-    ctx.fillStyle = 'rgba(7, 6, 5, 0.88)';
-    ctx.roundRect(16, 16, 480, 96, 24);
+    ctx.fillStyle = 'rgba(18, 14, 11, 0.92)';
+    ctx.roundRect(14, 14, 612, 132, 24);
     ctx.fill();
 
-    // Border
     ctx.strokeStyle = color;
     ctx.lineWidth = 4;
-    ctx.roundRect(16, 16, 480, 96, 24);
+    ctx.roundRect(14, 14, 612, 132, 24);
     ctx.stroke();
 
-    // Text
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 36px "Outfit", sans-serif';
+    ctx.font = 'bold 34px "Outfit", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, 256, 64);
+    ctx.fillText(title, 320, 62);
+
+    ctx.fillStyle = '#d6d3d1';
+    ctx.font = '600 20px "Outfit", sans-serif';
+    ctx.fillText(subtitle.slice(0, 52), 320, 108);
 
     const texture = new THREE.CanvasTexture(canvas);
     const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
     const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(6, 1.5, 1);
+    sprite.scale.set(5.4, 1.35, 1);
     return sprite;
-  }
-
-  // --- Collectible Data Cores ---
-  private buildDataCores() {
-    DATA_CORES.forEach((core) => {
-      const group = new THREE.Group();
-      group.position.set(...core.position);
-
-      const coreMesh = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.65, 0),
-        new THREE.MeshStandardMaterial({
-          color: 0xf97316,
-          emissive: 0xf97316,
-          emissiveIntensity: 0.95,
-          roughness: 0.1,
-          metalness: 0.9,
-        })
-      );
-      coreMesh.castShadow = true;
-      group.add(coreMesh);
-
-      // Orbiting energy ring
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.9, 0.04, 8, 24),
-        new THREE.MeshBasicMaterial({ color: 0xffedd5 })
-      );
-      ring.rotation.x = Math.PI / 3;
-      group.add(ring);
-
-      const light = new THREE.PointLight(0xf97316, 1.4, 5.5);
-      group.add(light);
-
-      this.scene.add(group);
-      this.coreMeshes.push({ id: core.id, mesh: group, collected: false });
-    });
   }
 
   // --- Event Listeners ---
@@ -1561,6 +1722,11 @@ export class ThreeEngine {
   }
 
   private handleKeyDown = (e: KeyboardEvent) => {
+    const active = document.activeElement as HTMLElement | null;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+      return;
+    }
+
     // Crucial: prevent spacebar default so browser never triggers click on focused DOM buttons!
     if (e.code === 'Space') {
       e.preventDefault();
@@ -1575,6 +1741,21 @@ export class ThreeEngine {
 
     this.keysPressed[e.code] = true;
 
+    if (
+      e.code === 'KeyW' ||
+      e.code === 'KeyS' ||
+      e.code === 'KeyA' ||
+      e.code === 'KeyD' ||
+      e.code === 'ArrowUp' ||
+      e.code === 'ArrowDown' ||
+      e.code === 'ArrowLeft' ||
+      e.code === 'ArrowRight'
+    ) {
+      this.targetDestination = null;
+      this.pendingInspectStationId = null;
+      if (this.destinationMarker) this.destinationMarker.visible = false;
+    }
+
     if (e.code === 'KeyF' || e.code === 'KeyH') {
       this.triggerShockwave();
     }
@@ -1585,6 +1766,19 @@ export class ThreeEngine {
 
     if (e.code === 'KeyR') {
       this.toggleRoverDrive();
+    }
+
+    // Character Martial-Arts & Workout Emote Controls (when on foot)
+    if (!this.isDrivingRover && !this.isTeleporting) {
+      if (e.code === 'KeyQ' || e.code === 'Digit1') {
+        this.triggerAvatarEmote('punch');
+      } else if (e.code === 'KeyX' || e.code === 'Digit2') {
+        this.triggerAvatarEmote('kick');
+      } else if (e.code === 'KeyC' || e.code === 'Digit3') {
+        this.triggerAvatarEmote('kick_punch');
+      } else if (e.code === 'KeyV' || e.code === 'Digit4') {
+        this.triggerAvatarEmote('pushups');
+      }
     }
   };
 
@@ -1611,16 +1805,63 @@ export class ThreeEngine {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     if (e.target !== this.renderer.domElement) return;
 
+    this.pendingInspectStationId = null;
+
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    // 1. Direct click on Interactive Office NPCs (HR Partner / Client Advisor) or Zone Totems
+    if (!this.isDrivingRover && this.clickableTargets.length > 0) {
+      const clickedZone = this.raycaster.intersectObjects(
+        this.clickableTargets.map((t) => t.root),
+        true
+      );
+      if (clickedZone.length > 0) {
+        const hitObj = clickedZone[0].object;
+        const entry = this.clickableTargets.find((t) => {
+          let cur: THREE.Object3D | null = hitObj;
+          while (cur) {
+            if (cur === t.root) return true;
+            cur = cur.parent;
+          }
+          return false;
+        });
+        if (entry) {
+          const station = STATIONS.find((s) => s.id === entry.stationId);
+          if (station) {
+            const targetPos = new THREE.Vector3();
+            entry.root.getWorldPosition(targetPos);
+            const dx = targetPos.x - this.playerGroup.position.x;
+            const dz = targetPos.z - this.playerGroup.position.z;
+            if (Math.sqrt(dx * dx + dz * dz) < 5.5) {
+              sfx.playInteract();
+              this.callbacks.onInspectStation?.(station);
+            } else {
+              const dest = targetPos.clone().add(entry.approachOffset);
+              this.clampToOfficeRoom(dest, 0.7);
+              this.applyOfficeCollisions(dest, 0.7);
+              this.clampToOfficeRoom(dest, 0.7);
+              this.pendingInspectStationId = station.id;
+              this.targetDestination = dest;
+              if (this.destinationMarker) {
+                this.destinationMarker.position.set(dest.x, 0.05, dest.z);
+                this.destinationMarker.visible = true;
+              }
+            }
+            return;
+          }
+        }
+      }
+    }
+
     const target = new THREE.Vector3();
     const hit = this.raycaster.ray.intersectPlane(this.groundPlane, target);
 
     if (hit) {
-      // Check if player clicked directly on or near the Cyber Rover
+      // Check if player clicked directly on or near the Executive Rover
       const dxRover = target.x - this.rover.pos.x;
       const dzRover = target.z - this.rover.pos.z;
       const clickDistToRover = Math.sqrt(dxRover * dxRover + dzRover * dzRover);
@@ -1635,7 +1876,9 @@ export class ThreeEngine {
           return;
         } else {
           // Walk to the rover and board it
-          const approachPos = this.rover.pos.clone().add(new THREE.Vector3(-2.0, 0, 0));
+          const approachPos = this.rover.pos.clone().add(new THREE.Vector3(-2.2, 0, 0));
+          this.clampToOfficeRoom(approachPos, 0.65);
+          this.applyOfficeCollisions(approachPos, 0.65);
           this.targetDestination = approachPos;
           if (this.destinationMarker) {
             this.destinationMarker.position.set(approachPos.x, 0.05, approachPos.z);
@@ -1674,17 +1917,21 @@ export class ThreeEngine {
           return;
         } else {
           // Walk towards the prop
-          this.targetDestination = clickedProp.pos.clone();
+          const propDest = clickedProp.pos.clone();
+          this.clampToOfficeRoom(propDest, 0.65);
+          this.targetDestination = propDest;
           if (this.destinationMarker) {
-            this.destinationMarker.position.set(target.x, 0.05, target.z);
+            this.destinationMarker.position.set(propDest.x, 0.05, propDest.z);
             this.destinationMarker.visible = true;
           }
           return;
         }
       }
 
-      const distFromCenter = Math.sqrt(target.x * target.x + target.z * target.z);
-      if (distFromCenter < 55) {
+      if (target.x >= -36 && target.x <= 40 && Math.abs(target.z) <= 36) {
+        this.clampToOfficeRoom(target, 0.65);
+        this.applyOfficeCollisions(target, 0.65);
+        this.clampToOfficeRoom(target, 0.65);
         this.targetDestination = target;
         if (this.destinationMarker) {
           this.destinationMarker.position.set(target.x, 0.05, target.z);
@@ -1700,6 +1947,7 @@ export class ThreeEngine {
     this.joystickVector = { x, y };
     if (Math.abs(x) > 0.05 || Math.abs(y) > 0.05) {
       this.targetDestination = null;
+      this.pendingInspectStationId = null;
       if (this.destinationMarker) this.destinationMarker.visible = false;
     }
   }
@@ -1716,14 +1964,6 @@ export class ThreeEngine {
     }
   }
 
-  public setOverdrive(active: boolean) {
-    this.isOverdrive = active;
-    if (active) {
-      this.thrusterGlow.color.setHex(0xfb923c);
-      this.thrusterGlow.intensity = 4.5;
-    }
-  }
-
   public teleportToStation(stationId: string) {
     if (this.isTeleporting) return;
     const targetStation = STATIONS.find((s) => s.id === stationId);
@@ -1732,11 +1972,26 @@ export class ThreeEngine {
     if (this.isDrivingRover) {
       this.exitRover();
     }
+    this.pendingInspectStationId = null;
 
+    const landByZone: Record<string, { pos: [number, number, number]; lookAt: [number, number] }> = {
+      spawn: { pos: [0, 0, 2.2], lookAt: [0, -2.5] },
+      projects: { pos: [0, 0, -16.8], lookAt: [0, -21.0] },
+      tech: { pos: [16.5, 0, 0], lookAt: [21.8, 0] },
+      experience: { pos: [-10.5, 0, 1.5], lookAt: [-15.0, -2.0] },
+      contact: { pos: [0, 0, 17.0], lookAt: [-0.5, 21.0] },
+    };
     const [tx, , tz] = targetStation.position;
-    const targetX = tx;
-    const targetZ = tz + 5.5;
-    const targetRotation = Math.atan2(tx - targetX, tz - targetZ);
+    const preset = landByZone[stationId];
+    const landPos = new THREE.Vector3(...(preset ? preset.pos : [tx, 0, tz + 3.2]));
+    this.clampToOfficeRoom(landPos, 0.65);
+    this.applyOfficeCollisions(landPos, 0.65);
+    this.clampToOfficeRoom(landPos, 0.65);
+
+    const targetX = landPos.x;
+    const targetZ = landPos.z;
+    const [lookX, lookZ] = preset ? preset.lookAt : [tx, tz];
+    const targetRotation = Math.atan2(lookX - targetX, lookZ - targetZ) + Math.PI;
 
     this.isTeleporting = true;
     this.teleportProgress = 0;
@@ -1844,16 +2099,10 @@ export class ThreeEngine {
 
       this.teleportLight.intensity = fade * 8;
 
-      // Character re-materializes with bounce and realistic knee flex landing
-      const bounce = p3 < 0.55 ? (p3 / 0.55) * 1.15 : 1.15 - ((p3 - 0.55) / 0.45) * 0.15;
+      // Character re-materializes with bounce
+      const bounce = p3 < 0.55 ? (p3 / 0.55) * 1.12 : 1.12 - ((p3 - 0.55) / 0.45) * 0.12;
       this.characterRoot.scale.set(bounce, bounce, bounce);
-      this.characterRoot.position.y = Math.max(0, (1 - p3) * 0.2);
-
-      // Kinetic knee flexion on teleport impact
-      const crouch = Math.sin(p3 * Math.PI) * 0.22;
-      this.leftLegGroup.rotation.x = -crouch;
-      this.rightLegGroup.rotation.x = -crouch;
-      this.torsoGroup.rotation.x = crouch * 0.6;
+      this.characterRoot.position.y = Math.max(0, (1 - p3) * 0.16);
 
       // Cinematic camera swoop directly behind destination
       const targetCamPos = this.playerGroup.position.clone().add(new THREE.Vector3(0, 5.2, 8.2));
@@ -1867,9 +2116,6 @@ export class ThreeEngine {
       this.teleportProgress = 0;
       this.characterRoot.scale.set(1, 1, 1);
       this.characterRoot.position.y = 0;
-      this.leftLegGroup.rotation.x = 0;
-      this.rightLegGroup.rotation.x = 0;
-      this.torsoGroup.rotation.x = 0;
       this.teleportGroup.visible = false;
       this.teleportRings.forEach((r) => r.scale.set(1, 1, 1));
       beamMat.opacity = 0;
@@ -1887,17 +2133,27 @@ export class ThreeEngine {
     if (this.isDrivingRover) {
       this.updateRoverMovement(delta);
     } else {
-      this.updatePlayerMovement(delta, time);
+      this.updatePlayerMovement(delta);
     }
 
     this.updateTeleport(delta);
     this.updateInteractiveProps(delta);
-    this.updateLaunchPads(delta);
+    if (!this.isDrivingRover) {
+      this.avatarController.update({
+        delta,
+        speed: this.playerVelocity.length(),
+        turnInput: this.lastTurnInput,
+        isBoosting: this.isBoosting,
+        isJumping: this.isJumping,
+        isTeleporting: this.isTeleporting,
+        isDriving: this.isDrivingRover,
+        heldPropPos: this.heldProp ? this.heldProp.pos : null,
+      });
+    }
     this.updateParticles(delta);
     this.updateShockwave(delta);
     this.updateAnimations(time);
     this.checkProximity();
-    this.checkCoreCollection();
     this.checkActionPrompts();
     this.updateCamera();
 
@@ -1954,7 +2210,6 @@ export class ThreeEngine {
     // Rover performance specifications
     let maxForwardSpeed = 22.0;
     if (this.isBoosting) maxForwardSpeed = 36.0;
-    if (this.isOverdrive) maxForwardSpeed *= 1.25;
     const maxReverseSpeed = -9.0;
 
     const acceleration = this.isBoosting ? 44.0 : 30.0;
@@ -1976,10 +2231,6 @@ export class ThreeEngine {
     const targetSteer = turnInput * 0.52;
     this.rover.steerAngle += (targetSteer - this.rover.steerAngle) * 0.22;
 
-    // Apply steering to front wheel pivots
-    this.rover.frontWheels[0].rotation.y = this.rover.steerAngle;
-    this.rover.frontWheels[1].rotation.y = this.rover.steerAngle;
-
     // Vehicle turning (responsive at all speeds, allows pivot steering)
     if (Math.abs(this.rover.speed) > 0.05 || Math.abs(turnInput) > 0.05) {
       const turnDir = this.rover.speed < -0.1 ? -1 : 1;
@@ -1993,27 +2244,23 @@ export class ThreeEngine {
     this.rover.velocity.copy(forwardDir).multiplyScalar(this.rover.speed);
     this.rover.pos.addScaledVector(this.rover.velocity, delta);
 
+    // Keep Rover in open concourse & collision-free around office bays
+    this.applyOfficeCollisions(this.rover.pos, 2.0, -15.2);
+
+    // Dynamic chassis suspension pitch & cornering roll
+    const speedRatio = Math.min(1, Math.abs(this.rover.speed) / 14);
+    const targetPitch = forwardInput * 0.035;
+    const targetRoll = -this.rover.steerAngle * speedRatio * 0.09;
+    this.rover.body.rotation.x += (targetPitch - this.rover.body.rotation.x) * 0.15;
+    this.rover.body.rotation.z += (targetRoll - this.rover.body.rotation.z) * 0.15;
+
     // Keep explorer playerGroup synced with rover
     this.playerGroup.position.copy(this.rover.pos);
     this.playerRotation = this.rover.rotation;
     this.playerGroup.rotation.y = this.playerRotation;
 
-    // Wheel spin rotation (proportional to forward speed)
-    const rollDelta = (this.rover.speed * delta) / 0.48;
-    this.rover.frontWheels.forEach((pivot) => {
-      const wheelGroup = pivot.children[0] as THREE.Group;
-      if (wheelGroup) wheelGroup.rotation.x += rollDelta;
-    });
-    this.rover.rearWheels.forEach((wheelGroup) => {
-      (wheelGroup as unknown as THREE.Group).rotation.x += rollDelta;
-    });
-
-    // Boundary clamping
-    const distFromCenter = Math.sqrt(this.rover.pos.x * this.rover.pos.x + this.rover.pos.z * this.rover.pos.z);
-    if (distFromCenter > 54) {
-      const angle = Math.atan2(this.rover.pos.z, this.rover.pos.x);
-      this.rover.pos.x = Math.cos(angle) * 54;
-      this.rover.pos.z = Math.sin(angle) * 54;
+    // Enclosed architectural room perimeter clamping
+    if (this.clampToOfficeRoom(this.rover.pos, 2.0, undefined, -15.2)) {
       this.rover.speed *= -0.4;
       sfx.playBump();
     }
@@ -2055,7 +2302,7 @@ export class ThreeEngine {
   }
 
   // --- Update Explorer Physics & Controls ---
-  private updatePlayerMovement(delta: number, time: number) {
+  private updatePlayerMovement(delta: number) {
     if (this.isTeleporting) return;
 
     let forwardInput = 0;
@@ -2091,19 +2338,29 @@ export class ThreeEngine {
         this.targetDestination = null;
         if (this.destinationMarker) this.destinationMarker.visible = false;
 
-        // Auto-board if player navigated directly to the Rover
-        const dxRover = this.playerGroup.position.x - this.rover.pos.x;
-        const dzRover = this.playerGroup.position.z - this.rover.pos.z;
-        if (Math.sqrt(dxRover * dxRover + dzRover * dzRover) < 4.5 && !this.isDrivingRover) {
-          this.enterRover();
+        if (this.pendingInspectStationId) {
+          const targetStation = STATIONS.find((s) => s.id === this.pendingInspectStationId);
+          this.pendingInspectStationId = null;
+          if (targetStation) {
+            sfx.playInteract();
+            this.callbacks.onInspectStation?.(targetStation);
+          }
+        } else {
+          // Auto-board if player navigated directly to the Rover
+          const dxRover = this.playerGroup.position.x - this.rover.pos.x;
+          const dzRover = this.playerGroup.position.z - this.rover.pos.z;
+          if (Math.sqrt(dxRover * dxRover + dzRover * dzRover) < 4.5 && !this.isDrivingRover) {
+            this.enterRover();
+          }
         }
       }
     }
 
-    // Movement speed settings (Humanoid Explorer)
+    this.lastTurnInput = turnInput;
+
+    // Movement speed settings (3D Character Avatar)
     let maxSpeed = 8.5;
     if (this.isBoosting) maxSpeed = 15.5;
-    if (this.isOverdrive) maxSpeed *= 1.25;
 
     const acceleration = 32;
     const drag = 0.86;
@@ -2148,106 +2405,16 @@ export class ThreeEngine {
     const shadowScale = Math.max(0.3, 1 - heightAboveGround * 0.12);
     this.contactShadow.scale.set(shadowScale, shadowScale, shadowScale);
 
-    // Humanoid Locomotion Kinematics (Walking, Running, Carrying, Jumping & Gestures)
     const currentSpeed = this.playerVelocity.length();
-    const isMoving = currentSpeed > 0.35;
 
-    if (isMoving) {
-      const walkFreq = (this.isBoosting ? 13.5 : 8.5) * Math.min(1.5, currentSpeed / 5);
-      this.walkCycle += delta * walkFreq;
-
-      // Leg swing (alternating strides)
-      const legAngle = Math.sin(this.walkCycle) * (this.isBoosting ? 0.95 : 0.72);
-      this.leftLegGroup.rotation.x = legAngle;
-      this.rightLegGroup.rotation.x = -legAngle;
-
-      // Arm swing / Carrying pose
-      if (this.heldProp) {
-        // Carrying pose: both arms hold the object firmly in front
-        this.leftArmGroup.rotation.x = -1.25;
-        this.leftArmGroup.rotation.y = 0.35;
-        this.leftArmGroup.rotation.z = 0.15;
-        this.rightArmGroup.rotation.x = -1.25;
-        this.rightArmGroup.rotation.y = -0.35;
-        this.rightArmGroup.rotation.z = -0.15;
-      } else if (this.gestureTimer <= 0) {
-        const armAngle = Math.sin(this.walkCycle) * (this.isBoosting ? 0.85 : 0.6);
-        this.leftArmGroup.rotation.x = -armAngle;
-        this.rightArmGroup.rotation.x = armAngle;
-        this.leftArmGroup.rotation.y = 0;
-        this.rightArmGroup.rotation.y = 0;
-        this.leftArmGroup.rotation.z = 0.12;
-        this.rightArmGroup.rotation.z = -0.12;
-      }
-
-      // Footstep audio trigger on gait cadence zero-crossing
-      const currentStepSign = Math.sign(Math.sin(this.walkCycle));
-      if (currentStepSign !== this.prevStepSin && currentStepSign !== 0) {
-        this.prevStepSin = currentStepSign;
-        if (!this.isJumping && !this.isTeleporting) {
-          const isLeftFoot = currentStepSign > 0;
-          sfx.playFootstep(this.isBoosting, isLeftFoot);
-        }
-      }
-
-      // Hip bobbing during strides
-      this.characterRoot.position.y = Math.abs(Math.sin(this.walkCycle)) * 0.08;
-
-      // Dynamic forward torso pitch lean into run
-      const targetTorsoPitch = forwardInput * (this.isBoosting ? 0.28 : 0.12);
-      this.torsoGroup.rotation.x += (targetTorsoPitch - this.torsoGroup.rotation.x) * 0.15;
-    } else {
-      // Idle recovery & breathing stance
-      this.leftLegGroup.rotation.x *= 0.85;
-      this.rightLegGroup.rotation.x *= 0.85;
-
-      if (this.heldProp) {
-        this.leftArmGroup.rotation.x = -1.25;
-        this.leftArmGroup.rotation.y = 0.35;
-        this.leftArmGroup.rotation.z = 0.15;
-        this.rightArmGroup.rotation.x = -1.25;
-        this.rightArmGroup.rotation.y = -0.35;
-        this.rightArmGroup.rotation.z = -0.15;
-      } else if (this.gestureTimer <= 0) {
-        this.leftArmGroup.rotation.x = Math.sin(time * 2) * 0.05;
-        this.rightArmGroup.rotation.x = -Math.sin(time * 2) * 0.05;
-        this.leftArmGroup.rotation.y = 0;
-        this.rightArmGroup.rotation.y = 0;
-      }
-      this.characterRoot.position.y = Math.sin(time * 2.5) * 0.02;
-      this.torsoGroup.rotation.x *= 0.88;
-    }
-
-    // Jump pose
-    if (this.isJumping) {
-      this.leftLegGroup.rotation.x = -0.4;
-      this.rightLegGroup.rotation.x = -0.25;
-      if (!this.heldProp && this.gestureTimer <= 0) {
-        this.leftArmGroup.rotation.x = 0.45;
-        this.rightArmGroup.rotation.x = 0.45;
-      }
-    }
-
-    // Shockwave repulsor blast gesture (arm extended forward)
-    if (this.gestureTimer > 0 && !this.heldProp) {
-      this.gestureTimer -= delta;
-      this.rightArmGroup.rotation.x = -1.55;
-    }
-
-    // Head turn & slight body banking into turns
-    this.headGroup.rotation.y = -turnInput * 0.28;
-    const targetRoll = -turnInput * 0.14;
+    // Subtle agile body banking into high-speed turns
+    const targetRoll = currentSpeed > 1.2 ? -turnInput * 0.08 : 0;
     this.characterRoot.rotation.z += (targetRoll - this.characterRoot.rotation.z) * 0.15;
 
-    // World boundary clamping
-    const currentDist = Math.sqrt(
-      this.playerGroup.position.x * this.playerGroup.position.x +
-        this.playerGroup.position.z * this.playerGroup.position.z
-    );
-    if (currentDist > 55) {
-      const angle = Math.atan2(this.playerGroup.position.z, this.playerGroup.position.x);
-      this.playerGroup.position.x = Math.cos(angle) * 55;
-      this.playerGroup.position.z = Math.sin(angle) * 55;
+    // Office furniture & enclosed room perimeter clamping
+    this.applyOfficeCollisions(this.playerGroup.position, 0.55);
+
+    if (this.clampToOfficeRoom(this.playerGroup.position, 0.55)) {
       this.playerVelocity.set(0, 0, 0);
     }
 
@@ -2256,8 +2423,8 @@ export class ThreeEngine {
       this.spawnTrailParticle();
     }
 
-    // Dynamic Jetpack Thruster Flare
-    this.thrusterGlow.intensity = 1.2 + (currentSpeed / maxSpeed) * 1.5 + (this.isBoosting ? 3.0 : 0);
+    // Dynamic Thruster / Boost Flare
+    this.thrusterGlow.intensity = 1.0 + (currentSpeed / maxSpeed) * 1.4 + (this.isBoosting ? 2.8 : 0);
 
     // Update real-time synthesized jetpack thruster
     sfx.updateJetpack(this.isBoosting || this.isJumping, currentSpeed);
@@ -2276,12 +2443,17 @@ export class ThreeEngine {
 
       // 1. If currently held by player
       if (this.heldProp === prop) {
-        const carryOffset = new THREE.Vector3(0, 1.25, -0.92).applyAxisAngle(
+        const isChair = prop.type === 'chair' || prop.type === 'exec_chair';
+        const carryDistance = isChair ? -(0.65 + prop.radius * 0.28) : -(0.52 + prop.radius * 0.35);
+        const carryY = isChair ? 0.68 : 1.08;
+        const carryOffset = new THREE.Vector3(0, carryY, carryDistance).applyAxisAngle(
           new THREE.Vector3(0, 1, 0),
           this.playerRotation
         );
         prop.pos.copy(playerPos).add(carryOffset);
         prop.group.position.copy(prop.pos);
+        prop.group.rotation.x *= 0.8;
+        prop.group.rotation.z *= 0.8;
         prop.group.rotation.y = this.playerRotation;
         continue;
       }
@@ -2293,11 +2465,7 @@ export class ThreeEngine {
       if (prop.pos.y <= prop.height) {
         prop.pos.y = prop.height;
         if (prop.velocity.y < -1.2) {
-          if (prop.type === 'sphere') {
-            sfx.playOrbBounce();
-          } else {
-            sfx.playBump();
-          }
+          sfx.playBump();
           prop.velocity.y = -prop.velocity.y * prop.restitution;
         } else {
           prop.velocity.y = 0;
@@ -2312,11 +2480,15 @@ export class ThreeEngine {
       prop.velocity.x *= horizFriction;
       prop.velocity.z *= horizFriction;
 
-      // 4. Angular tumble
+      // 4. Angular tumble (keep swivel chairs & book stacks settling upright on floor)
       prop.group.rotation.x += prop.angularVelocity.x * delta;
       prop.group.rotation.y += prop.angularVelocity.y * delta;
       prop.group.rotation.z += prop.angularVelocity.z * delta;
       prop.angularVelocity.multiplyScalar(Math.pow(0.9, delta * 60));
+      if (prop.pos.y <= prop.height + 0.05) {
+        prop.group.rotation.x *= 0.85;
+        prop.group.rotation.z *= 0.85;
+      }
 
       // 5. Collision with Explorer Character (only if not driving)
       if (!this.isDrivingRover) {
@@ -2338,11 +2510,7 @@ export class ThreeEngine {
           );
 
           if (impactSpeed > 1.0) {
-            if (prop.type === 'sphere') {
-              sfx.playOrbBounce();
-            } else {
-              sfx.playBump();
-            }
+            sfx.playBump();
           }
         }
       }
@@ -2367,11 +2535,7 @@ export class ThreeEngine {
             new THREE.Vector3((Math.random() - 0.5) * 14, Math.random() * 8, (Math.random() - 0.5) * 14)
           );
 
-          if (prop.type === 'sphere') {
-            sfx.playOrbBounce();
-          } else {
-            sfx.playBump();
-          }
+          sfx.playBump();
           this.rover.speed *= 0.88;
         }
       }
@@ -2406,66 +2570,19 @@ export class ThreeEngine {
             otherProp.velocity.addScaledVector(colNormal, -impulse * prop.mass);
 
             if (Math.abs(normalVel) > 1.5) {
-              if (prop.type === 'sphere' || otherProp.type === 'sphere') {
-                sfx.playOrbBounce();
-              } else {
-                sfx.playBump();
-              }
+              sfx.playBump();
             }
           }
         }
       }
 
-      // 8. World boundary clamping
-      const distFromCenter = Math.sqrt(prop.pos.x * prop.pos.x + prop.pos.z * prop.pos.z);
-      if (distFromCenter > 54) {
-        const angle = Math.atan2(prop.pos.z, prop.pos.x);
-        prop.pos.x = Math.cos(angle) * 54;
-        prop.pos.z = Math.sin(angle) * 54;
-        prop.velocity.x *= -0.5;
-        prop.velocity.z *= -0.5;
-      }
+      // 8. Office furniture & enclosed room perimeter clamping
+      this.applyOfficeCollisions(prop.pos, prop.radius);
+      this.clampToOfficeRoom(prop.pos, prop.radius, prop.velocity);
 
       // Sync Three.js group position
       prop.group.position.copy(prop.pos);
     }
-  }
-
-  // --- Energy Launch Pads Trigger ---
-  private updateLaunchPads(delta: number) {
-    const activePos = this.isDrivingRover ? this.rover.pos : this.playerGroup.position;
-
-    this.boostPads.forEach((pad) => {
-      if (pad.cooldown > 0) {
-        pad.cooldown -= delta;
-      }
-
-      const dx = pad.pos.x - activePos.x;
-      const dz = pad.pos.z - activePos.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-
-      if (dist < 2.2 && pad.cooldown <= 0) {
-        pad.cooldown = 1.2;
-        if (this.isDrivingRover) {
-          // Launch rover forward with supersonic speed boost!
-          this.rover.speed = Math.max(this.rover.speed, 32);
-          sfx.playLaunchPad();
-        } else {
-          // Launch explorer forward and up!
-          this.isJumping = true;
-          this.verticalVelocity = 11;
-          this.playerVelocity.addScaledVector(pad.direction, 22);
-          sfx.playLaunchPad();
-        }
-
-        // Visual pad flash
-        const padMesh = pad.mesh.children[1] as THREE.Mesh;
-        if (padMesh) {
-          padMesh.scale.set(1.4, 1.4, 1.4);
-          setTimeout(() => padMesh.scale.set(1, 1, 1), 200);
-        }
-      }
-    });
   }
 
   // --- Spawn & Update Skid / Particle Trails ---
@@ -2536,26 +2653,26 @@ export class ThreeEngine {
 
   // --- Dynamic Visual Animations ---
   private updateAnimations(time: number) {
-    // Station sculptures bobbing & pulsing
-    this.stationMeshes.forEach(({ group, beacon, data, platformRing }, idx) => {
-      beacon.rotation.y = time * 0.55 + idx;
-      if (data.category === 'spawn') {
-        beacon.rotation.x = time * 0.35;
-      }
-      group.position.y = Math.sin(time * 2 + idx) * 0.1;
-
-      // Platform ring subtle breathing pulse
-      const ringScale = 1 + Math.sin(time * 3 + idx) * 0.03;
-      platformRing.scale.set(ringScale, ringScale, 1);
+    // Subtle overhead warm accent breathing per department
+    this.stationMeshes.forEach(({ light }, idx) => {
+      light.intensity = 1.25 + Math.sin(time * 2.2 + idx) * 0.14;
     });
 
-    // Collectible Data Cores bobbing & spinning
-    this.coreMeshes.forEach(({ mesh, collected }, idx) => {
-      if (!collected) {
-        mesh.rotation.y = time * 1.8 + idx;
-        mesh.rotation.x = time * 0.9;
-        mesh.position.y = DATA_CORES[idx].position[1] + Math.sin(time * 3 + idx) * 0.25;
-      }
+    // Office NPCs (HR Partner & Client Advisor) idle breathing + friendly gaze tracking
+    const playerPos = this.isDrivingRover ? this.rover.pos : this.playerGroup.position;
+    this.officeNpcs.forEach((npc, idx) => {
+      npc.bodyPivot.scale.y = 1 + Math.sin(time * 2.1 + idx * 1.4) * 0.008;
+      npc.bodyPivot.rotation.z = Math.sin(time * 1.1 + idx) * 0.015;
+
+      const dx = playerPos.x - npc.root.position.x;
+      const dz = playerPos.z - npc.root.position.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      const targetRot = dist < 8.0 ? Math.atan2(dx, dz) : npc.baseRotY;
+
+      let diff = targetRot - npc.root.rotation.y;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      npc.root.rotation.y += diff * 0.08;
     });
 
     // Destination marker pulse
@@ -2567,15 +2684,6 @@ export class ThreeEngine {
     // Atmospheric particles slow float
     if (this.particles) {
       this.particles.rotation.y = time * 0.015;
-    }
-
-    // Rover charging pad pylon pulse
-    if (this.roverDockPad) {
-      const pylonBeacon = this.roverDockPad.children[4];
-      if (pylonBeacon) {
-        const beaconScale = 1 + Math.sin(time * 4) * 0.2;
-        pylonBeacon.scale.set(beaconScale, beaconScale, beaconScale);
-      }
     }
   }
 
@@ -2602,26 +2710,6 @@ export class ThreeEngine {
     }
   }
 
-  // --- Check Collectible Cores Proximity ---
-  private checkCoreCollection() {
-    const activePos = this.isDrivingRover ? this.rover.pos : this.playerGroup.position;
-
-    this.coreMeshes.forEach((core) => {
-      if (!core.collected) {
-        const dx = core.mesh.position.x - activePos.x;
-        const dz = core.mesh.position.z - activePos.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
-
-        if (dist < 2.5) {
-          core.collected = true;
-          this.collectedCoreIds.add(core.id);
-          core.mesh.visible = false;
-          this.callbacks.onCollectCore(core.id, this.collectedCoreIds.size);
-        }
-      }
-    });
-  }
-
   // --- Proximity & Interactive Action Prompts ---
   private checkActionPrompts() {
     if (this.isTeleporting) {
@@ -2637,7 +2725,7 @@ export class ThreeEngine {
     if (this.isDrivingRover) {
       nextPrompt = {
         type: 'exit_rover',
-        label: 'EXIT CYBER ROVER',
+        label: 'EXIT EXECUTIVE ROVER',
         key: 'R',
       };
     } else if (this.heldProp) {
@@ -2652,11 +2740,11 @@ export class ThreeEngine {
       const dzRover = pPos.z - this.rover.pos.z;
       const roverDist = Math.sqrt(dxRover * dxRover + dzRover * dzRover);
 
-      // Check proximity to Cyber Rover (generous 6.5m radius covering the charging pad)
+      // Check proximity to Executive Rover (generous 6.5m radius covering the bay)
       if (roverDist < 6.5) {
         nextPrompt = {
           type: 'enter_rover',
-          label: 'DRIVE CYBER ROVER',
+          label: 'DRIVE EXECUTIVE ROVER',
           key: 'R',
         };
       } else {
@@ -2746,9 +2834,12 @@ export class ThreeEngine {
         }
       }
       if (nearestAny) {
-        this.targetDestination = nearestAny.pos.clone();
+        const dest = nearestAny.pos.clone();
+        this.clampToOfficeRoom(dest, 0.65);
+        this.pendingInspectStationId = null;
+        this.targetDestination = dest;
         if (this.destinationMarker) {
-          this.destinationMarker.position.set(nearestAny.pos.x, 0.05, nearestAny.pos.z);
+          this.destinationMarker.position.set(dest.x, 0.05, dest.z);
           this.destinationMarker.visible = true;
         }
       }
@@ -2794,6 +2885,10 @@ export class ThreeEngine {
         const approachPos = this.rover.pos
           .clone()
           .add(new THREE.Vector3(-2.0, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rover.rotation));
+        this.clampToOfficeRoom(approachPos, 0.65);
+        this.applyOfficeCollisions(approachPos, 0.65);
+        this.clampToOfficeRoom(approachPos, 0.65);
+        this.pendingInspectStationId = null;
         this.targetDestination = approachPos;
         if (this.destinationMarker) {
           this.destinationMarker.position.set(approachPos.x, 0.05, approachPos.z);
@@ -2805,6 +2900,8 @@ export class ThreeEngine {
 
   public enterRover() {
     if (this.isDrivingRover) return;
+
+    this.avatarController.cancelEmote();
 
     // Release any held prop safely
     if (this.heldProp) {
@@ -2839,6 +2936,8 @@ export class ThreeEngine {
     // Step out safely to the left / driver side of the rover
     const exitOffset = new THREE.Vector3(-2.2, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rover.rotation);
     this.playerGroup.position.copy(this.rover.pos).add(exitOffset);
+    this.applyOfficeCollisions(this.playerGroup.position, 0.55);
+    this.clampToOfficeRoom(this.playerGroup.position, 0.55);
     this.playerGroup.position.y = 0;
     this.playerVelocity.set(0, 0, 0);
     this.playerRotation = this.rover.rotation;
@@ -2888,8 +2987,28 @@ export class ThreeEngine {
       cancelAnimationFrame(this.animFrameId);
     }
     this.unbindEvents();
+    this.avatarController.dispose();
+    this.pmremTarget?.dispose();
     sfx.stopJetpack();
     sfx.stopRoverEngine();
+
+    this.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh || obj instanceof THREE.Points || obj instanceof THREE.Line) {
+        obj.geometry?.dispose();
+        const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+        for (const mat of materials) {
+          if (!mat) continue;
+          const record = mat as unknown as Record<string, unknown>;
+          for (const key of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap']) {
+            const tex = record[key];
+            if (tex instanceof THREE.Texture) {
+              tex.dispose();
+            }
+          }
+          mat.dispose();
+        }
+      }
+    });
 
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement) {

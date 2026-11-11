@@ -8,28 +8,26 @@ import {
   Cpu,
   Award,
   Radio,
-  Sparkles,
   HelpCircle,
   Zap,
-  ArrowRight,
   MousePointer,
   Waves,
   Car,
   LogOut,
   Package,
-  Flame,
+  Activity,
+  Briefcase,
 } from 'lucide-react';
 import { STATIONS, type StationData } from '../../data/stationsData';
 import { useViewMode } from '../../context/ViewModeContext';
 import { sfx } from '../../utils/audio';
 import { type ActionPrompt } from './ThreeEngine';
+import { type AvatarEmoteName } from './AvatarController';
 
 interface GameHUDProps {
   nearbyStation: StationData | null;
   onInspectStation: (station: StationData) => void;
   onTeleport: (stationId: string) => void;
-  coresCollected: number;
-  totalCores: number;
   speed: number;
   playerPos: { x: number; z: number; rotation: number };
   onJoystickMove: (x: number, y: number) => void;
@@ -40,14 +38,15 @@ interface GameHUDProps {
   isDriving?: boolean;
   onTogglePickThrow?: () => void;
   onToggleRover?: () => void;
+  avatarLoaded?: boolean;
+  activeEmote?: AvatarEmoteName | null;
+  onTriggerEmote?: (emote: AvatarEmoteName) => void;
 }
 
 export default function GameHUD({
   nearbyStation,
   onInspectStation,
   onTeleport,
-  coresCollected,
-  totalCores,
   speed,
   playerPos,
   onJoystickMove,
@@ -58,11 +57,15 @@ export default function GameHUD({
   isDriving = false,
   onTogglePickThrow,
   onToggleRover,
+  avatarLoaded = true,
+  activeEmote = null,
+  onTriggerEmote,
 }: GameHUDProps) {
   const { mode, setMode } = useViewMode();
   const [isMuted, setIsMuted] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showRadar, setShowRadar] = useState(true);
+  const [showMoves, setShowMoves] = useState(false);
   const [touchActive] = useState(() => {
     if (typeof window === 'undefined') return false;
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -76,6 +79,10 @@ export default function GameHUD({
   // Keyboard shortcut handlers for station inspection & spacebar safety
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+        return;
+      }
       // Prevent Spacebar from triggering focused DOM button
       if (e.code === 'Space') {
         e.preventDefault();
@@ -129,10 +136,8 @@ export default function GameHUD({
     onJoystickMove(0, 0);
   };
 
-  const isOverdrive = coresCollected >= totalCores;
-
-  // Radar Map calculations
-  const radarScale = 40 / 55;
+  // HQ Map calculations (scaled for enclosed 58m x 54m tiled corporate floorplan)
+  const radarScale = 40 / 34;
   const radarPlayerX = 50 + playerPos.x * radarScale;
   const radarPlayerY = 50 + playerPos.z * radarScale;
   const playerDeg = (playerPos.rotation * 180) / Math.PI;
@@ -178,6 +183,19 @@ export default function GameHUD({
             </button>
           </div>
 
+          {/* Avatar Streaming Indicator Badge */}
+          {!avatarLoaded && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 px-3 py-1 bg-black/75 border border-orange-500/40 text-orange-300 rounded-full text-xs font-mono"
+            >
+              <div className="w-2.5 h-2.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+              <span className="hidden sm:inline">Loading 3D Character...</span>
+              <span className="sm:hidden">Loading...</span>
+            </motion.div>
+          )}
+
           {/* Active Driving Indicator Badge */}
           {isDriving && (
             <motion.div
@@ -191,28 +209,29 @@ export default function GameHUD({
           )}
         </div>
 
-        {/* Right Status Pill, Audio & Help */}
+        {/* Right Quick Action, Audio & Help */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* PRD Data Cores Counter */}
-          <div
-            className={`hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold font-mono transition-all ${
-              isOverdrive
-                ? 'bg-orange-950/80 border-orange-500 text-orange-200 shadow-lg shadow-orange-500/30 animate-pulse'
-                : 'bg-black/60 backdrop-blur-xl border-white/10 text-neutral-300'
-            }`}
+          {/* Quick Executive Brief / Hire Trigger */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              sfx.playInteract();
+              onInspectStation(STATIONS[0]);
+            }}
+            className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl border bg-orange-500/15 hover:bg-orange-500/25 border-orange-500/40 text-orange-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
+            title="Open Priyanshu's Executive Brief & Hiring Summary"
           >
-            <Sparkles className={`w-3.5 h-3.5 ${isOverdrive ? 'text-amber-400' : 'text-orange-400'}`} />
-            <span>
-              {isOverdrive ? 'OVERDRIVE ACTIVE' : `CORES: ${coresCollected}/${totalCores}`}
-            </span>
-          </div>
+            <Briefcase className="w-3.5 h-3.5 text-orange-400" />
+            <span>Hire / Brief</span>
+          </button>
 
-          {/* Radar Toggle */}
+          {/* HQ Map Toggle */}
           <button
             onClick={() => setShowRadar(!showRadar)}
             className="p-2 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl text-neutral-300 hover:text-white transition-colors"
-            title={showRadar ? 'Hide Tactical Radar' : 'Show Tactical Radar'}
-            aria-label="Toggle Radar"
+            title={showRadar ? 'Hide HQ Map' : 'Show HQ Map'}
+            aria-label="Toggle HQ Map"
           >
             <Compass className={`w-4 h-4 ${showRadar ? 'text-orange-400' : 'text-neutral-500'}`} />
           </button>
@@ -242,21 +261,45 @@ export default function GameHUD({
         </div>
       </header>
 
-      {/* --- TACTICAL HOLOGRAPHIC RADAR MINIMAP (TOP RIGHT) --- */}
+      {/* --- EXECUTIVE HQ FLOORPLAN MINIMAP (TOP RIGHT) --- */}
       {showRadar && (
         <div className="pointer-events-auto absolute top-20 right-6 hidden md:block select-none">
           <div className="relative w-28 h-28 rounded-full bg-black/85 backdrop-blur-2xl border border-orange-500/30 p-1 shadow-2xl shadow-orange-950/40">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              {/* Radar Grid Rings */}
+              {/* HQ Floorplan Grid Rings */}
               <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(249, 115, 22, 0.2)" strokeWidth="1" />
               <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(249, 115, 22, 0.15)" strokeWidth="0.8" strokeDasharray="2,2" />
               <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(249, 115, 22, 0.15)" strokeWidth="0.8" />
+
+              {/* Outer Tiled Office Room Boundary */}
+              <rect
+                x="18.2"
+                y="18.2"
+                width="68.2"
+                height="63.5"
+                rx="2"
+                fill="rgba(255, 255, 255, 0.03)"
+                stroke="rgba(255, 255, 255, 0.16)"
+                strokeWidth="0.7"
+              />
+
+              {/* Executive Office Suite Footprint (West Wing) */}
+              <rect
+                x="20.0"
+                y="22.11"
+                width="10.22"
+                height="56.13"
+                rx="1"
+                fill="rgba(249, 115, 22, 0.16)"
+                stroke="rgba(249, 115, 22, 0.42)"
+                strokeWidth="0.6"
+              />
 
               {/* Crosshairs */}
               <line x1="50" y1="5" x2="50" y2="95" stroke="rgba(249, 115, 22, 0.12)" strokeWidth="0.8" />
               <line x1="5" y1="50" x2="95" y2="50" stroke="rgba(249, 115, 22, 0.12)" strokeWidth="0.8" />
 
-              {/* Rotating Radar Sweep Beam */}
+              {/* Rotating Orientation Sweep */}
               <line
                 x1="50"
                 y1="50"
@@ -268,7 +311,7 @@ export default function GameHUD({
                 style={{ animationDuration: '4s' }}
               />
 
-              {/* Station Blips */}
+              {/* Zone Blips */}
               {STATIONS.map((station) => {
                 const sx = 50 + station.position[0] * radarScale;
                 const sy = 50 + station.position[2] * radarScale;
@@ -285,7 +328,7 @@ export default function GameHUD({
                       onTeleport(station.id);
                     }}
                   >
-                    <title>{station.name} (Click to Teleport)</title>
+                    <title>{station.name} (Click to Jump)</title>
                   </circle>
                 );
               })}
@@ -298,119 +341,76 @@ export default function GameHUD({
               </g>
             </svg>
 
-            {/* Radar Label */}
+            {/* Minimap Label */}
             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/80 rounded border border-white/10 text-[8px] font-mono uppercase tracking-widest text-neutral-400">
-              RADAR
+              HQ MAP
             </div>
           </div>
         </div>
       )}
 
-      {/* --- PROXIMITY INTERACTION NOTIFICATION --- */}
-      <AnimatePresence>
-        {nearbyStation && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="pointer-events-auto mx-auto max-w-md w-full"
-          >
-            <button
-              onClick={() => {
-                sfx.playInteract();
-                onInspectStation(nearbyStation);
-              }}
-              className="group w-full flex items-center justify-between p-3.5 sm:p-4 bg-neutral-950/90 backdrop-blur-2xl border border-orange-500/40 hover:border-orange-500 rounded-2xl shadow-2xl shadow-orange-500/20 transition-all hover:scale-[1.02]"
-            >
-              <div className="flex items-center gap-3 text-left">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${nearbyStation.color}25` }}
-                >
-                  <Sparkles className="w-5 h-5" style={{ color: nearbyStation.color }} />
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase font-mono tracking-widest text-neutral-400">
-                    Station Proximity Detected
-                  </div>
-                  <div className="text-sm sm:text-base font-black text-white group-hover:text-orange-300 transition-colors">
-                    {nearbyStation.name}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white text-black font-mono font-bold text-xs rounded-xl shadow">
-                <span>[ E ] INSPECT</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </div>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* --- CONTEXTUAL INTERACTIVE ACTION PROMPT (ROVER / PICK UP / THROW) --- */}
-      <AnimatePresence>
-        {actionPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.18 }}
-            className="pointer-events-auto mx-auto max-w-sm w-full mb-1"
-          >
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                if (actionPrompt.type === 'enter_rover' || actionPrompt.type === 'exit_rover') {
-                  onToggleRover?.();
-                } else {
-                  onTogglePickThrow?.();
-                }
-              }}
-              className="w-full flex items-center justify-between p-3 bg-neutral-950/90 backdrop-blur-2xl border border-amber-500/50 hover:border-amber-400 rounded-2xl shadow-xl shadow-orange-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
-                  {actionPrompt.type === 'enter_rover' && <Car className="w-4 h-4 animate-pulse" />}
-                  {actionPrompt.type === 'exit_rover' && <LogOut className="w-4 h-4" />}
-                  {actionPrompt.type === 'pickup' && <Package className="w-4 h-4" />}
-                  {actionPrompt.type === 'throw' && <Flame className="w-4 h-4 text-amber-300" />}
-                </div>
-                <div className="text-left">
-                  <div className="text-[9px] uppercase font-mono tracking-widest text-neutral-400">
-                    Interactive Action Ready
-                  </div>
-                  <div className="text-xs sm:text-sm font-black text-white group-hover:text-amber-300 transition-colors">
-                    {actionPrompt.label}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-mono font-bold text-xs rounded-xl shadow-md">
-                <span>[ {actionPrompt.key} ] ACTIVATE</span>
-              </div>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* --- BOTTOM SECTION (DOCK & CONTROLS) --- */}
       <footer className="w-full max-w-7xl mx-auto flex flex-col items-center gap-3">
-        {/* Teleport Quick Dock */}
+        {/* Optional Compact Moves / Emotes Tray */}
+        <AnimatePresence>
+          {showMoves && !isDriving && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              transition={{ duration: 0.16 }}
+              className="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-neutral-950/90 backdrop-blur-2xl border border-orange-500/35 rounded-2xl shadow-2xl shadow-orange-950/50"
+            >
+              {[
+                { id: 'punch' as AvatarEmoteName, label: 'Punch', key: 'Q' },
+                { id: 'kick' as AvatarEmoteName, label: 'Kick', key: 'X' },
+                { id: 'kick_punch' as AvatarEmoteName, label: 'Combo', key: 'C' },
+                { id: 'pushups' as AvatarEmoteName, label: 'Push-ups', key: 'V' },
+              ].map((move) => {
+                const isActive = activeEmote === move.id;
+                return (
+                  <button
+                    key={move.id}
+                    type="button"
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onTriggerEmote?.(move.id);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 ${
+                      isActive
+                        ? 'bg-orange-500 text-black shadow-md shadow-orange-500/40'
+                        : 'bg-white/5 hover:bg-white/15 text-neutral-200'
+                    }`}
+                  >
+                    <span className="text-[11px]">{move.label}</span>
+                    <span
+                      className={`px-1 py-0.5 rounded text-[9px] font-mono ${
+                        isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-orange-300'
+                      }`}
+                    >
+                      {move.key}
+                    </span>
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* HQ Zone Jump Dock */}
         <div className="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-neutral-950/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-x-auto max-w-full scrollbar-none">
           <span className="text-[9px] uppercase font-mono tracking-widest text-neutral-500 px-2.5 hidden sm:inline">
-            Teleport:
+            Zones:
           </span>
           {[
-            { id: 'spawn', label: 'Core', icon: Compass },
-            { id: 'projects', label: 'Projects', icon: FolderGit2 },
-            { id: 'tech', label: 'Skills', icon: Cpu },
-            { id: 'experience', label: 'Career', icon: Award },
-            { id: 'contact', label: 'Comms', icon: Radio },
+            { id: 'spawn', label: 'Overview', icon: Compass },
+            { id: 'projects', label: 'Case Studies', icon: FolderGit2 },
+            { id: 'tech', label: 'Stack', icon: Cpu },
+            { id: 'experience', label: 'Track Record', icon: Award },
+            { id: 'contact', label: 'Hire Me', icon: Radio },
           ].map((item) => {
             const Icon = item.icon;
+            const isNearbyZone = nearbyStation?.id === item.id;
             return (
               <button
                 type="button"
@@ -418,12 +418,26 @@ export default function GameHUD({
                 onClick={(e) => {
                   e.currentTarget.blur();
                   sfx.playInteract();
-                  onTeleport(item.id);
+                  if (isNearbyZone && nearbyStation) {
+                    onInspectStation(nearbyStation);
+                  } else {
+                    onTeleport(item.id);
+                  }
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+                title={isNearbyZone && nearbyStation ? `Open ${nearbyStation.name} Brief [E]` : `Jump to ${item.label}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 ${
+                  isNearbyZone
+                    ? 'bg-orange-500/20 border border-orange-400/70 text-white shadow-md shadow-orange-500/20'
+                    : 'bg-white/5 hover:bg-white/15 border border-transparent text-neutral-300 hover:text-white'
+                }`}
               >
                 <Icon className="w-3.5 h-3.5 text-orange-400" />
                 <span className="text-[11px]">{item.label}</span>
+                {isNearbyZone && (
+                  <span className="px-1 py-0.5 bg-white text-black rounded text-[9px] font-mono font-bold leading-none">
+                    E
+                  </span>
+                )}
               </button>
             );
           })}
@@ -440,9 +454,11 @@ export default function GameHUD({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-md ${
               isDriving
                 ? 'bg-orange-500/30 border border-orange-400 text-orange-200 shadow-orange-500/30 animate-pulse'
-                : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
+                : actionPrompt?.type === 'enter_rover'
+                  ? 'bg-amber-500/25 border border-amber-400/75 text-amber-100 shadow-amber-500/25'
+                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
             }`}
-            title="Enter or Exit Cyber Rover [R]"
+            title={actionPrompt?.type === 'enter_rover' ? `${actionPrompt.label} [R]` : 'Enter or Exit Executive Rover [R]'}
           >
             {isDriving ? (
               <>
@@ -464,11 +480,23 @@ export default function GameHUD({
               e.currentTarget.blur();
               onTogglePickThrow?.();
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95"
-            title="Pick Up or Throw Interactive Object [G]"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 ${
+              actionPrompt?.type === 'throw'
+                ? 'bg-amber-500/30 border border-amber-400 text-amber-100 shadow-md shadow-amber-500/25'
+                : actionPrompt?.type === 'pickup'
+                  ? 'bg-orange-500/25 border border-orange-400/75 text-orange-100 shadow-md shadow-orange-500/20'
+                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
+            }`}
+            title={
+              actionPrompt?.type === 'pickup' || actionPrompt?.type === 'throw'
+                ? `${actionPrompt.label} [G]`
+                : 'Pick Up or Throw Office Object [G]'
+            }
           >
             <Package className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-[11px] hidden sm:inline">Grab/Throw [G]</span>
+            <span className="text-[11px] hidden sm:inline">
+              {actionPrompt?.type === 'throw' ? 'Throw [G]' : 'Grab/Throw [G]'}
+            </span>
           </button>
 
           {/* Jump Action Trigger in Dock */}
@@ -487,7 +515,28 @@ export default function GameHUD({
             <span className="text-[11px]">Jump [Space]</span>
           </button>
 
-          {/* Sonic Pulse Trigger in Dock */}
+          {/* Character Moves / Emotes Tray Toggle */}
+          {!isDriving && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                sfx.playInteract();
+                setShowMoves((v) => !v);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 ${
+                showMoves || activeEmote
+                  ? 'bg-orange-500/25 border border-orange-400/60 text-orange-200'
+                  : 'bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white'
+              }`}
+              title="Toggle Character Moves & Emotes (Punch, Kick, Combo, Push-ups)"
+            >
+              <Activity className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-[11px] hidden sm:inline">Moves</span>
+            </button>
+          )}
+
+          {/* Kinetic Pulse Trigger in Dock */}
           <button
             type="button"
             onClick={(e) => {
@@ -495,18 +544,18 @@ export default function GameHUD({
               onTriggerShockwave();
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/25 border border-orange-500/30 text-orange-300 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
-            title="Emit Sonic Shockwave to push interactive props"
+            title="Emit pulse to push interactive office objects"
           >
             <Waves className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-[11px] hidden sm:inline">Shockwave [F]</span>
+            <span className="text-[11px] hidden sm:inline">Pulse [F]</span>
           </button>
         </div>
 
         {/* Desktop Controls Indicator & Speedometer */}
         <div className="hidden sm:flex items-center justify-between w-full text-[11px] text-neutral-500 font-mono px-2 select-none">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3.5 flex-wrap">
             <span className="flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">W A S D</span> / <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Arrows</span> to Drive / Move
+              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">W A S D</span> / <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Arrows</span> Move
             </span>
             <button
               type="button"
@@ -515,9 +564,9 @@ export default function GameHUD({
                 onToggleRover?.();
               }}
               className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Enter or Exit Cyber Rover [R]"
+              title="Enter or Exit Executive Rover [R]"
             >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">R</span> Drive Rover
+              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">R</span> Rover
             </button>
             <button
               type="button"
@@ -526,10 +575,47 @@ export default function GameHUD({
                 onTogglePickThrow?.();
               }}
               className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Pick Up or Throw Props [G]"
+              title="Pick Up or Throw Office Objects [G]"
             >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">G</span> Pick/Throw
+              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">G</span> Grab
             </button>
+            {!isDriving && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onTriggerEmote?.('punch');
+                  }}
+                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  title="Punch Attack [Q]"
+                >
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Q</span> Punch
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onTriggerEmote?.('kick');
+                  }}
+                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  title="Kick Attack [X]"
+                >
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">X</span> Kick
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onTriggerEmote?.('pushups');
+                  }}
+                  className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  title="Push-ups Workout Emote [V]"
+                >
+                  <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">V</span> Push-ups
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={(e) => {
@@ -541,7 +627,7 @@ export default function GameHUD({
               className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
               title="Click or press Space to Jump / Turbo"
             >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Space</span> Boost / Jump
+              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Space</span> Jump
             </button>
             <button
               type="button"
@@ -552,10 +638,10 @@ export default function GameHUD({
               className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
               title="Click or press F to Blast"
             >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">F</span> Shockwave
+              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">F</span> Pulse
             </button>
-            <span className="flex items-center gap-1.5">
-              <MousePointer className="w-3 h-3 text-neutral-400" /> Click Ground to Move
+            <span className="hidden lg:flex items-center gap-1.5">
+              <MousePointer className="w-3 h-3 text-neutral-400" /> Click to Move
             </span>
           </div>
 
@@ -594,11 +680,19 @@ export default function GameHUD({
                   onTogglePickThrow?.();
                 }}
                 onTouchStart={() => onTogglePickThrow?.()}
-                className="w-13 h-13 rounded-full bg-orange-500/20 active:bg-orange-500/60 border border-orange-400/50 flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg shadow-orange-500/20"
+                className={`w-13 h-13 rounded-full border flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg ${
+                  actionPrompt?.type === 'throw'
+                    ? 'bg-amber-500/35 border-amber-300 shadow-amber-500/30'
+                    : actionPrompt?.type === 'pickup'
+                      ? 'bg-orange-500/35 border-orange-300 shadow-orange-500/30'
+                      : 'bg-orange-500/20 active:bg-orange-500/60 border-orange-400/50 shadow-orange-500/20'
+                }`}
                 title="Pick Up or Throw"
               >
                 <Package className="w-4 h-4 text-orange-300" />
-                <span className="text-[7px] font-mono uppercase font-bold tracking-wider">GRAB</span>
+                <span className="text-[7px] font-mono uppercase font-bold tracking-wider">
+                  {actionPrompt?.type === 'throw' ? 'THROW' : 'GRAB'}
+                </span>
               </button>
 
               <button
@@ -611,7 +705,9 @@ export default function GameHUD({
                 className={`w-13 h-13 rounded-full flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg ${
                   isDriving
                     ? 'bg-red-500/30 border border-red-400 text-red-200'
-                    : 'bg-amber-500/20 active:bg-amber-500/60 border border-amber-400/50'
+                    : actionPrompt?.type === 'enter_rover'
+                      ? 'bg-amber-500/35 border border-amber-300 shadow-amber-500/30'
+                      : 'bg-amber-500/20 active:bg-amber-500/60 border border-amber-400/50'
                 }`}
                 title="Drive or Exit Rover"
               >
@@ -671,7 +767,7 @@ export default function GameHUD({
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <Compass className="w-5 h-5 text-orange-400" />
-                  <h3 className="text-lg font-bold">3D World Navigation Guide</h3>
+                  <h3 className="text-lg font-bold">Priyanshu&apos;s 3D Corporate HQ — Guide</h3>
                 </div>
                 <button
                   onClick={() => setShowHelp(false)}
@@ -683,44 +779,48 @@ export default function GameHUD({
 
               <div className="space-y-3 text-xs text-neutral-300">
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Move / Drive</span>
+                  <span className="text-neutral-400">Walk / Drive</span>
                   <span className="font-mono font-bold text-white">W A S D or Arrow Keys</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Drive / Exit Cyber Rover</span>
+                  <span className="text-neutral-400">Drive / Exit Executive Rover</span>
                   <span className="font-mono font-bold text-amber-300">Press [ R ] or Tap Prompt</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Pick Up & Throw Objects</span>
-                  <span className="font-mono font-bold text-orange-400">Press [ G ] (Carry & Throw)</span>
+                  <span className="text-neutral-400">Pick Up &amp; Throw Objects</span>
+                  <span className="font-mono font-bold text-orange-400">Press [ G ] (Carry &amp; Throw)</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Turbo Boost / Jet Jump</span>
+                  <span className="text-neutral-400">Punch / Kick / Combo</span>
+                  <span className="font-mono font-bold text-amber-300">[ Q ] / [ X ] / [ C ]</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
+                  <span className="text-neutral-400">Push-ups Workout</span>
+                  <span className="font-mono font-bold text-orange-300">Press [ V ] (or Moves tray)</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
+                  <span className="text-neutral-400">Sprint / Jump</span>
                   <span className="font-mono font-bold text-white">Spacebar</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Gauntlet Shockwave</span>
+                  <span className="text-neutral-400">Kinetic Pulse</span>
                   <span className="font-mono font-bold text-orange-300">Press [ F ] or [ H ]</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Interactive Props</span>
-                  <span className="font-mono font-bold text-white">Cubes, Plasma Orbs, Pyramids, Cylinders</span>
+                  <span className="text-neutral-400">Interactive Office Objects</span>
+                  <span className="font-mono font-bold text-white">Swivel Chairs &amp; Book Stacks</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Booster Launch Pads</span>
-                  <span className="font-mono font-bold text-white">Step onto runway pads</span>
+                  <span className="text-neutral-400">Talk to HR / Open Zone</span>
+                  <span className="font-mono font-bold text-white">Click NPC / Zone or Press [ E ]</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
                   <span className="text-neutral-400">Click to Navigate</span>
-                  <span className="font-mono font-bold text-white">Left Click ground</span>
+                  <span className="font-mono font-bold text-white">Left Click office tiles</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Inspect Station</span>
-                  <span className="font-mono font-bold text-white">[ E ] Key or Tap Prompt</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Quantum Teleport</span>
-                  <span className="font-mono font-bold text-white">Dock or Radar blips</span>
+                  <span className="text-neutral-400">Quick Jump</span>
+                  <span className="font-mono font-bold text-white">Dock buttons or HQ Map blips</span>
                 </div>
               </div>
 
@@ -728,7 +828,7 @@ export default function GameHUD({
                 onClick={() => setShowHelp(false)}
                 className="w-full mt-5 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-neutral-200 transition-colors"
               >
-                Got It, Let’s Explore
+                Got It, Let’s Tour HQ
               </button>
             </motion.div>
           </div>

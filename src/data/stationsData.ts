@@ -21,147 +21,146 @@ export interface StationData {
 export const STATIONS: StationData[] = [
   {
     id: 'spawn',
-    name: 'Command Core',
+    name: 'Executive Brief',
     category: 'spawn',
     position: [0, 0, 0],
     color: '#ffffff',
-    tagline: 'Priyanshu Rawat — Product & Engineering Hub',
+    tagline: 'Priyanshu Rawat — Software Engineer & Product Thinker',
     iconName: 'Compass',
     content: {
       title: 'Priyanshu Rawat',
-      subtitle: 'Software Engineer & Product Thinker • 4+ Years Experience',
+      subtitle: 'Software Engineer & Product Builder • 4+ Years Enterprise & AI Delivery',
       description:
-        'Bridging the gap between complex engineering systems and strategic product growth. Architecting AI-powered platforms, resilient microservices, and high-impact enterprise solutions.',
+        'For Hiring Managers & Prospective Clients: I bridge complex full-stack engineering with product strategy so every sprint drives measurable business ROI. From writing PRDs with stakeholders to shipping production AI agents and resilient microservices, I own outcomes end-to-end.',
       highlights: [
-        'Currently at TestingXperts: Client-facing delivery & AI-powered internal products',
-        'MCA Graduate with 8.93 CGPA',
-        'Recommended by the Air Force Selection Board (AFSB) — disciplined, mission-oriented mindset',
-        'Believer in "Engineering with Intent": Discovery → PRD → Architecture → Build → Iteration'
+        'End-to-End Ownership: Discovery → PRD → System Architecture → Full-Stack Build → Iteration',
+        'Currently at TestingXperts: Delivering client microservices while shipping internal AI tools that boost engineering velocity',
+        'Proven Enterprise Delivery: Intermex (Fintech), S&S Activewear (Logistics), Premium Health US (Healthcare EHR)',
+        'Leadership & Discipline: MCA (8.93 CGPA) & Air Force Selection Board (AFSB) Recommended candidate',
       ],
       links: [
-        { label: 'Download Resume', url: 'https://drive.google.com/uc?export=download&id=1kUrtfQCpxHjxxPDoP4tRE257u_-abUWf', primary: true },
-        { label: 'View LinkedIn', url: PORTFOLIO_CONTEXT.contact.linkedin },
-        { label: 'GitHub Profile', url: PORTFOLIO_CONTEXT.contact.github }
-      ]
-    }
+        {
+          label: 'Download Resume',
+          url: 'https://drive.google.com/uc?export=download&id=1kUrtfQCpxHjxxPDoP4tRE257u_-abUWf',
+          primary: true,
+        },
+        { label: 'LinkedIn Profile', url: PORTFOLIO_CONTEXT.contact.linkedin },
+        { label: 'GitHub Portfolio', url: PORTFOLIO_CONTEXT.contact.github },
+      ],
+      meta: {
+        'Hiring Availability': 'Open to Senior SWE, Product Engineer & AI Systems roles',
+        'Client Engagements': 'AI Agents, SaaS MVPs & Architecture Consulting',
+      },
+    },
   },
   {
     id: 'projects',
-    name: 'Projects Citadel',
+    name: 'Case Studies & ROI',
     category: 'projects',
-    position: [0, 0, -32],
+    position: [0, 0, -20],
     color: '#f97316',
-    tagline: 'Featured AI & Full-Stack Systems',
+    tagline: 'Live AI Products & Business Impact Portfolio',
     iconName: 'FolderGit2',
     content: {
-      title: 'Featured Projects & AI Systems',
-      subtitle: 'Engineered for Real-World Scalability & Business Impact',
+      title: 'Selected Case Studies & AI Systems',
+      subtitle: 'Built to Eliminate Operational Bottlenecks & Ship Faster',
       description:
-        'A collection of production applications, AI agent frameworks, and productivity tools built to eliminate operational friction and turn complex data into actionable workflows.',
+        'Production applications engineered around concrete user and team bottlenecks — from cutting 15-hour manual PRD cycles down to minutes, to orchestrating stateless Gemini AI pipelines.',
       highlights: [
-        'SyncScripts: Solving meeting debt by automating transcript analysis with Gemini 1.5 Flash (Stateless privacy architecture)',
-        'EchoMap: AI-driven diagnostic speech recognition system for detecting nuanced English linguistic gaps',
-        '4Her: Dignified menstrual wellness tracking platform built with React, Node, Express, MongoDB',
-        'AI Agent Orchestration Platform: Scalable multi-agent system on Google Cloud reclaiming 40% dev sprint capacity',
-        'Intelligent PRD Gen: Multi-LLM spec automation cutting feature requirement writing from 15h to minutes',
-        'PulseCheck AI: Predictive customer churn intelligence connecting LLM structured JSON to real-time dynamic visualizations'
+        'AI Agent Orchestrator: Reclaimed ~40% engineering sprint capacity on Google Cloud by automating manual operational workflows',
+        'Intelligent PRD Generator: Cut feature spec authoring from 15+ hours to minutes using multi-LLM structured outputs & PostgreSQL',
+        'SyncScripts (Live): Zero-retention Gemini 1.5 Flash meeting synthesizer turning raw transcripts into executive action plans',
+        'EchoMap (Live): Real-time English pronunciation & speech diagnostic engine powered by Web Audio spectrograms & Speech AI',
+        'PulseCheck AI: Predictive customer churn BI mapping structured LLM JSON directly to live retention visualizations',
+        '4Her (Live): Privacy-first full-stack wellness analytics platform built with React, Node.js, Express & MongoDB',
       ],
       links: [
-        { label: 'Launch SyncScripts', url: 'https://syncscripts.netlify.app/', primary: true },
-        { label: 'Launch EchoMap', url: 'https://echo-map.netlify.app/' },
-        { label: 'Launch 4Her', url: 'https://the4her.netlify.app/' }
-      ]
-    }
+        { label: 'Open SyncScripts Live', url: 'https://syncscripts.netlify.app/', primary: true },
+        { label: 'Open EchoMap Live', url: 'https://echo-map.netlify.app/' },
+        { label: 'Open 4Her Live', url: 'https://the4her.netlify.app/' },
+      ],
+    },
   },
   {
     id: 'tech',
-    name: 'Tech Matrix',
+    name: 'Capabilities & Stack',
     category: 'tech',
-    position: [32, 0, 0],
-    color: '#a855f7',
-    tagline: 'Modern Stack & Architectural Pillars',
+    position: [20, 0, 0],
+    color: '#f59e0b',
+    tagline: 'Full-Stack Engineering • AI Agents • Cloud Architecture',
     iconName: 'Cpu',
     content: {
-      title: 'Technical Arsenal & Capabilities',
-      subtitle: 'Full-Stack • AI / Agents • Cloud & Distributed Systems',
+      title: 'Technical Capabilities & Architecture',
+      subtitle: 'What You Get on Day One — Production Readiness Across the Stack',
       description:
-        'A battle-tested stack spanning modern frontend frameworks, robust typed backend engines, large language model integrations, and cloud infrastructure.',
+        'A versatile, production-hardened toolkit spanning typed backends, modern web interfaces, LLM agent orchestration, and cloud infrastructure designed for maintainability and scale.',
       highlights: [
-        'Languages: TypeScript, JavaScript, C#, Python, SQL',
-        'Frontend: React, Next.js, Angular, Tailwind CSS, Framer Motion, Three.js / WebGL',
-        'Backend & Cloud: .NET Core, Node.js, Express, Google Cloud Platform (GCP), RESTful APIs & Microservices',
-        'AI & Agents: Google Gemini API, OpenAI GPT-4o, LLM Orchestration, Prompt Engineering, Structured Outputs',
-        'Databases & DevOps: MS SQL Server, PostgreSQL, MongoDB, Git, CI/CD Pipelines, Netlify'
+        'Frontend & UX Engineering: React, Next.js, Angular, TypeScript, Tailwind CSS, Framer Motion, Three.js / WebGL',
+        'Backend & APIs: .NET Core (C#), Node.js, Express, Python, FastAPI, RESTful Microservices & Entity Framework',
+        'Applied AI & Automation: Google Gemini API, OpenAI GPT-4o, LangChain, CrewAI, RAG, Vector DBs, Structured Outputs',
+        'Cloud, Data & DevOps: Google Cloud Platform (GCP), Azure, Docker, Kubernetes, MS SQL Server, PostgreSQL, MongoDB, Redis',
+        'Product Execution: PRDs, Agile Roadmapping, Stakeholder Demos, Rapid 0-to-1 MVP Prototyping & CI/CD',
       ],
       meta: {
-        'Engineering Philosophy': 'Intentional architecture over premature optimization',
-        'Core Focus': 'Zero-friction UX backed by resilient backend services'
-      }
-    }
+        'Architecture Standard': 'Resilient typed contracts, low-friction UX & measurable latency',
+        'Delivery Model': 'Fast iterative releases backed by clear PRDs and ownership',
+      },
+    },
   },
   {
     id: 'experience',
-    name: 'Career Highway',
+    name: 'Track Record',
     category: 'experience',
-    position: [-32, 0, 0],
-    color: '#34d399',
-    tagline: 'Milestones, Leadership & Proven Track Record',
+    position: [-12.5, 0, 0],
+    color: '#fb923c',
+    tagline: 'Enterprise Clients, Shipping History & Recognition',
     iconName: 'Award',
     content: {
-      title: 'Career Trajectory & Impact',
-      subtitle: '4+ Years Delivering Scalable Software & AI Capabilities',
+      title: 'Enterprise Experience & Track Record',
+      subtitle: '4+ Years Shipping Critical Systems Across Fintech, Logistics & Healthcare',
       description:
-        'Proven history of designing high-availability systems, leading cross-functional teams, and transforming product requirements into business value.',
+        'Trusted across client-facing consulting and enterprise product delivery to take ambiguous requirements to reliable, high-volume production releases.',
       highlights: [
-        'TestingXperts (Current): Driving end-to-end delivery of client-facing microservices and building internal AI products',
-        'Key Enterprise Clients: Intermex (Fintech/Remittance), S&S Activewear (Logistics/Wholesale), Premium Health US (Healthcare EHR)',
-        'smartData Enterprises: Enterprise healthcare modules, dynamic travel insurance backend microservices',
-        'RITES Ltd: Transport infrastructure engineering lifecycle and system audits',
-        'Indian Air Force (AFSB) Recommendation: Demonstrating decisive leadership, calm execution under pressure, and strategic team alignment',
-        'Academic Excellence: Master of Computer Applications (MCA) — 8.93 CGPA'
-      ]
-    }
+        'TestingXperts (Current — Software Engineer): Leading client microservice delivery & internal AI products; recipient of individual & team recognition awards',
+        'Enterprise Client Portfolio: Intermex (Fintech & cross-border remittance), S&S Activewear (Wholesale logistics), Premium Health US (Urgent-care EHR)',
+        'smartData Enterprises (Associate Software Engineer): Built HIPAA-aware healthcare EHR backend modules, travel insurance microservices & React dashboards',
+        'RITES Ltd (Intern): Transport infrastructure engineering workflows, documentation & enterprise SDLC audits',
+        'Indian Air Force (AFSB) Recommendation: Leadership under pressure, mission clarity & cross-functional team command',
+      ],
+    },
   },
   {
     id: 'contact',
-    name: 'Transmission Outpost',
+    name: 'Hire or Partner',
     category: 'contact',
-    position: [0, 0, 32],
-    color: '#fbbf24',
-    tagline: 'Direct Comms, Collaborations & Hiring',
+    position: [0, 0, 20],
+    color: '#10b981',
+    tagline: 'Start a Hiring Conversation or Client Engagement',
     iconName: 'Radio',
     content: {
-      title: 'Initiate Transmission',
-      subtitle: 'Open for Software Engineering, Product Roles & High-Value Consulting',
+      title: 'Hire or Partner With Priyanshu',
+      subtitle: 'Open for Senior SWE / Product Engineering Roles & High-Impact Client Builds',
       description:
-        'Looking for someone who can translate complex technical challenges into measurable business outcomes? Let’s connect.',
+        'Whether you are hiring a high-ownership engineer for your product team or looking for a technical partner to scope and build an AI-enabled application, reach out directly below.',
       highlights: [
+        'For Hiring Managers: Full-time roles (Software Engineer, Product Engineer, Full-Stack / Applied AI) — India / Remote / Relocation',
+        'For Prospective Clients: End-to-end 0-to-1 MVP builds, workflow/AI agent automation & architecture advisory',
         'Primary Email: priyanshurawat.business@gmail.com',
-        'Alternate Email: therealrawat@gmail.com',
-        'Location: India (Open to Global Remote / Relocation Opportunities)',
-        'Social: LinkedIn @rawat-priyanshu • Instagram @lowwhiskey'
+        'Secondary Email: therealrawat@gmail.com',
       ],
       links: [
         { label: 'Email Priyanshu', url: 'mailto:priyanshurawat.business@gmail.com', primary: true },
-        { label: 'LinkedIn Message', url: PORTFOLIO_CONTEXT.contact.linkedin },
-        { label: 'GitHub Repos', url: PORTFOLIO_CONTEXT.contact.github },
-        { label: 'Instagram', url: PORTFOLIO_CONTEXT.contact.instagram }
-      ]
-    }
-  }
+        {
+          label: 'Download Resume',
+          url: 'https://drive.google.com/uc?export=download&id=1kUrtfQCpxHjxxPDoP4tRE257u_-abUWf',
+        },
+        { label: 'Message on LinkedIn', url: PORTFOLIO_CONTEXT.contact.linkedin },
+        { label: 'Inspect GitHub', url: PORTFOLIO_CONTEXT.contact.github },
+      ],
+      meta: {
+        'Response Window': 'Typically within 24 hours',
+        'Discovery Call': 'Available via email or LinkedIn',
+      },
+    },
+  },
 ];
-
-export interface DataCoreItem {
-  id: number;
-  position: [number, number, number];
-  label: string;
-}
-
-export const DATA_CORES: DataCoreItem[] = [
-  { id: 1, position: [14, 0.8, -14], label: 'Discovery Core' },
-  { id: 2, position: [-14, 0.8, -14], label: 'PRD Core' },
-  { id: 3, position: [14, 0.8, 14], label: 'Architecture Core' },
-  { id: 4, position: [-14, 0.8, 14], label: 'Iteration Core' },
-  { id: 5, position: [0, 0.8, -18], label: 'Optimization Core' },
-];
-

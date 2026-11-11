@@ -61,7 +61,7 @@ export default function StationModal({ station, onClose, onOpenAI }: StationModa
                   style={{ backgroundColor: station.color }}
                 />
                 <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-400 font-mono">
-                  Sector :: {station.category.toUpperCase()}
+                  Corporate HQ :: {station.category.toUpperCase()}
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">{station.content.title}</h2>
@@ -89,7 +89,7 @@ export default function StationModal({ station, onClose, onOpenAI }: StationModa
           {station.content.highlights && (
             <div className="space-y-2.5 my-4">
               <span className="text-[10px] uppercase tracking-[0.25em] text-neutral-500 font-semibold block mb-2">
-                Key Telemetry & Highlights
+                Impact, Metrics &amp; Highlights
               </span>
               {station.content.highlights.map((item, idx) => (
                 <div
@@ -108,7 +108,7 @@ export default function StationModal({ station, onClose, onOpenAI }: StationModa
             <div className="mt-6 p-4 bg-white/[0.04] border border-white/10 rounded-xl space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
-                  <span className="text-[10px] uppercase tracking-wider text-neutral-400 block font-mono">Direct Frequency</span>
+                  <span className="text-[10px] uppercase tracking-wider text-neutral-400 block font-mono">Direct Email &amp; Scheduling</span>
                   <span className="text-sm font-semibold text-white">priyanshurawat.business@gmail.com</span>
                 </div>
                 <button
@@ -165,7 +165,7 @@ export default function StationModal({ station, onClose, onOpenAI }: StationModa
           {/* Footer controls hint */}
           <div className="mt-6 text-center">
             <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">
-              [ ESC or Click Outside to Return to Explorer ]
+              [ ESC or Click Outside to Return to 3D Office ]
             </span>
           </div>
         </motion.div>

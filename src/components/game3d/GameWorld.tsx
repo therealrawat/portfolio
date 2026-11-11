@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Trophy } from 'lucide-react';
 import { ThreeEngine, type ActionPrompt } from './ThreeEngine';
+import { type AvatarEmoteName } from './AvatarController';
 import GameHUD from './GameHUD';
 import StationModal from './StationModal';
-import { DATA_CORES, type StationData } from '../../data/stationsData';
+import { type StationData } from '../../data/stationsData';
 import { sfx } from '../../utils/audio';
 
 interface GameWorldProps {
@@ -17,15 +16,13 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
 
   const [nearbyStation, setNearbyStation] = useState<StationData | null>(null);
   const [activeModalStation, setActiveModalStation] = useState<StationData | null>(null);
-  const [coresCollected, setCoresCollected] = useState(0);
   const [speed, setSpeed] = useState(0);
   const [playerPos, setPlayerPos] = useState({ x: 0, z: 6, rotation: 0 });
-  const [showOverdriveToast, setShowOverdriveToast] = useState(false);
   const [isTeleporting, setIsTeleporting] = useState(false);
   const [actionPrompt, setActionPrompt] = useState<ActionPrompt | null>(null);
   const [isDriving, setIsDriving] = useState(false);
-
-  const totalCores = DATA_CORES.length;
+  const [avatarLoaded, setAvatarLoaded] = useState(false);
+  const [activeEmote, setActiveEmote] = useState<AvatarEmoteName | null>(null);
 
   // Initialize Three.js Engine
   useEffect(() => {
@@ -35,16 +32,9 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
       onNearbyStation: (station) => {
         setNearbyStation(station);
       },
-      onCollectCore: (_coreId, total) => {
-        setCoresCollected(total);
-        sfx.playCollect();
-
-        if (total >= totalCores) {
-          setShowOverdriveToast(true);
-          sfx.playOverdrive();
-          engine.setOverdrive(true);
-          setTimeout(() => setShowOverdriveToast(false), 5000);
-        }
+      onInspectStation: (station) => {
+        setActiveModalStation(station);
+        sfx.playInteract();
       },
       onSpeedChange: (currentSpeed) => {
         setSpeed(currentSpeed);
@@ -61,6 +51,12 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
       onDriveState: (driving) => {
         setIsDriving(driving);
       },
+      onAvatarLoaded: () => {
+        setAvatarLoaded(true);
+      },
+      onEmoteChange: (emote) => {
+        setActiveEmote(emote);
+      },
     });
 
     engineRef.current = engine;
@@ -69,7 +65,7 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [totalCores]);
+  }, []);
 
   const handleTeleport = useCallback((stationId: string) => {
     engineRef.current?.teleportToStation(stationId);
@@ -95,6 +91,10 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
     engineRef.current?.toggleRoverDrive();
   }, []);
 
+  const handleTriggerEmote = useCallback((emote: AvatarEmoteName) => {
+    engineRef.current?.triggerAvatarEmote(emote);
+  }, []);
+
   const handleInspectStation = useCallback((station: StationData) => {
     setActiveModalStation(station);
     sfx.playInteract();
@@ -105,13 +105,11 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
       {/* 3D WebGL Canvas Container */}
       <div ref={containerRef} className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing" />
 
-      {/* Minimal Game HUD with Tactical Radar & Controls */}
+      {/* Minimal Game HUD with Executive Office Map & Controls */}
       <GameHUD
         nearbyStation={nearbyStation}
         onInspectStation={handleInspectStation}
         onTeleport={handleTeleport}
-        coresCollected={coresCollected}
-        totalCores={totalCores}
         speed={speed}
         playerPos={playerPos}
         onJoystickMove={handleJoystickMove}
@@ -122,6 +120,9 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
         isDriving={isDriving}
         onTogglePickThrow={handleTogglePickThrow}
         onToggleRover={handleToggleRover}
+        avatarLoaded={avatarLoaded}
+        activeEmote={activeEmote}
+        onTriggerEmote={handleTriggerEmote}
       />
 
       {/* Station Details Inspection Modal */}
@@ -130,31 +131,6 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
         onClose={() => setActiveModalStation(null)}
         onOpenAI={onOpenAI}
       />
-
-      {/* Overdrive Unlocked Toast */}
-      <AnimatePresence>
-        {showOverdriveToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -40, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3.5 bg-orange-950/90 border border-orange-500 rounded-2xl shadow-2xl shadow-orange-500/40 text-white backdrop-blur-xl pointer-events-none"
-          >
-            <div className="p-2 bg-orange-500/20 rounded-xl">
-              <Trophy className="w-5 h-5 text-amber-300 animate-bounce" />
-            </div>
-            <div>
-              <div className="text-xs font-mono uppercase tracking-widest text-amber-300 font-bold">
-                Achievement Unlocked!
-              </div>
-              <div className="text-sm font-black text-white">
-                All 5 PRD Cores Collected • Overdrive Mode Activated ⚡
-              </div>
-            </div>
-            <Sparkles className="w-4 h-4 text-orange-300 animate-pulse ml-2" />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
