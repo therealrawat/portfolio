@@ -486,6 +486,89 @@ class SoundEffects {
     }
   }
 
+  // --- Realistic Human Jump Takeoff & Two-Foot Sneaker Landing Audio ---
+  public playJumpTakeoff() {
+    if (this.muted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+
+      // Rubber sole push-off against tile floor
+      const pushOsc = ctx.createOscillator();
+      const pushGain = ctx.createGain();
+      pushOsc.type = 'triangle';
+      pushOsc.frequency.setValueAtTime(165, now);
+      pushOsc.frequency.exponentialRampToValueAtTime(75, now + 0.055);
+      pushGain.gain.setValueAtTime(0.04, now);
+      pushGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      pushOsc.connect(pushGain);
+      pushGain.connect(ctx.destination);
+      pushOsc.start(now);
+      pushOsc.stop(now + 0.065);
+
+      // Subtle sneaker / clothing air brush
+      const brushBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.065), ctx.sampleRate);
+      const brushData = brushBuf.getChannelData(0);
+      for (let i = 0; i < brushData.length; i++) {
+        brushData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (brushData.length * 0.45));
+      }
+      const brushSrc = ctx.createBufferSource();
+      brushSrc.buffer = brushBuf;
+      const brushFilter = ctx.createBiquadFilter();
+      brushFilter.type = 'bandpass';
+      brushFilter.frequency.setValueAtTime(900, now);
+      brushFilter.Q.value = 1.2;
+      const brushGain = ctx.createGain();
+      brushGain.gain.setValueAtTime(0.025, now);
+      brushSrc.connect(brushFilter);
+      brushFilter.connect(brushGain);
+      brushGain.connect(ctx.destination);
+      brushSrc.start(now);
+    } catch {
+      // Audio handled
+    }
+  }
+
+  public playJumpLand() {
+    if (this.muted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+
+      // Primary heel + sole weight absorption thud on tile floor
+      const bodyOsc = ctx.createOscillator();
+      const bodyGain = ctx.createGain();
+      bodyOsc.type = 'triangle';
+      bodyOsc.frequency.setValueAtTime(125, now);
+      bodyOsc.frequency.exponentialRampToValueAtTime(42, now + 0.09);
+      bodyGain.gain.setValueAtTime(0.065, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      bodyOsc.connect(bodyGain);
+      bodyGain.connect(ctx.destination);
+      bodyOsc.start(now);
+      bodyOsc.stop(now + 0.105);
+
+      // Slight staggered second-foot tap 28ms later
+      const secondOsc = ctx.createOscillator();
+      const secondGain = ctx.createGain();
+      secondOsc.type = 'sine';
+      secondOsc.frequency.setValueAtTime(145, now + 0.028);
+      secondOsc.frequency.exponentialRampToValueAtTime(52, now + 0.085);
+      secondGain.gain.setValueAtTime(0.04, now + 0.028);
+      secondGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      secondOsc.connect(secondGain);
+      secondGain.connect(ctx.destination);
+      secondOsc.start(now + 0.028);
+      secondOsc.stop(now + 0.095);
+    } catch {
+      // Audio handled
+    }
+  }
+
   // --- Jump Pad Launch Whoosh ---
   public playLaunchPad() {
     const ctx = this.getContext();

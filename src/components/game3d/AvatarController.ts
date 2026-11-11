@@ -38,15 +38,22 @@ export class AvatarController {
   private isLoaded = false;
   private disposed = false;
 
-  // Procedural bones for carry arm posing & head look
+  // Procedural bones for carry arm posing, jump articulation & head look
   private bones: {
     head?: THREE.Object3D;
+    spine?: THREE.Object3D;
     leftArm?: THREE.Object3D;
     leftForeArm?: THREE.Object3D;
     leftHand?: THREE.Object3D;
     rightArm?: THREE.Object3D;
     rightForeArm?: THREE.Object3D;
     rightHand?: THREE.Object3D;
+    leftUpLeg?: THREE.Object3D;
+    leftLeg?: THREE.Object3D;
+    leftFoot?: THREE.Object3D;
+    rightUpLeg?: THREE.Object3D;
+    rightLeg?: THREE.Object3D;
+    rightFoot?: THREE.Object3D;
   } = {};
 
   // Timing & sync state
@@ -56,16 +63,24 @@ export class AvatarController {
   private firedStrikes = new Set<number>();
   private lastRunPhase = 0;
   private carryBlend = 0;
+  private jumpBlend = 0;
+  private landSquash = 0;
+  private wasJumping = false;
   private headLookAngle = 0;
 
   // Reusable math objects (zero GC per frame)
   private readonly tmpVecA = new THREE.Vector3();
   private readonly tmpVecB = new THREE.Vector3();
   private readonly tmpVecC = new THREE.Vector3();
+  private readonly tmpVecD = new THREE.Vector3();
   private readonly tmpDirCur = new THREE.Vector3();
   private readonly tmpDirDes = new THREE.Vector3();
+  private readonly tmpFwd = new THREE.Vector3();
+  private readonly tmpLeft = new THREE.Vector3();
+  private readonly tmpUp = new THREE.Vector3();
   private readonly tmpQuatA = new THREE.Quaternion();
   private readonly tmpQuatB = new THREE.Quaternion();
+  private readonly tmpQuatC = new THREE.Quaternion();
   private readonly tmpQuatDelta = new THREE.Quaternion();
 
   private loadPromise: Promise<void> | null = null;
@@ -181,12 +196,19 @@ export class AvatarController {
 
       this.bones = {
         head: scene.getObjectByName('Head'),
+        spine: scene.getObjectByName('Spine'),
         leftArm: scene.getObjectByName('LeftArm'),
         leftForeArm: scene.getObjectByName('LeftForeArm'),
         leftHand: scene.getObjectByName('LeftHand'),
         rightArm: scene.getObjectByName('RightArm'),
         rightForeArm: scene.getObjectByName('RightForeArm'),
         rightHand: scene.getObjectByName('RightHand'),
+        leftUpLeg: scene.getObjectByName('LeftUpLeg'),
+        leftLeg: scene.getObjectByName('LeftLeg'),
+        leftFoot: scene.getObjectByName('LeftFoot'),
+        rightUpLeg: scene.getObjectByName('RightUpLeg'),
+        rightLeg: scene.getObjectByName('RightLeg'),
+        rightFoot: scene.getObjectByName('RightFoot'),
       };
 
       const mixer = new THREE.AnimationMixer(scene);
@@ -297,11 +319,22 @@ export class AvatarController {
     turnInput: number;
     isBoosting: boolean;
     isJumping: boolean;
+    verticalVelocity?: number;
     isTeleporting: boolean;
     isDriving: boolean;
     heldPropPos: THREE.Vector3 | null;
   }) {
-    const { delta, speed, turnInput, isBoosting, isJumping, isTeleporting, isDriving, heldPropPos } = params;
+    const {
+      delta,
+      speed,
+      turnInput,
+      isBoosting,
+      isJumping,
+      verticalVelocity = 0,
+      isTeleporting,
+      isDriving,
+      heldPropPos,
+    } = params;
 
     // Spin placeholder holo while downloading
     if (!this.isLoaded && this.loadingGroup) {
@@ -369,7 +402,7 @@ export class AvatarController {
       }
       const runAct = this.actions.get('run');
       if (runAct) {
-        const targetRate = isJumping ? 0.28 : Math.min(1.42, Math.max(0.55, speed / 9.0));
+        const targetRate = isJumping ? 0.12 : Math.min(1.42, Math.max(0.55, speed / 9.0));
         runAct.setEffectiveTimeScale(targetRate);
 
         // Exact sneaker plant footstep triggers synced to Mixamo run clip frames
@@ -395,8 +428,21 @@ export class AvatarController {
     // Advance baked animation mixer
     this.mixer.update(delta);
 
-    // Subtle procedural bone layering on top of baked skeleton
-    this.applyProceduralBoneLayers(delta, turnInput, heldPropPos);
+    // Track natural jump tuck & touchdown knee compression
+    const activeJumpPose = isJumping && !isTeleporting && !this.activeEmote && this.currentAnim !== 'entry';
+    if (this.wasJumping && !isJumping && !isTeleporting) {
+      this.landSquash = 1.0;
+    }
+    this.wasJumping = isJumping;
+
+    const blendSpeed = activeJumpPose ? 14 : 10;
+    this.jumpBlend += ((activeJumpPose ? 1 : 0) - this.jumpBlend) * Math.min(1, delta * blendSpeed);
+    this.landSquash = Math.max(0, this.landSquash - delta * 4.5);
+    this.avatarScene.position.y =
+      this.landSquash > 0.01 ? -Math.sin(this.landSquash * Math.PI) * 0.085 : 0;
+
+    // Procedural bone layering (head look, realistic jump legs/arms, object carrying)
+    this.applyProceduralBoneLayers(delta, turnInput, heldPropPos, isJumping, verticalVelocity, speed);
   }
 
   private crossedPhase(prev: number, next: number, target: number): boolean {
@@ -407,7 +453,14 @@ export class AvatarController {
     return prev < target || next >= target;
   }
 
-  private applyProceduralBoneLayers(delta: number, turnInput: number, heldPropPos: THREE.Vector3 | null) {
+  private applyProceduralBoneLayers(
+    delta: number,
+    turnInput: number,
+    heldPropPos: THREE.Vector3 | null,
+    isJumping: boolean,
+    verticalVelocity: number,
+    speed: number
+  ) {
     if (!this.avatarScene) return;
 
     // 1. Subtle Head look yaw into turns (when not in pushups or floor entry)
@@ -419,7 +472,70 @@ export class AvatarController {
       }
     }
 
-    // 2. Dynamic dual-arm carry reaching towards held object
+    // 2. Realistic athletic jump posture (knee tuck on ascent, extend on fall, knee flex on landing)
+    const landFlex = !isJumping ? Math.sin(this.landSquash * Math.PI) * 0.68 : 0;
+    const legWeight = Math.max(this.jumpBlend, landFlex);
+    if (legWeight > 0.01 && !this.activeEmote && this.currentAnim !== 'entry') {
+      this.avatarScene.updateMatrixWorld(true);
+      this.avatarScene.getWorldQuaternion(this.tmpQuatC);
+      this.tmpFwd.set(0, 0, 1).applyQuaternion(this.tmpQuatC);
+      this.tmpLeft.set(1, 0, 0).applyQuaternion(this.tmpQuatC);
+      this.tmpUp.set(0, 1, 0).applyQuaternion(this.tmpQuatC);
+
+      // Forward torso athletic lean during airborne jump & landing absorb
+      if (this.bones.spine) {
+        this.bones.spine.rotation.x += 0.14 * legWeight;
+      }
+
+      const descentFactor = isJumping ? THREE.MathUtils.clamp((verticalVelocity + 4.5) / 8.5, 0.35, 1.0) : 0.72;
+      const runStagger = speed > 1.2 && isJumping ? 0.14 : 0;
+
+      const { leftUpLeg, leftLeg, leftFoot, rightUpLeg, rightLeg, rightFoot, leftArm, leftForeArm, rightArm, rightForeArm } =
+        this.bones;
+
+      // Thighs swing forward & upward with bent knees
+      this.tmpVecD
+        .copy(this.tmpUp)
+        .multiplyScalar(-0.74)
+        .addScaledVector(this.tmpFwd, (0.58 - runStagger * 0.5) * descentFactor);
+      if (leftUpLeg && leftLeg) this.aimBoneDirection(leftUpLeg, leftLeg, this.tmpVecD, legWeight);
+
+      this.tmpVecD
+        .copy(this.tmpUp)
+        .multiplyScalar(-0.66)
+        .addScaledVector(this.tmpFwd, (0.68 + runStagger) * descentFactor);
+      if (rightUpLeg && rightLeg) this.aimBoneDirection(rightUpLeg, rightLeg, this.tmpVecD, legWeight);
+
+      this.avatarScene.updateMatrixWorld(true);
+
+      // Shins tuck naturally backward underneath thighs
+      this.tmpVecD
+        .copy(this.tmpUp)
+        .multiplyScalar(-0.74)
+        .addScaledVector(this.tmpFwd, -0.64 * descentFactor);
+      if (leftLeg && leftFoot) this.aimBoneDirection(leftLeg, leftFoot, this.tmpVecD, legWeight);
+      if (rightLeg && rightFoot) this.aimBoneDirection(rightLeg, rightFoot, this.tmpVecD, legWeight);
+
+      // Counterbalance arms when not carrying an object
+      if (heldPropPos === null && this.jumpBlend > 0.04) {
+        const armWeight = this.jumpBlend * 0.82;
+        this.tmpVecD
+          .copy(this.tmpUp)
+          .multiplyScalar(-0.35)
+          .addScaledVector(this.tmpLeft, 0.48)
+          .addScaledVector(this.tmpFwd, 0.55);
+        if (leftArm && leftForeArm) this.aimBoneDirection(leftArm, leftForeArm, this.tmpVecD, armWeight);
+
+        this.tmpVecD
+          .copy(this.tmpUp)
+          .multiplyScalar(-0.35)
+          .addScaledVector(this.tmpLeft, -0.48)
+          .addScaledVector(this.tmpFwd, 0.55);
+        if (rightArm && rightForeArm) this.aimBoneDirection(rightArm, rightForeArm, this.tmpVecD, armWeight);
+      }
+    }
+
+    // 3. Dynamic dual-arm carry reaching towards held object
     const wantCarry = heldPropPos !== null && !this.activeEmote && this.currentAnim !== 'entry';
     const targetBlend = wantCarry ? 1 : 0;
     this.carryBlend += (targetBlend - this.carryBlend) * Math.min(1, delta * 12);
@@ -458,16 +574,21 @@ export class AvatarController {
   }
 
   private aimBoneTowards(bone: THREE.Object3D, childBone: THREE.Object3D, worldTarget: THREE.Vector3, weight: number) {
-    if (!bone.parent) return;
+    bone.getWorldPosition(this.tmpVecA);
+    this.tmpVecD.subVectors(worldTarget, this.tmpVecA);
+    this.aimBoneDirection(bone, childBone, this.tmpVecD, weight);
+  }
+
+  private aimBoneDirection(bone: THREE.Object3D, childBone: THREE.Object3D, worldDir: THREE.Vector3, weight: number) {
+    if (!bone.parent || weight <= 0.001) return;
     bone.getWorldPosition(this.tmpVecA);
     childBone.getWorldPosition(this.tmpVecB);
 
     this.tmpDirCur.subVectors(this.tmpVecB, this.tmpVecA);
-    this.tmpDirDes.subVectors(worldTarget, this.tmpVecA);
-    if (this.tmpDirCur.lengthSq() < 1e-6 || this.tmpDirDes.lengthSq() < 1e-6) return;
+    if (this.tmpDirCur.lengthSq() < 1e-6 || worldDir.lengthSq() < 1e-6) return;
 
     this.tmpDirCur.normalize();
-    this.tmpDirDes.normalize();
+    this.tmpDirDes.copy(worldDir).normalize();
 
     this.tmpQuatDelta.setFromUnitVectors(this.tmpDirCur, this.tmpDirDes);
     bone.getWorldQuaternion(this.tmpQuatA);

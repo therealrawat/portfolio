@@ -90,14 +90,6 @@ interface ClickableZoneTarget {
   approachOffset: THREE.Vector3;
 }
 
-interface TrailParticle {
-  pos: THREE.Vector3;
-  vel: THREE.Vector3;
-  life: number;
-  maxLife: number;
-  size: number;
-}
-
 export class ThreeEngine {
   private container: HTMLElement;
   private callbacks: EngineCallbacks;
@@ -117,7 +109,6 @@ export class ThreeEngine {
   private characterRoot: THREE.Group;
   private avatarController!: AvatarController;
   private pmremTarget: THREE.WebGLRenderTarget | null = null;
-  private thrusterGlow: THREE.PointLight;
   private contactShadow: THREE.Mesh;
   private playerVelocity = new THREE.Vector3();
   private playerRotation = 0;
@@ -125,7 +116,7 @@ export class ThreeEngine {
   private isBoosting = false;
   private isJumping = false;
   private verticalVelocity = 0;
-  private gravity = 22;
+  private gravity = 19.5;
 
   // Click to move target
   private targetDestination: THREE.Vector3 | null = null;
@@ -152,14 +143,6 @@ export class ThreeEngine {
   // Drivable Executive Rover Vehicle
   public isDrivingRover = false;
   private rover!: DrivableRover;
-  private trailParticles: TrailParticle[] = [];
-  private trailPoints!: THREE.Points;
-  private trailPositions!: Float32Array;
-
-  // Shockwave ring
-  private shockwaveRing: THREE.Mesh | null = null;
-  private shockwaveActive = false;
-  private shockwaveRadius = 0;
 
   // Quantum Teleportation System
   public isTeleporting = false;
@@ -233,13 +216,11 @@ export class ThreeEngine {
     const {
       group,
       characterRoot,
-      thrusterLight,
       shadow,
       avatarController,
     } = this.buildCharacterRig();
     this.playerGroup = group;
     this.characterRoot = characterRoot;
-    this.thrusterGlow = thrusterLight;
     this.contactShadow = shadow;
     this.avatarController = avatarController;
     this.scene.add(this.playerGroup);
@@ -298,8 +279,6 @@ export class ThreeEngine {
 
     this.buildEnvironment();
     this.buildStations();
-    this.buildParticleTrails();
-    this.buildShockwaveMesh();
     this.destinationMarker = this.buildDestinationMarker();
     if (this.destinationMarker) {
       this.scene.add(this.destinationMarker);
@@ -1060,26 +1039,35 @@ export class ThreeEngine {
     const group = new THREE.Group();
     group.position.set(0, 0, 6);
 
-    // Contact shadow underneath feet
-    const shadowGeo = new THREE.CircleGeometry(0.68, 24);
+    // Subtle soft-feathered ambient contact shadow underneath shoes
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 128;
+    shadowCanvas.height = 128;
+    const sCtx = shadowCanvas.getContext('2d');
+    if (sCtx) {
+      const grad = sCtx.createRadialGradient(64, 64, 6, 64, 64, 60);
+      grad.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
+      grad.addColorStop(0.55, 'rgba(0, 0, 0, 0.2)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      sCtx.fillStyle = grad;
+      sCtx.fillRect(0, 0, 128, 128);
+    }
+    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+    const shadowGeo = new THREE.PlaneGeometry(0.95, 0.95);
     const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x000000,
+      map: shadowTex,
       transparent: true,
       opacity: 0.65,
+      depthWrite: false,
     });
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
     shadow.rotation.x = -Math.PI / 2;
-    shadow.position.y = 0.02;
+    shadow.position.y = 0.015;
     group.add(shadow);
 
     // Root node for loaded GLB character, teleport scale, and lean
     const characterRoot = new THREE.Group();
     group.add(characterRoot);
-
-    // Warm cybernetic aura / boost glow at feet
-    const thrusterLight = new THREE.PointLight(0xf97316, 1.4, 5.5);
-    thrusterLight.position.set(0, 0.35, 0.25);
-    characterRoot.add(thrusterLight);
 
     const avatarController = new AvatarController(
       characterRoot,
@@ -1088,13 +1076,7 @@ export class ThreeEngine {
           this.callbacks.onAvatarLoaded?.();
         },
         onEntryLand: () => {
-          // Trigger subtle orange impact shockwave ring when hero drops onto spawn pad
-          if (this.shockwaveRing) {
-            this.shockwaveRing.position.set(this.playerGroup.position.x, 0.08, this.playerGroup.position.z);
-            this.shockwaveRing.visible = true;
-            this.shockwaveRadius = 0.4;
-            this.shockwaveActive = true;
-          }
+          sfx.playJumpLand();
         },
         onStrikeImpact: (kind) => {
           this.applyStrikeImpulse(kind);
@@ -1109,7 +1091,6 @@ export class ThreeEngine {
     return {
       group,
       characterRoot,
-      thrusterLight,
       shadow,
       avatarController,
     };
@@ -1136,7 +1117,6 @@ export class ThreeEngine {
     }
 
     // Check props in strike cone in front of player (range 3.2m)
-    let hitAny = false;
     for (const prop of this.interactiveProps) {
       const toProp = new THREE.Vector3(prop.pos.x - pPos.x, 0, prop.pos.z - pPos.z);
       const dist = toProp.length();
@@ -1144,7 +1124,6 @@ export class ThreeEngine {
 
       const dot = dist > 0.01 ? toProp.clone().normalize().dot(forwardDir) : 1;
       if (dot > 0.25 || dist < 1.3) {
-        hitAny = true;
         const launchPower = (kind === 'kick' ? 22 : 17) / Math.max(0.7, prop.mass);
         const launchVec = forwardDir.clone().multiplyScalar(launchPower);
         launchVec.y = kind === 'kick' ? 8.5 / Math.sqrt(prop.mass) : 4.2 / Math.sqrt(prop.mass);
@@ -1155,14 +1134,6 @@ export class ThreeEngine {
         );
         sfx.playBump();
       }
-    }
-
-    if (hitAny && this.shockwaveRing) {
-      const impactPt = pPos.clone().addScaledVector(forwardDir, 1.1);
-      this.shockwaveRing.position.set(impactPt.x, 0.08, impactPt.z);
-      this.shockwaveRing.visible = true;
-      this.shockwaveRadius = 0.25;
-      this.shockwaveActive = true;
     }
   }
 
@@ -1477,82 +1448,6 @@ export class ThreeEngine {
     });
   }
 
-  // --- Particle Exhaust & Skid Trail System ---
-  private buildParticleTrails() {
-    const maxParticles = 120;
-    const geometry = new THREE.BufferGeometry();
-    this.trailPositions = new Float32Array(maxParticles * 3);
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
-
-    const material = new THREE.PointsMaterial({
-      color: 0xf97316,
-      size: 0.3,
-      transparent: true,
-      opacity: 0.8,
-      blending: THREE.AdditiveBlending,
-    });
-
-    this.trailPoints = new THREE.Points(geometry, material);
-    this.scene.add(this.trailPoints);
-  }
-
-  // --- Shockwave Mesh (Triggered on 'F' or action button) ---
-  private buildShockwaveMesh() {
-    const ringGeo = new THREE.RingGeometry(0.5, 0.9, 32);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xf97316,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8,
-    });
-    this.shockwaveRing = new THREE.Mesh(ringGeo, ringMat);
-    this.shockwaveRing.rotation.x = -Math.PI / 2;
-    this.shockwaveRing.position.y = 0.1;
-    this.shockwaveRing.visible = false;
-    this.scene.add(this.shockwaveRing);
-  }
-
-  public triggerShockwave() {
-    if (!this.isReady) return;
-    this.shockwaveActive = true;
-    this.shockwaveRadius = 1;
-    const blastOrigin = this.isDrivingRover ? this.rover.pos : this.playerGroup.position;
-
-    if (!this.isDrivingRover && !this.heldProp && this.playerVelocity.length() < 1.2) {
-      this.avatarController.triggerEmote('punch');
-    }
-
-    if (this.shockwaveRing) {
-      this.shockwaveRing.position.set(blastOrigin.x, 0.1, blastOrigin.z);
-      this.shockwaveRing.visible = true;
-      this.shockwaveRing.scale.set(1, 1, 1);
-    }
-    sfx.playShockwave();
-
-    // If holding an object, blast-launch it!
-    if (this.heldProp) {
-      this.throwHeldProp(28);
-    }
-
-    // Push all nearby interactive props outward with radial force
-    this.interactiveProps.forEach((prop) => {
-      if (prop === this.heldProp) return;
-
-      const dx = prop.pos.x - blastOrigin.x;
-      const dz = prop.pos.z - blastOrigin.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < 14) {
-        const force = (Math.max(0, 1 - dist / 14) * 28) / prop.mass;
-        const dir = new THREE.Vector3(dx, 0.35, dz).normalize();
-        prop.velocity.addScaledVector(dir, force);
-        prop.angularVelocity.add(
-          new THREE.Vector3((Math.random() - 0.5) * 12, 3, (Math.random() - 0.5) * 12)
-        );
-      }
-    });
-  }
-
   // --- Quantum Teleportation Portal Beam & Rings Mesh ---
   private buildTeleportFX() {
     this.teleportGroup = new THREE.Group();
@@ -1815,16 +1710,17 @@ export class ThreeEngine {
       return;
     }
 
-    // Crucial: prevent spacebar default so browser never triggers click on focused DOM buttons!
+    // Prevent spacebar default so browser never triggers click on focused DOM buttons
     if (e.code === 'Space') {
       e.preventDefault();
-      if (!this.isJumping && !this.isTeleporting) {
-        this.isJumping = true;
-        this.verticalVelocity = 8.5;
-        sfx.playBoost();
+      if (!e.repeat) {
+        this.triggerJump();
       }
-      this.isBoosting = true;
       return;
+    }
+
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+      this.isBoosting = true;
     }
 
     this.keysPressed[e.code] = true;
@@ -1842,10 +1738,6 @@ export class ThreeEngine {
       this.targetDestination = null;
       this.pendingInspectStationId = null;
       if (this.destinationMarker) this.destinationMarker.visible = false;
-    }
-
-    if (e.code === 'KeyF' || e.code === 'KeyH') {
-      this.triggerShockwave();
     }
 
     if (e.code === 'KeyG') {
@@ -1873,8 +1765,10 @@ export class ThreeEngine {
   private handleKeyUp = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       e.preventDefault();
-      this.isBoosting = false;
       return;
+    }
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+      this.isBoosting = false;
     }
     this.keysPressed[e.code] = false;
   };
@@ -2040,16 +1934,16 @@ export class ThreeEngine {
     }
   }
 
+  public triggerJump() {
+    if (!this.isReady || this.isTeleporting || this.isDrivingRover || this.isJumping) return;
+    this.isJumping = true;
+    this.verticalVelocity = 5.45;
+    sfx.playJumpTakeoff();
+  }
+
   public setBoost(active: boolean) {
     if (!this.isReady || this.isTeleporting) return;
     this.isBoosting = active;
-    if (active) {
-      if (!this.isDrivingRover && !this.isJumping) {
-        this.isJumping = true;
-        this.verticalVelocity = 8.5;
-      }
-      sfx.playBoost();
-    }
   }
 
   public teleportToStation(stationId: string) {
@@ -2150,14 +2044,6 @@ export class ThreeEngine {
         this.playerRotation = this.teleportTarget.rotation;
         this.playerGroup.rotation.y = this.playerRotation;
         this.teleportGroup.position.set(this.teleportTarget.x, 5, this.teleportTarget.z);
-
-        // Radial energy landing burst
-        if (this.shockwaveRing) {
-          this.shockwaveRing.position.set(this.teleportTarget.x, 0.08, this.teleportTarget.z);
-          this.shockwaveRing.visible = true;
-          this.shockwaveRadius = 0.5;
-          this.shockwaveActive = true;
-        }
       }
 
       beamMat.opacity = 0.95;
@@ -2234,13 +2120,12 @@ export class ThreeEngine {
         turnInput: this.lastTurnInput,
         isBoosting: this.isBoosting,
         isJumping: this.isJumping,
+        verticalVelocity: this.verticalVelocity,
         isTeleporting: this.isTeleporting,
         isDriving: this.isDrivingRover,
         heldPropPos: this.heldProp ? this.heldProp.pos : null,
       });
     }
-    this.updateParticles(delta);
-    this.updateShockwave(delta);
     this.updateAnimations(time);
     this.checkProximity();
     this.checkActionPrompts();
@@ -2358,36 +2243,11 @@ export class ThreeEngine {
     this.rover.thrusterLight.intensity =
       1.0 + (Math.abs(this.rover.speed) / maxForwardSpeed) * 3.5 + (this.isBoosting ? 4.0 : 0);
 
-    // Spawn exhaust trails when speeding or boosting
-    if (Math.abs(this.rover.speed) > 3.0) {
-      this.spawnRoverExhaustParticle();
-    }
-
     // Real-time electric motor audio update
     sfx.updateRoverEngine(Math.abs(this.rover.speed), this.isBoosting);
 
     // Speedometer report to UI
     this.callbacks.onSpeedChange(Math.round(Math.abs(this.rover.speed) * 3.6));
-  }
-
-  private spawnRoverExhaustParticle() {
-    if (this.trailParticles.length >= 100) return;
-
-    [-0.6, 0.6].forEach((xOffset) => {
-      const rearOffset = new THREE.Vector3(xOffset, 0.55, 1.95).applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        this.rover.rotation
-      );
-      const spawnPos = this.rover.pos.clone().add(rearOffset);
-
-      this.trailParticles.push({
-        pos: spawnPos,
-        vel: new THREE.Vector3((Math.random() - 0.5) * 0.8, Math.random() * 0.4, (Math.random() - 0.5) * 0.8),
-        life: 0,
-        maxLife: 0.4 + Math.random() * 0.3,
-        size: 0.35,
-      });
-    });
   }
 
   // --- Update Explorer Physics & Controls ---
@@ -2448,28 +2308,27 @@ export class ThreeEngine {
     this.lastTurnInput = turnInput;
 
     // Movement speed settings (3D Character Avatar)
-    let maxSpeed = 8.5;
-    if (this.isBoosting) maxSpeed = 15.5;
-
+    const maxSpeed = this.isBoosting ? 12.8 : 8.5;
     const acceleration = 32;
-    const drag = 0.86;
     const turnSpeed = 3.6;
+    const controlFactor = this.isJumping ? 0.22 : 1.0;
+    const drag = this.isJumping ? 0.97 : 0.86;
 
-    // Apply rotation
-    this.playerRotation += turnInput * turnSpeed * delta;
+    // Apply rotation (reduced mid-air turning for realistic jump inertia)
+    this.playerRotation += turnInput * turnSpeed * (this.isJumping ? 0.45 : 1.0) * delta;
     this.playerGroup.rotation.y = this.playerRotation;
 
     // Apply forward/backward force along facing direction
     if (forwardInput !== 0) {
       const forwardDir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.playerRotation);
-      this.playerVelocity.addScaledVector(forwardDir, forwardInput * acceleration * delta);
+      this.playerVelocity.addScaledVector(forwardDir, forwardInput * acceleration * controlFactor * delta);
 
       if (this.playerVelocity.length() > maxSpeed) {
         this.playerVelocity.setLength(maxSpeed);
       }
     }
 
-    // Apply drag / friction
+    // Apply drag / friction (airborne momentum carries across the jump arc)
     this.playerVelocity.multiplyScalar(Math.pow(drag, delta * 60));
 
     // Update X/Z position
@@ -2484,20 +2343,24 @@ export class ThreeEngine {
         this.playerGroup.position.y = 0;
         this.isJumping = false;
         this.verticalVelocity = 0;
+        sfx.playJumpLand();
       }
     } else {
       this.playerGroup.position.y = 0;
     }
 
-    // Contact Shadow follows and scales inversely with jump height
+    // Keep soft contact shadow grounded on the floor and fade naturally with jump height
     const heightAboveGround = this.playerGroup.position.y;
-    const shadowScale = Math.max(0.3, 1 - heightAboveGround * 0.12);
+    const shadowScale = Math.max(0.55, 1 - heightAboveGround * 0.35);
+    this.contactShadow.position.y = 0.015 - heightAboveGround;
     this.contactShadow.scale.set(shadowScale, shadowScale, shadowScale);
+    const shadowMat = this.contactShadow.material as THREE.MeshBasicMaterial;
+    shadowMat.opacity = Math.max(0.1, 0.65 - heightAboveGround * 0.45);
 
     const currentSpeed = this.playerVelocity.length();
 
-    // Subtle agile body banking into high-speed turns
-    const targetRoll = currentSpeed > 1.2 ? -turnInput * 0.08 : 0;
+    // Subtle agile body banking into high-speed turns while grounded
+    const targetRoll = !this.isJumping && currentSpeed > 1.2 ? -turnInput * 0.08 : 0;
     this.characterRoot.rotation.z += (targetRoll - this.characterRoot.rotation.z) * 0.15;
 
     // Office furniture & enclosed room perimeter clamping
@@ -2506,17 +2369,6 @@ export class ThreeEngine {
     if (this.clampToOfficeRoom(this.playerGroup.position, 0.55)) {
       this.playerVelocity.set(0, 0, 0);
     }
-
-    // Spawn exhaust & thruster particles
-    if (currentSpeed > 2) {
-      this.spawnTrailParticle();
-    }
-
-    // Dynamic Thruster / Boost Flare
-    this.thrusterGlow.intensity = 1.0 + (currentSpeed / maxSpeed) * 1.4 + (this.isBoosting ? 2.8 : 0);
-
-    // Update real-time synthesized jetpack thruster
-    sfx.updateJetpack(this.isBoosting || this.isJumping, currentSpeed);
 
     // Report speed to React UI
     this.callbacks.onSpeedChange(Math.round(currentSpeed * 2));
@@ -2671,72 +2523,6 @@ export class ThreeEngine {
 
       // Sync Three.js group position
       prop.group.position.copy(prop.pos);
-    }
-  }
-
-  // --- Spawn & Update Skid / Particle Trails ---
-  private spawnTrailParticle() {
-    if (this.trailParticles.length >= 100) return;
-
-    const pPos = this.playerGroup.position;
-    // Spawn behind explorer boots / thrusters
-    const rearOffset = new THREE.Vector3(0, 0.2, 0.35).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.playerRotation);
-    const spawnPos = pPos.clone().add(rearOffset);
-
-    this.trailParticles.push({
-      pos: spawnPos,
-      vel: new THREE.Vector3((Math.random() - 0.5) * 0.4, Math.random() * 0.3, (Math.random() - 0.5) * 0.4),
-      life: 0,
-      maxLife: 0.5 + Math.random() * 0.3,
-      size: 0.25,
-    });
-  }
-
-  private updateParticles(delta: number) {
-    for (let i = this.trailParticles.length - 1; i >= 0; i--) {
-      const p = this.trailParticles[i];
-      p.life += delta;
-      p.pos.addScaledVector(p.vel, delta);
-
-      if (p.life >= p.maxLife) {
-        this.trailParticles.splice(i, 1);
-      }
-    }
-
-    // Update BufferGeometry positions
-    const posAttr = this.trailPoints.geometry.getAttribute('position') as THREE.BufferAttribute;
-    const array = posAttr.array as Float32Array;
-
-    for (let i = 0; i < 120; i++) {
-      if (i < this.trailParticles.length) {
-        const p = this.trailParticles[i];
-        array[i * 3] = p.pos.x;
-        array[i * 3 + 1] = p.pos.y;
-        array[i * 3 + 2] = p.pos.z;
-      } else {
-        array[i * 3] = 0;
-        array[i * 3 + 1] = -100;
-        array[i * 3 + 2] = 0;
-      }
-    }
-    posAttr.needsUpdate = true;
-  }
-
-  // --- Shockwave Update ---
-  private updateShockwave(delta: number) {
-    if (!this.shockwaveActive || !this.shockwaveRing) return;
-
-    this.shockwaveRadius += delta * 24;
-    const scale = this.shockwaveRadius;
-    this.shockwaveRing.scale.set(scale, scale, 1);
-
-    const mat = this.shockwaveRing.material as THREE.MeshBasicMaterial;
-    const opacity = Math.max(0, 1 - this.shockwaveRadius / 14);
-    mat.opacity = opacity * 0.85;
-
-    if (this.shockwaveRadius >= 14) {
-      this.shockwaveActive = false;
-      this.shockwaveRing.visible = false;
     }
   }
 

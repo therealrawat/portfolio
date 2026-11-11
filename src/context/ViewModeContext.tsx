@@ -11,42 +11,37 @@ interface ViewModeContextType {
 
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'priyanshu_folio_mode';
+const LEGACY_STORAGE_KEY = 'priyanshu_folio_mode';
 
 export function ViewModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ViewMode>(() => {
-    // Check URL parameters or hash first
+    // Always default to standard (2D) portfolio; only enter 3D upfront if explicitly requested via query param
     if (typeof window !== 'undefined') {
-      const hash = window.location.hash.toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const paramMode = params.get('mode') || params.get('view');
-      
-      if (hash === '#3d' || paramMode === '3d') {
+      if (paramMode === '3d') {
         return '3d';
-      }
-      if (hash === '#2d' || hash === '#standard' || paramMode === '2d') {
-        return '2d';
-      }
-
-      // Fallback to localStorage
-      const saved = localStorage.getItem(STORAGE_KEY) as ViewMode | null;
-      if (saved === '3d' || saved === '2d') {
-        return saved;
       }
     }
     return '2d';
   });
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Clear any previously persisted 3D preference or stale #3d hash so loads always start in standard view
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    if (window.location.hash.toLowerCase() === '#3d') {
+      const url = new URL(window.location.href);
+      url.hash = '';
+      window.history.replaceState(null, '', url.toString());
+    }
+  }, []);
+
   const setMode = (newMode: ViewMode) => {
     setModeState(newMode);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, newMode);
+    if (typeof window !== 'undefined' && newMode === '2d' && window.location.hash.toLowerCase() === '#3d') {
       const url = new URL(window.location.href);
-      if (newMode === '3d') {
-        url.hash = '3d';
-      } else {
-        url.hash = '';
-      }
+      url.hash = '';
       window.history.replaceState(null, '', url.toString());
     }
   };

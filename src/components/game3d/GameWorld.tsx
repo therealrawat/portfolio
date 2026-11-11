@@ -86,12 +86,8 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
     engineRef.current?.setJoystickVector(x, y);
   }, []);
 
-  const handleBoostToggle = useCallback((boosting: boolean) => {
-    engineRef.current?.setBoost(boosting);
-  }, []);
-
-  const handleTriggerShockwave = useCallback(() => {
-    engineRef.current?.triggerShockwave();
+  const handleJump = useCallback(() => {
+    engineRef.current?.triggerJump();
   }, []);
 
   const handleTogglePickThrow = useCallback(() => {
@@ -193,8 +189,7 @@ export default function GameWorld({ onOpenAI }: GameWorldProps) {
           speed={speed}
           playerPos={playerPos}
           onJoystickMove={handleJoystickMove}
-          onBoostToggle={handleBoostToggle}
-          onTriggerShockwave={handleTriggerShockwave}
+          onJump={handleJump}
           isTeleporting={isTeleporting}
           actionPrompt={actionPrompt}
           isDriving={isDriving}

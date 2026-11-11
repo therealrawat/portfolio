@@ -9,9 +9,8 @@ import {
   Award,
   Radio,
   HelpCircle,
-  Zap,
+  ArrowUp,
   MousePointer,
-  Waves,
   Car,
   LogOut,
   Package,
@@ -31,8 +30,7 @@ interface GameHUDProps {
   speed: number;
   playerPos: { x: number; z: number; rotation: number };
   onJoystickMove: (x: number, y: number) => void;
-  onBoostToggle: (boosting: boolean) => void;
-  onTriggerShockwave: () => void;
+  onJump: () => void;
   isTeleporting?: boolean;
   actionPrompt?: ActionPrompt | null;
   isDriving?: boolean;
@@ -50,8 +48,7 @@ export default function GameHUD({
   speed,
   playerPos,
   onJoystickMove,
-  onBoostToggle,
-  onTriggerShockwave,
+  onJump,
   isTeleporting = false,
   actionPrompt = null,
   isDriving = false,
@@ -504,14 +501,12 @@ export default function GameHUD({
             type="button"
             onClick={(e) => {
               e.currentTarget.blur();
-              sfx.playBoost();
-              onBoostToggle(true);
-              setTimeout(() => onBoostToggle(false), 350);
+              onJump();
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-md shadow-amber-500/20"
-            title="Jet Jump / Sprint [Space]"
+            title="Jump [Space]"
           >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <ArrowUp className="w-3.5 h-3.5 text-amber-400" />
             <span className="text-[11px]">Jump [Space]</span>
           </button>
 
@@ -535,20 +530,6 @@ export default function GameHUD({
               <span className="text-[11px] hidden sm:inline">Moves</span>
             </button>
           )}
-
-          {/* Kinetic Pulse Trigger in Dock */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onTriggerShockwave();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/25 border border-orange-500/30 text-orange-300 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
-            title="Emit pulse to push interactive office objects"
-          >
-            <Waves className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-[11px] hidden sm:inline">Pulse [F]</span>
-          </button>
         </div>
 
         {/* Desktop Controls Indicator & Speedometer */}
@@ -620,25 +601,12 @@ export default function GameHUD({
               type="button"
               onClick={(e) => {
                 e.currentTarget.blur();
-                sfx.playBoost();
-                onBoostToggle(true);
-                setTimeout(() => onBoostToggle(false), 350);
+                onJump();
               }}
               className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Click or press Space to Jump / Turbo"
+              title="Click or press Space to Jump"
             >
               <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">Space</span> Jump
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                onTriggerShockwave();
-              }}
-              className="pointer-events-auto flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Click or press F to Blast"
-            >
-              <span className="px-1.5 py-0.5 bg-white/10 text-white rounded text-[10px]">F</span> Pulse
             </button>
             <span className="hidden lg:flex items-center gap-1.5">
               <MousePointer className="w-3 h-3 text-neutral-400" /> Click to Move
@@ -721,33 +689,14 @@ export default function GameHUD({
                 type="button"
                 onClick={(e) => {
                   e.currentTarget.blur();
-                  onTriggerShockwave();
+                  onJump();
                 }}
-                onTouchStart={onTriggerShockwave}
-                className="w-13 h-13 rounded-full bg-amber-500/20 active:bg-amber-500/60 border border-amber-400/50 flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg shadow-amber-500/25"
-                title="Shockwave"
-              >
-                <Waves className="w-4 h-4 text-amber-300" />
-                <span className="text-[7px] font-mono uppercase font-bold tracking-wider">PULSE</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.currentTarget.blur();
-                  sfx.playBoost();
-                  onBoostToggle(true);
-                  setTimeout(() => onBoostToggle(false), 350);
-                }}
-                onTouchStart={() => {
-                  sfx.playBoost();
-                  onBoostToggle(true);
-                }}
-                onTouchEnd={() => onBoostToggle(false)}
+                onTouchStart={onJump}
                 className="w-14 h-14 rounded-full bg-orange-500/20 active:bg-orange-500/60 border border-orange-400/50 flex flex-col items-center justify-center text-white active:scale-90 transition-transform shadow-lg shadow-orange-500/25"
+                title="Jump"
               >
-                <Zap className="w-5 h-5 text-orange-300" />
-                <span className="text-[8px] font-mono uppercase font-bold tracking-wider">BOOST</span>
+                <ArrowUp className="w-5 h-5 text-orange-300" />
+                <span className="text-[8px] font-mono uppercase font-bold tracking-wider">JUMP</span>
               </button>
             </div>
           </div>
@@ -799,12 +748,12 @@ export default function GameHUD({
                   <span className="font-mono font-bold text-orange-300">Press [ V ] (or Moves tray)</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Sprint / Jump</span>
+                  <span className="text-neutral-400">Jump</span>
                   <span className="font-mono font-bold text-white">Spacebar</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
-                  <span className="text-neutral-400">Kinetic Pulse</span>
-                  <span className="font-mono font-bold text-orange-300">Press [ F ] or [ H ]</span>
+                  <span className="text-neutral-400">Sprint / Rover Boost</span>
+                  <span className="font-mono font-bold text-white">Hold [ Shift ]</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-white/[0.04] rounded-xl">
                   <span className="text-neutral-400">Interactive Office Objects</span>
