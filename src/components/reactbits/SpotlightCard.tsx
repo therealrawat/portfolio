@@ -3,6 +3,7 @@ import { useRef, useState, type ReactNode, type MouseEvent as ReactMouseEvent } 
 interface SpotlightCardProps {
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
   spotlightColor?: string;
   spotlightSize?: number;
   onClick?: () => void;
@@ -11,6 +12,7 @@ interface SpotlightCardProps {
 export default function SpotlightCard({
   children,
   className = '',
+  contentClassName = '',
   spotlightColor = 'rgba(139, 92, 246, 0.16)',
   spotlightSize = 340,
   onClick,
@@ -69,7 +71,7 @@ export default function SpotlightCard({
       />
 
       {/* Content */}
-      <div className="relative z-10 h-full w-full">{children}</div>
+      <div className={`relative z-10 h-full w-full ${contentClassName}`}>{children}</div>
     </div>
   );
 }

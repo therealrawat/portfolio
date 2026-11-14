@@ -99,26 +99,8 @@ const detailedProjects: DetailedProject[] = [
     ],
   },
   {
-    id: 'prd-generator',
-    title: 'Intelligent PRD Generator',
-    subtitle: 'Automated Product Specifications & User Stories',
-    highlightMetric: '15+ Hours Saved Per Major Feature Spec',
-    pmPhilosophy:
-      'Writing rigorous PRDs from scratch is slow and prone to omitting technical edge cases. This system enforces structured requirements definitions that align engineering and design before a single line of code is written.',
-    engineeringArch:
-      'Multi-model LLM chaining pipeline built with Next.js and PostgreSQL. Translates high-level feature goals into structured personas, data entity diagrams, acceptance criteria, and edge-case test matrices.',
-    techStack: ['Next.js', 'PostgreSQL', 'OpenAI & Gemini', 'TypeScript', 'Tailwind CSS'],
-    liveUrl: 'https://syncscripts.netlify.app/',
-    githubUrl: 'https://github.com/therealrawat',
-    images: [
-      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=800&auto=format&fit=crop',
-    ],
-  },
-  {
     id: '4her',
-    title: '4Her Health Platform',
+    title: '4Her Health',
     subtitle: 'Predictive Wellness with Zero-Tracking Dignity',
     highlightMetric: '100% Client-Side Private Encryption',
     pmPhilosophy:
@@ -215,98 +197,93 @@ export default function ProjectsPage() {
               <SpotlightCard
                 spotlightColor="rgba(139, 92, 246, 0.2)"
                 spotlightSize={400}
-                className="p-6 sm:p-8 md:p-10 rounded-2xl flex flex-col lg:flex-row gap-8 lg:gap-12 items-center"
+                className="p-6 sm:p-8 md:p-10 rounded-2xl w-full"
               >
-                {/* Left Side: Interactive 3D Image Stack */}
-                <div className="w-full lg:w-1/2 flex flex-col justify-center">
-                  <div className="w-full h-56 sm:h-64 md:h-72">
-                    <ProjectImageStack
-                      images={project.images}
-                      title={project.title}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between pt-4 text-[11px] font-mono text-neutral-400">
-                    <span className="flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-violet-400" />
-                      Hover cards for 3D fan-out
-                    </span>
-                    <span className="text-neutral-400">0{idx + 1} / 0{detailedProjects.length}</span>
-                  </div>
-                </div>
-
-                {/* Right Side: Narrative, Engineering, Metrics & Links */}
-                <div className="w-full lg:w-1/2 flex flex-col justify-between">
-                  <div>
-                    {/* Header Row */}
-                    <div className="flex items-center justify-between gap-4 mb-2">
-                      <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                        {project.title}
-                      </h3>
-                      <span className="text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-300 font-bold shrink-0">
-                        {project.highlightMetric}
-                      </span>
-                    </div>
-
-                    <p className="text-xs sm:text-sm font-mono text-neutral-400 mb-6">
-                      {project.subtitle}
-                    </p>
-
-                    {/* PM Angle */}
-                    <div className="mb-4 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1.5">
-                        <Layers className="w-3.5 h-3.5" />
-                        <span>Product Problem & Strategy</span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-neutral-300 font-light leading-relaxed">
-                        {project.pmPhilosophy}
-                      </p>
-                    </div>
-
-                    {/* Engineering Architecture */}
-                    <div className="mb-6 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1.5">
-                        <Cpu className="w-3.5 h-3.5" />
-                        <span>Engineering Implementation</span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-neutral-300 font-light leading-relaxed">
-                        {project.engineeringArch}
-                      </p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full">
+                  {/* Left Side: Interactive 3D Image Stack */}
+                  <div className="w-full flex flex-col justify-center">
+                    <div className="w-full h-56 sm:h-64 md:h-72">
+                      <ProjectImageStack
+                        images={project.images}
+                        title={project.title}
+                      />
                     </div>
                   </div>
 
-                  {/* Tech stack and Action Buttons */}
-                  <div>
-                    <div className="flex flex-wrap gap-1.5 mb-6">
-                      {project.techStack.map((tech) => (
-                        <span
-                          key={tech}
-                          className="text-[11px] font-mono px-2.5 py-1 rounded-lg border border-white/10 bg-white/[0.03] text-neutral-300"
-                        >
-                          {tech}
+                  {/* Right Side: Narrative, Engineering, Metrics & Links */}
+                  <div className="w-full flex flex-col justify-between">
+                    <div>
+                      {/* Header Row */}
+                      <div className="flex items-center justify-between gap-4 mb-2">
+                        <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                          {project.title}
+                        </h3>
+                        <span className="text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-300 font-bold shrink-0">
+                          {project.highlightMetric}
                         </span>
-                      ))}
+                      </div>
+
+                      <p className="text-xs sm:text-sm font-mono text-neutral-400 mb-6">
+                        {project.subtitle}
+                      </p>
+
+                      {/* PM Angle */}
+                      <div className="mb-4 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1.5">
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Product Problem & Strategy</span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-neutral-300 font-light leading-relaxed">
+                          {project.pmPhilosophy}
+                        </p>
+                      </div>
+
+                      {/* Engineering Architecture */}
+                      <div className="mb-6 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1.5">
+                          <Cpu className="w-3.5 h-3.5" />
+                          <span>Engineering Implementation</span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-neutral-300 font-light leading-relaxed">
+                          {project.engineeringArch}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3 pt-4 border-t border-white/[0.08]">
-                      <a
-                        href={project.liveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-all shadow-md cursor-pointer"
-                      >
-                        <span>Live Prototype</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </a>
+                    {/* Tech stack and Action Buttons */}
+                    <div>
+                      <div className="flex flex-wrap gap-1.5 mb-6">
+                        {project.techStack.map((tech) => (
+                          <span
+                            key={tech}
+                            className="text-[11px] font-mono px-2.5 py-1 rounded-lg border border-white/10 bg-white/[0.03] text-neutral-300"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
 
-                      <a
-                        href={project.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 bg-white/[0.03] hover:border-violet-400 hover:bg-violet-500/10 text-neutral-200 hover:text-white text-xs font-semibold transition-all"
-                      >
-                        <Github className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white" />
-                        <span>Source Code</span>
-                      </a>
+                      <div className="flex items-center gap-3 pt-4 border-t border-white/[0.08]">
+                        <a
+                          href={project.liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-all shadow-md cursor-pointer"
+                        >
+                          <span>Live Prototype</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </a>
+
+                        <a
+                          href={project.githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 bg-white/[0.03] hover:border-violet-400 hover:bg-violet-500/10 text-neutral-200 hover:text-white text-xs font-semibold transition-all"
+                        >
+                          <Github className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white" />
+                          <span>Source Code</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
