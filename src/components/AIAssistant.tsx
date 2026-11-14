@@ -2,32 +2,39 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2 } from 'lucide-react';
 import { PORTFOLIO_CONTEXT, getContextForSection, type SectionContext } from '../data/bio';
+import { useViewMode } from '../context/ViewModeContext';
+import { useViewportState } from '../utils/mobileViewport';
 
 /* ─── Morphing Bot Component ────────────────────────────────────────────── */
 
 function MorphingBot({ isOpen }: { isOpen: boolean }) {
-  const [isBot, setIsBot] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [isBotState, setIsBotState] = useState(false);
+  const [showTooltipState, setShowTooltipState] = useState(false);
+
+  const isBot = !isOpen && isBotState;
+  const showTooltip = !isOpen && showTooltipState;
 
   useEffect(() => {
-    if (isOpen) {
-      setIsBot(false);
-      setShowTooltip(false);
-      return;
-    }
+    if (isOpen) return;
 
     // Initial sequence: Logo -> Bot -> Logo
+    let tooltipTimer: ReturnType<typeof setTimeout> | undefined;
+    let resetTimer: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(() => {
-      setIsBot(true);
-      setTimeout(() => setShowTooltip(true), 600);
+      setIsBotState(true);
+      tooltipTimer = setTimeout(() => setShowTooltipState(true), 600);
 
-      setTimeout(() => {
-        setIsBot(false);
-        setShowTooltip(false);
+      resetTimer = setTimeout(() => {
+        setIsBotState(false);
+        setShowTooltipState(false);
       }, 5000);
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (tooltipTimer) clearTimeout(tooltipTimer);
+      if (resetTimer) clearTimeout(resetTimer);
+    };
   }, [isOpen]);
 
   return (
@@ -195,6 +202,8 @@ interface Message {
 }
 
 export default function AIAssistant() {
+  const { mode } = useViewMode();
+  const viewport = useViewportState();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -206,6 +215,12 @@ export default function AIAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentSection, setCurrentSection] = useState<SectionContext>('home');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-ai-assistant', handleOpen);
+    return () => window.removeEventListener('open-ai-assistant', handleOpen);
+  }, []);
 
   useEffect(() => {
     let raf = 0;
@@ -316,11 +331,12 @@ Your Role & Contact Policy:
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AI Assistant Error:', error);
+      const message = error instanceof Error ? error.message : "I'm having trouble connecting. Please try again later.";
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: error.message || "I'm having trouble connecting. Please try again later."
+        content: message || "I'm having trouble connecting. Please try again later."
       }]);
     } finally {
       setIsLoading(false);
@@ -333,6 +349,9 @@ Your Role & Contact Policy:
       sendMessage();
     }
   };
+
+  const hideFabForMobile3D = mode === '3d' && (viewport.showTouchControls || viewport.isCompactLandscape);
+  const fabBottomClass = mode === '3d' ? 'bottom-16 right-6' : 'bottom-8 right-8';
 
   return (
     <>
@@ -349,21 +368,23 @@ Your Role & Contact Policy:
         )}
       </AnimatePresence>
 
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-8 right-8 z-50 w-16 h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-        aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
-      >
-        {isOpen ? (
-          <X className="w-8 h-8 text-white" />
-        ) : (
-          <MorphingBot isOpen={isOpen} />
-        )}
-      </motion.button>
+      {!hideFabForMobile3D && (
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsOpen(!isOpen)}
+          className={`fixed ${fabBottomClass} z-50 w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]`}
+          aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
+        >
+          {isOpen ? (
+            <X className="w-8 h-8 text-white" />
+          ) : (
+            <MorphingBot isOpen={isOpen} />
+          )}
+        </motion.button>
+      )}
 
       <AnimatePresence>
         {isOpen && (
@@ -373,23 +394,33 @@ Your Role & Contact Policy:
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="fixed bottom-28 right-8 z-50 w-[90vw] md:w-[400px] h-[600px] bg-black border border-white/10 shadow-2xl flex flex-col overflow-hidden"
+            className={`fixed z-50 w-[min(92vw,400px)] h-[min(560px,calc(100dvh-1.5rem))] bg-black border border-white/10 shadow-2xl flex flex-col overflow-hidden ${
+              hideFabForMobile3D || mode === '3d' ? 'bottom-3 right-3 sm:right-6' : 'bottom-28 right-4 sm:right-8'
+            }`}
           >
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 border border-white/20 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
+            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 border border-white/20 flex items-center justify-center">
+                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest">AI ASSISTANT</h3>
+                  <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-widest">AI ASSISTANT</h3>
                   <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">
-                    {currentSection}
+                    {mode === '3d' ? '3d office tour' : currentSection}
                   </p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                aria-label="Close AI Assistant"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 scrollbar-hide">
               {messages.map((message, index) => (
                 <motion.div
                   key={index}
@@ -417,21 +448,21 @@ Your Role & Contact Policy:
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-6 border-t border-white/10 bg-black">
-              <div className="flex gap-4">
+            <div className="p-3 sm:p-5 border-t border-white/10 bg-black">
+              <div className="flex gap-3">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="ASK ME ANYTHING..."
-                  className="flex-1 bg-neutral-950 border border-neutral-900 px-4 py-3 text-white placeholder-neutral-700 focus:outline-none focus:border-white transition-colors text-[10px] uppercase tracking-widest font-bold"
+                  className="flex-1 bg-neutral-950 border border-neutral-900 px-3 sm:px-4 py-2.5 sm:py-3 text-white placeholder-neutral-700 focus:outline-none focus:border-white transition-colors text-[10px] uppercase tracking-widest font-bold"
                   disabled={isLoading}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
-                  className="w-12 h-12 bg-white flex items-center justify-center text-black disabled:opacity-20 transition-opacity"
+                  className="w-10 h-10 sm:w-12 sm:h-12 bg-white flex items-center justify-center text-black disabled:opacity-20 transition-opacity shrink-0"
                   aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />

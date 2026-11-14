@@ -37,43 +37,104 @@ export default function App() {
       {/* 2D Preloader only shown once on initial standard load */}
       {loading && <Preloader />}
 
-      <Navigation />
-      <main className={`transition-opacity duration-1000 ${loading ? 'opacity-0' : 'opacity-100'}`}>
-        <Hero />
-        <BrandTicker />
-        <ValueProp />
-        <Suspense fallback={null}>
-          <Projects />
-        </Suspense>
-        <Suspense fallback={null}>
-          <ProductMindset />
-        </Suspense>
-        <Suspense fallback={null}>
-          <TechStack />
-        </Suspense>
-        <Suspense fallback={null}>
-          <Testimonials />
-        </Suspense>
-        <Suspense fallback={null}>
-          <Experience />
-        </Suspense>
-        <Suspense fallback={null}>
-          <Footer />
-        </Suspense>
-      </main>
+      <AnimatePresence mode="wait">
+        {mode === '3d' ? (
+          <motion.div
+            key="3d-mode"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full h-[100dvh] overflow-hidden"
+          >
+            <Suspense
+              fallback={
+                <div className="w-full h-[100dvh] bg-[#090807] flex flex-col items-center justify-center gap-4 text-white">
+                  <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-mono tracking-widest text-neutral-400 uppercase">
+                    Initializing 3D Executive HQ...
+                  </span>
+                </div>
+              }
+            >
+              <GameWorld onOpenAI={() => window.dispatchEvent(new CustomEvent('open-ai-assistant'))} />
+            </Suspense>
 
-      {!loading && (
-        <Suspense
-          fallback={
-            <div
-              className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-white/5 border border-white/10 pointer-events-none motion-safe:animate-pulse"
-              aria-hidden
-            />
-          }
-        >
-          <AIAssistant />
-        </Suspense>
-      )}
-    </div>
-  );
+            {/* AIAssistant available in 3D mode */}
+            <Suspense fallback={null}>
+              <AIAssistant />
+            </Suspense>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="2d-mode"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: loading ? 0 : 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="transition-opacity duration-1000"
+          >
+            <Navigation />
+            <main>
+              <Hero />
+              <BrandTicker />
+              <ValueProp />
+              <Suspense fallback={null}>
+                <Projects />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ProductMindset />
+              </Suspense>
+              <Suspense fallback={null}>
+                <TechStack />
+              </Suspense>
+              <Suspense fallback={null}>
+                <Testimonials />
+              </Suspense>
+              <Suspense fallback={null}>
+                <Experience />
+              </Suspense>
+              <Suspense fallback={null}>
+                <Footer />
+              </Suspense>
+            </main>
+            <Navigation />
+            <main className={`transition-opacity duration-1000 ${loading ? 'opacity-0' : 'opacity-100'}`}>
+              <Hero />
+              <BrandTicker />
+              <ValueProp />
+              <Suspense fallback={null}>
+                <Projects />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ProductMindset />
+              </Suspense>
+              <Suspense fallback={null}>
+                <TechStack />
+              </Suspense>
+              <Suspense fallback={null}>
+                <Testimonials />
+              </Suspense>
+              <Suspense fallback={null}>
+                <Experience />
+              </Suspense>
+              <Suspense fallback={null}>
+                <Footer />
+              </Suspense>
+            </main>
+
+            {!loading && (
+              <Suspense
+                fallback={
+                  <div
+                    className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-white/5 border border-white/10 pointer-events-none motion-safe:animate-pulse"
+                    aria-hidden
+                  />
+                }
+              >
+                <AIAssistant />
+              </Suspense>
+            )}
+          </div>
+        );
 }

@@ -345,6 +345,58 @@ class SoundEffects {
     }
   }
 
+  // --- Melee / Athletic Action Swoosh & Impact ---
+  public playActionStrike(kind: 'punch' | 'kick' | 'land' = 'punch') {
+    if (this.muted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Air whoosh via filtered noise
+      const dur = kind === 'land' ? 0.16 : 0.14;
+      const bufSize = Math.floor(ctx.sampleRate * dur);
+      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.45));
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(kind === 'kick' ? 620 : kind === 'land' ? 220 : 880, now);
+      filter.frequency.exponentialRampToValueAtTime(kind === 'land' ? 80 : 280, now + dur);
+      filter.Q.value = 1.6;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(kind === 'land' ? 0.1 : 0.08, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(now);
+
+      // Sub punchy impact body
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(kind === 'kick' ? 135 : kind === 'land' ? 110 : 175, now);
+      osc.frequency.exponentialRampToValueAtTime(38, now + 0.12);
+      oscGain.gain.setValueAtTime(kind === 'land' ? 0.14 : 0.09, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    } catch {
+      // Handled
+    }
+  }
+
   public playOrbBounce() {
     if (this.muted) return;
     const ctx = this.getContext();
@@ -429,6 +481,89 @@ class SoundEffects {
       tapFilter.connect(tapGain);
       tapGain.connect(ctx.destination);
       tapSource.start(now);
+    } catch {
+      // Audio handled
+    }
+  }
+
+  // --- Realistic Human Jump Takeoff & Two-Foot Sneaker Landing Audio ---
+  public playJumpTakeoff() {
+    if (this.muted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+
+      // Rubber sole push-off against tile floor
+      const pushOsc = ctx.createOscillator();
+      const pushGain = ctx.createGain();
+      pushOsc.type = 'triangle';
+      pushOsc.frequency.setValueAtTime(165, now);
+      pushOsc.frequency.exponentialRampToValueAtTime(75, now + 0.055);
+      pushGain.gain.setValueAtTime(0.04, now);
+      pushGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      pushOsc.connect(pushGain);
+      pushGain.connect(ctx.destination);
+      pushOsc.start(now);
+      pushOsc.stop(now + 0.065);
+
+      // Subtle sneaker / clothing air brush
+      const brushBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.065), ctx.sampleRate);
+      const brushData = brushBuf.getChannelData(0);
+      for (let i = 0; i < brushData.length; i++) {
+        brushData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (brushData.length * 0.45));
+      }
+      const brushSrc = ctx.createBufferSource();
+      brushSrc.buffer = brushBuf;
+      const brushFilter = ctx.createBiquadFilter();
+      brushFilter.type = 'bandpass';
+      brushFilter.frequency.setValueAtTime(900, now);
+      brushFilter.Q.value = 1.2;
+      const brushGain = ctx.createGain();
+      brushGain.gain.setValueAtTime(0.025, now);
+      brushSrc.connect(brushFilter);
+      brushFilter.connect(brushGain);
+      brushGain.connect(ctx.destination);
+      brushSrc.start(now);
+    } catch {
+      // Audio handled
+    }
+  }
+
+  public playJumpLand() {
+    if (this.muted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+
+      // Primary heel + sole weight absorption thud on tile floor
+      const bodyOsc = ctx.createOscillator();
+      const bodyGain = ctx.createGain();
+      bodyOsc.type = 'triangle';
+      bodyOsc.frequency.setValueAtTime(125, now);
+      bodyOsc.frequency.exponentialRampToValueAtTime(42, now + 0.09);
+      bodyGain.gain.setValueAtTime(0.065, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      bodyOsc.connect(bodyGain);
+      bodyGain.connect(ctx.destination);
+      bodyOsc.start(now);
+      bodyOsc.stop(now + 0.105);
+
+      // Slight staggered second-foot tap 28ms later
+      const secondOsc = ctx.createOscillator();
+      const secondGain = ctx.createGain();
+      secondOsc.type = 'sine';
+      secondOsc.frequency.setValueAtTime(145, now + 0.028);
+      secondOsc.frequency.exponentialRampToValueAtTime(52, now + 0.085);
+      secondGain.gain.setValueAtTime(0.04, now + 0.028);
+      secondGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      secondOsc.connect(secondGain);
+      secondGain.connect(ctx.destination);
+      secondOsc.start(now + 0.028);
+      secondOsc.stop(now + 0.095);
     } catch {
       // Audio handled
     }
