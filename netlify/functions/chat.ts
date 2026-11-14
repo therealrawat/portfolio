@@ -10,7 +10,7 @@ export default async function chat(request: Request): Promise<Response> {
   }
 
   try {
-    const apiKey = (process as any).env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY is not configured.');
     }

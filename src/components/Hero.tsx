@@ -1,8 +1,10 @@
 import { motion, type Variants } from 'framer-motion';
 import { MoveUpRight } from 'lucide-react';
+import DecryptedText from './reactbits/DecryptedText';
+import BlurText from './reactbits/BlurText';
+import ShinyText from './reactbits/ShinyText';
 
 export default function Hero() {
-
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: 'smooth' });
@@ -20,7 +22,7 @@ export default function Hero() {
   };
 
   const itemVariants: Variants = {
-    hidden: { y: 30, opacity: 0 },
+    hidden: { y: 25, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
@@ -29,10 +31,9 @@ export default function Hero() {
   };
 
   return (
-    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-6 md:px-20 pt-24 pb-16">
-      {/* Structural Lines */}
-      <div className="absolute top-0 left-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
-      <div className="absolute top-0 right-20 w-[1px] h-full bg-white/[0.03] hidden md:block" />
+    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-6 md:px-20 pt-28 pb-16">
+      {/* Electric Violet Radial Spotlight Ambient Glow */}
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-violet-600/[0.08] blur-[150px] z-0" />
 
       <motion.div
         variants={containerVariants}
@@ -41,64 +42,85 @@ export default function Hero() {
         className="relative z-10 max-w-7xl mx-auto w-full"
       >
         {/* Availability Badge */}
-        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8 flex-wrap">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/[0.04] border border-white/10 rounded-full text-xs text-neutral-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-medium">Open to Strategic Engineering & Product Roles</span>
+        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8 flex-wrap pointer-events-auto">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#070709]/90 border border-violet-500/30 rounded-xl text-xs text-neutral-200 shadow-[0_0_15px_rgba(139,92,246,0.15)] backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#8B5CF6]" />
+            <ShinyText text="Open to Strategic Engineering & Product Roles" speed={3.5} className="font-semibold text-xs" />
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-neutral-500 font-semibold">
+          <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-neutral-400 font-semibold">
             <span className="w-8 h-[1px] bg-neutral-800" />
             MCA • 8.93 CGPA • AFSB Rec.
           </div>
         </motion.div>
 
-        {/* Impact Headline */}
-        <motion.h1
-          variants={itemVariants}
-          className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white mb-8 leading-[0.92] tracking-tighter"
-        >
-          SOLVING <br />
-          <span
-            className="text-transparent"
-            style={{
-              WebkitTextStroke: '1.5px rgba(255,255,255,0.3)',
-              textShadow: '0 0 40px rgba(255,255,255,0.05)',
-            }}
-          >
-            OPERATIONAL
-          </span>{' '}
-          <br />
-          DEBT.
-        </motion.h1>
+        {/* Impact Headline with ReactBits Decrypted Text */}
+        <motion.div variants={itemVariants} className="mb-8 select-none">
+          <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white leading-[0.92] tracking-tighter">
+            <div className="pointer-events-auto inline-block">
+              <DecryptedText
+                text="SOLVING"
+                speed={35}
+                maxIterations={10}
+                animateOn="view"
+                encryptedClassName="text-violet-400"
+              />
+            </div>
+            <br />
+            <span
+              className="text-transparent transition-all duration-500"
+              style={{
+                WebkitTextStroke: '1.5px rgba(255,255,255,0.3)',
+                textShadow: '0 0 45px rgba(139,92,246,0.15)',
+              }}
+            >
+              OPERATIONAL
+            </span>{' '}
+            <br />
+            <div className="pointer-events-auto inline-block">
+              <DecryptedText
+                text="DEBT."
+                speed={40}
+                maxIterations={10}
+                animateOn="view"
+                encryptedClassName="text-violet-400"
+              />
+            </div>
+          </h1>
+        </motion.div>
 
         {/* Narrative & CTAs */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 pt-8 border-t border-white/[0.08]">
-          <motion.p
+          <motion.div
             variants={itemVariants}
-            className="text-lg md:text-xl lg:text-2xl text-neutral-400 max-w-2xl leading-relaxed font-light"
+            className="text-lg md:text-xl lg:text-2xl text-neutral-300 max-w-2xl leading-relaxed font-light"
           >
-            I bridge the gap between complex engineering systems and strategic product growth.
-            Designing resilient microservices and AI-driven products that deliver measurable business value.
-          </motion.p>
+            <BlurText
+              text="I bridge the gap between complex engineering systems and strategic product growth. Designing resilient microservices and AI-driven products that deliver measurable business value."
+              delay={40}
+              animateBy="words"
+              direction="bottom"
+              className="text-neutral-300 font-light"
+            />
+          </motion.div>
 
-          <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-4">
+          <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-4 pointer-events-auto">
             {/* Primary CTA */}
             <button
               onClick={() => scrollToSection('projects')}
-              className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02] shadow-xl"
+              className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] rounded-xl"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Explore Work
-                <MoveUpRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1" />
+                <MoveUpRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1 text-violet-600" />
               </span>
-              <div className="absolute inset-0 bg-neutral-200 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
+              <div className="absolute inset-0 bg-violet-100 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
             </button>
 
-            {/* Contact Anchor */}
+            {/* Trajectory CTA */}
             <button
               onClick={() => scrollToSection('experience')}
-              className="px-6 py-4 sm:px-8 sm:py-5 border border-white/10 text-neutral-400 hover:text-white font-bold uppercase text-xs tracking-widest hover:border-white transition-colors duration-500"
+              className="px-6 py-4 sm:px-8 sm:py-5 border border-white/15 bg-white/[0.02] text-neutral-300 hover:text-white font-bold uppercase text-xs tracking-widest hover:border-violet-400 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] transition-all duration-500 rounded-xl"
             >
               Trajectory
             </button>
@@ -108,19 +130,19 @@ export default function Hero() {
         {/* Footer Meta */}
         <motion.div
           variants={itemVariants}
-          className="mt-16 flex items-center gap-8 text-[10px] uppercase tracking-widest text-neutral-500 font-semibold flex-wrap"
+          className="mt-16 flex items-center gap-8 text-[10px] uppercase tracking-widest text-neutral-400 font-semibold flex-wrap pointer-events-auto"
         >
           <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
-            <span>Senior Product Engineer @ TestingXperts</span>
+            <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping shadow-[0_0_8px_#8B5CF6]" />
+            <span className="text-neutral-300">Product Engineer @ TestingXperts</span>
           </div>
           <span className="opacity-25 hidden sm:inline">•</span>
-          <span className="hidden sm:inline">Discovery → PRD → Architecture → Build → Scale</span>
+          <span className="hidden sm:inline text-neutral-400">Discovery → PRD → Architecture → Build → Scale</span>
         </motion.div>
       </motion.div>
 
-      {/* Background Decorative Monogram */}
-      <div className="absolute -bottom-16 -right-10 text-[18vw] font-black text-white/[0.015] pointer-events-none select-none">
+      {/* Decorative Monogram */}
+      <div className="absolute -bottom-16 -right-10 text-[18vw] font-black text-white/[0.015] pointer-events-none select-none z-0">
         PM+ENG
       </div>
     </section>

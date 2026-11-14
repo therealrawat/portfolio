@@ -99,14 +99,13 @@ const brands = [
 ];
 
 export default function BrandTicker() {
-  // Triplicate array for smooth endless looping on all displays
   const marqueeItems = [...brands, ...brands, ...brands];
 
   return (
-    <section className="py-14 bg-[#050505] border-y border-neutral-900/60 relative overflow-hidden select-none">
+    <section className="py-14 bg-[#070709] relative overflow-hidden select-none">
       {/* Header Label */}
       <div className="max-w-7xl mx-auto px-8 mb-8 text-center">
-        <div className="flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.4em] text-neutral-500 font-bold">
+        <div className="flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.4em] text-neutral-400 font-bold">
           <span className="w-8 md:w-16 h-[1px] bg-neutral-800" />
           <span>Companies & Client Projects Contributed To</span>
           <span className="w-8 md:w-16 h-[1px] bg-neutral-800" />
@@ -114,8 +113,8 @@ export default function BrandTicker() {
       </div>
 
       {/* Gradient Fades for Infinite Edge Blend */}
-      <div className="absolute left-0 top-0 bottom-0 w-24 md:w-48 bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-24 md:w-48 bg-gradient-to-l from-[#050505] via-[#050505]/80 to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-24 md:w-48 bg-gradient-to-r from-[#070709] via-[#070709]/80 to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-24 md:w-48 bg-gradient-to-l from-[#070709] via-[#070709]/80 to-transparent z-10 pointer-events-none" />
 
       {/* Ticker Track */}
       <div className="flex overflow-hidden">
@@ -133,23 +132,23 @@ export default function BrandTicker() {
             return (
               <div
                 key={`${brand.name}-${idx}`}
-                className="group flex items-center gap-4 px-6 py-3.5 rounded-full border border-neutral-900 bg-neutral-950/80 hover:border-neutral-700 hover:bg-neutral-900/60 transition-all duration-300 cursor-default shrink-0 shadow-lg shadow-black/40"
+                className="group flex items-center gap-4 px-6 py-3.5 rounded-xl border border-white/10 bg-[#0c0c11]/80 hover:border-violet-500/50 hover:bg-violet-950/20 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-default shrink-0 shadow-lg shadow-black/40"
               >
-                <div className="w-8 h-8 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center p-2 group-hover:border-neutral-600 group-hover:bg-neutral-800 transition-colors">
-                  <span className="w-full h-full text-neutral-400 group-hover:text-white transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center p-2 group-hover:border-violet-400 group-hover:bg-violet-500/20 transition-all duration-300">
+                  <span className="w-full h-full text-neutral-400 group-hover:text-violet-300 transition-colors">
                     <Icon />
                   </span>
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-black tracking-widest text-neutral-300 group-hover:text-white uppercase transition-colors">
+                    <span className="text-xs font-black tracking-widest text-neutral-200 group-hover:text-white uppercase transition-colors">
                       {brand.name}
                     </span>
-                    <span className="text-[8px] uppercase tracking-wider text-neutral-600 px-1.5 py-0.5 rounded border border-neutral-800/80 font-bold">
+                    <span className="text-[8px] uppercase tracking-wider text-neutral-400 px-1.5 py-0.5 rounded-lg border border-white/10 font-bold group-hover:border-violet-400/30 group-hover:text-violet-300">
                       {brand.type}
                     </span>
                   </div>
-                  <span className="text-[9px] uppercase tracking-wider text-neutral-500 group-hover:text-neutral-400 font-bold transition-colors">
+                  <span className="text-[9px] uppercase tracking-wider text-neutral-400 group-hover:text-neutral-300 font-bold transition-colors">
                     {brand.role}
                   </span>
                 </div>

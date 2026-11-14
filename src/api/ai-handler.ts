@@ -9,9 +9,13 @@ export async function handleAIChat(prompt: string, apiKey: string, retries = 2):
     const response = await result.response;
     return response.text();
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorStatus = (error && typeof error === 'object' && 'status' in error)
+      ? (error as { status: unknown }).status
+      : undefined;
+
     // If it's a 503 (Server Busy) and we have retries left...
-    if (error.status === 503 && retries > 0) {
+    if (errorStatus === 503 && retries > 0) {
       console.log(`Model busy, retrying... (${retries} attempts left)`);
       // Wait 2 seconds before trying again
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -19,7 +23,7 @@ export async function handleAIChat(prompt: string, apiKey: string, retries = 2):
     }
 
     // Friendly message for the UI
-    if (error.status === 503) {
+    if (errorStatus === 503) {
       return "Google's AI servers are currently overloaded due to high demand. Please wait a moment and try your question again!";
     }
 

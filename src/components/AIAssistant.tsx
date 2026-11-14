@@ -6,11 +6,8 @@ import { PORTFOLIO_CONTEXT, getContextForSection, type SectionContext } from '..
 /* ─── Morphing Bot Component ────────────────────────────────────────────── */
 
 function MorphingBot({ isOpen }: { isOpen: boolean }) {
-  const [isBotState, setIsBotState] = useState(false);
-  const [showTooltipState, setShowTooltipState] = useState(false);
-
-  const isBot = !isOpen && isBotState;
-  const showTooltip = !isOpen && showTooltipState;
+  const [isBot, setIsBot] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     if (isOpen) return;
@@ -19,12 +16,12 @@ function MorphingBot({ isOpen }: { isOpen: boolean }) {
     let tooltipTimer: ReturnType<typeof setTimeout> | undefined;
     let resetTimer: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(() => {
-      setIsBotState(true);
-      tooltipTimer = setTimeout(() => setShowTooltipState(true), 600);
+      setIsBot(true);
+      tooltipTimer = setTimeout(() => setShowTooltip(true), 600);
 
       resetTimer = setTimeout(() => {
-        setIsBotState(false);
-        setShowTooltipState(false);
+        setIsBot(false);
+        setShowTooltip(false);
       }, 5000);
     }, 2000);
 
@@ -35,15 +32,18 @@ function MorphingBot({ isOpen }: { isOpen: boolean }) {
     };
   }, [isOpen]);
 
+  const displayBot = !isOpen && isBot;
+  const displayTooltip = !isOpen && showTooltip;
+
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       <AnimatePresence>
-        {showTooltip && (
+        {displayTooltip && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, x: 10 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.8, x: 10 }}
-            className="absolute right-full mr-4 px-4 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-xl"
+            className="absolute right-full mr-4 px-4 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-xl rounded-lg"
           >
             Hi! Ask me anything
             <div className="absolute right-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45" />
@@ -54,13 +54,13 @@ function MorphingBot({ isOpen }: { isOpen: boolean }) {
       <svg
         viewBox="0 0 750 750"
         className="w-12 h-12 transition-transform duration-700"
-        style={{ transform: isBot ? 'scale(0.9) rotate(5deg)' : 'scale(1) rotate(0deg)' }}
+        style={{ transform: displayBot ? 'scale(0.9) rotate(5deg)' : 'scale(1) rotate(0deg)' }}
       >
         {/* Top Part of Logo → transforms to Bot Head */}
         <motion.path
           d="M456,82 C496,75 536,81 537,81 C583,98 618,143 618,196 L618,375 L375,375 L375,196 C375,143 409,98 456,82 Z"
           fill="white"
-          animate={isBot ? {
+          animate={displayBot ? {
             y: -20,
             scale: 0.85,
             transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
@@ -75,7 +75,7 @@ function MorphingBot({ isOpen }: { isOpen: boolean }) {
         <motion.path
           d="M293,667 C253,675 213,668 212,668 C166,651 131,606 131,553 L131,375 L375,375 L375,553 C374,606 340,651 293,667 Z"
           fill="white"
-          animate={isBot ? {
+          animate={displayBot ? {
             y: 20,
             scale: 1.1,
             transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
@@ -90,13 +90,13 @@ function MorphingBot({ isOpen }: { isOpen: boolean }) {
         <motion.circle
           cx="450" cy="240" r="25" fill="black"
           initial={{ opacity: 0, scale: 0 }}
-          animate={isBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+          animate={displayBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
           transition={{ delay: 0.4 }}
         />
         <motion.circle
           cx="550" cy="240" r="25" fill="black"
           initial={{ opacity: 0, scale: 0 }}
-          animate={isBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+          animate={displayBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
           transition={{ delay: 0.5 }}
         />
 
@@ -105,13 +105,13 @@ function MorphingBot({ isOpen }: { isOpen: boolean }) {
           x1="500" y1="80" x2="500" y2="20"
           stroke="white" strokeWidth="15" strokeLinecap="round"
           initial={{ pathLength: 0, opacity: 0 }}
-          animate={isBot ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+          animate={displayBot ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
           transition={{ delay: 0.6 }}
         />
         <motion.circle
           cx="500" cy="15" r="15" fill="white"
           initial={{ opacity: 0, scale: 0 }}
-          animate={isBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+          animate={displayBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
           transition={{ delay: 0.8 }}
         />
       </svg>
@@ -329,10 +329,10 @@ Your Role & Contact Policy:
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error: unknown) {
       console.error('AI Assistant Error:', error);
-      const message = error instanceof Error ? error.message : "I'm having trouble connecting. Please try again later.";
+      const errorMessage = error instanceof Error ? error.message : "I'm having trouble connecting. Please try again later.";
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: message || "I'm having trouble connecting. Please try again later."
+        content: errorMessage
       }]);
     } finally {
       setIsLoading(false);
@@ -361,21 +361,21 @@ Your Role & Contact Policy:
         )}
       </AnimatePresence>
 
-        <motion.button
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setIsOpen(!isOpen)}
-          className="fixed bottom-8 right-8 z-50 w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-          aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
-        >
-          {isOpen ? (
-            <X className="w-8 h-8 text-white" />
-          ) : (
-            <MorphingBot isOpen={isOpen} />
-          )}
-        </motion.button>
+      <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-8 right-8 z-50 w-16 h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]"
+        aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
+      >
+        {isOpen ? (
+          <X className="w-8 h-8 text-white" />
+        ) : (
+          <MorphingBot isOpen={isOpen} />
+        )}
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
@@ -385,16 +385,16 @@ Your Role & Contact Policy:
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="fixed z-50 w-[min(92vw,400px)] h-[min(560px,calc(100dvh-1.5rem))] bg-black border border-white/10 shadow-2xl flex flex-col overflow-hidden bottom-28 right-4 sm:right-8"
+            className="fixed bottom-28 right-8 z-50 w-[90vw] md:w-[400px] h-[600px] bg-[#070709] border border-violet-500/30 shadow-[0_0_40px_rgba(139,92,246,0.15)] flex flex-col overflow-hidden rounded-2xl"
           >
-            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 border border-white/20 flex items-center justify-center">
-                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 border border-violet-500/30 bg-violet-500/10 rounded-xl flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-violet-400" />
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-widest">AI ASSISTANT</h3>
-                  <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest">AI ASSISTANT</h3>
+                  <p className="text-[10px] text-violet-400/80 uppercase tracking-widest font-bold">
                     {currentSection}
                   </p>
                 </div>
@@ -402,7 +402,7 @@ Your Role & Contact Policy:
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-2 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                className="p-2 text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors rounded-lg"
                 aria-label="Close AI Assistant"
               >
                 <X className="w-4 h-4" />
@@ -418,9 +418,9 @@ Your Role & Contact Policy:
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words ${message.role === 'user'
+                    className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words rounded-xl ${message.role === 'user'
                       ? 'bg-white text-black font-medium'
-                      : 'bg-neutral-900 text-neutral-300 border border-neutral-800'
+                      : 'bg-white/[0.04] text-neutral-200 border border-white/10'
                       }`}
                   >
                     <FormattedMessage content={message.content} isUser={message.role === 'user'} />
@@ -429,15 +429,15 @@ Your Role & Contact Policy:
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-neutral-900 border border-neutral-800 px-4 py-3">
-                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  <div className="bg-white/[0.04] border border-white/10 px-4 py-3 rounded-xl">
+                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-3 sm:p-5 border-t border-white/10 bg-black">
+            <div className="p-6 border-t border-white/10 bg-[#070709]">
               <div className="flex gap-3">
                 <input
                   type="text"
@@ -445,13 +445,13 @@ Your Role & Contact Policy:
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="ASK ME ANYTHING..."
-                  className="flex-1 bg-neutral-950 border border-neutral-900 px-3 sm:px-4 py-2.5 sm:py-3 text-white placeholder-neutral-700 focus:outline-none focus:border-white transition-colors text-[10px] uppercase tracking-widest font-bold"
+                  className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-neutral-500 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-colors text-[10px] uppercase tracking-widest font-bold"
                   disabled={isLoading}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
-                  className="w-10 h-10 sm:w-12 sm:h-12 bg-white flex items-center justify-center text-black disabled:opacity-20 transition-opacity shrink-0"
+                  className="w-12 h-12 bg-white hover:bg-violet-400 rounded-xl flex items-center justify-center text-black disabled:opacity-20 transition-all hover:shadow-[0_0_15px_rgba(139,92,246,0.4)]"
                   aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />

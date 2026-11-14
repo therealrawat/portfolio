@@ -1,18 +1,19 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=JetBrains+Mono:wght@400..700&display=swap');
 
 @theme {
-  --color-accent: #ffffff;
+  --color-accent: #8b5cf6;
   --color-primary: #ffffff;
-  --color-secondary: #0a0a0a;
-  --color-muted: #737373;
+  --color-secondary: #070709;
+  --color-muted: #94a3b8;
 }
 
 @layer base {
   :root {
-    --bg-main: #050505;
+    --bg-main: #070709;
     --text-main: #ffffff;
-    --text-muted: #a3a3a3;
+    --text-muted: #94a3b8;
+    --accent: #8b5cf6;
   }
 
   body {
@@ -24,21 +25,7 @@
     overflow-x: hidden;
   }
 
-  /* Noise Overlay */
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    opacity: 0.03;
-    pointer-events: none;
-    z-index: 9999;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  }
-
-  /* Ambient Glow with Subtle Warm Amber/Orange Undertone */
+  /* Ambient Glow with Subtle Electric Violet Undertone */
   body::after {
     content: "";
     position: fixed;
@@ -48,7 +35,7 @@
     height: 100vh;
     z-index: -1;
     pointer-events: none;
-    background: radial-gradient(circle at 50% 25%, rgba(249, 115, 22, 0.04) 0%, rgba(255, 255, 255, 0.015) 40%, transparent 70%);
+    background: radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.07) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 70%);
   }
 
   a,
@@ -60,9 +47,9 @@
     cursor: pointer;
   }
 
-  /* Custom Selection */
+  /* 3-Color Selection: Violet Glow */
   ::selection {
-    background: rgba(249, 115, 22, 0.25);
+    background: rgba(139, 92, 246, 0.35);
     color: #ffffff;
   }
 
@@ -71,3 +58,49 @@
     scroll-behavior: smooth;
   }
 }
+
+@keyframes shine {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.animate-shine {
+  animation: shine 4s linear infinite;
+}
+
+/* Vertical Testimonial Marquee */
+@keyframes marquee-up {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes marquee-down {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+.animate-marquee-up {
+  animation: marquee-up 36s linear infinite;
+}
+
+.animate-marquee-down {
+  animation: marquee-down 36s linear infinite;
+}
+
+.pause-marquee:hover {
+  animation-play-state: paused;
+}
+

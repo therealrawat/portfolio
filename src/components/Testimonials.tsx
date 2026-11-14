@@ -1,362 +1,137 @@
-import { useRef, useState } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useVelocity, useSpring } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import DecryptedText from './reactbits/DecryptedText';
+import SpotlightCard from './reactbits/SpotlightCard';
 
-/* ─── Testimonial Data ──────────────────────────────────────────────────── */
+/* ─── Real Testimonials Only ─────────────────────────────────────────────── */
 
-const testimonials = [
+interface Testimonial {
+  quote: string;
+  name: string;
+  title: string;
+  initials: string;
+}
+
+const realTestimonials: Testimonial[] = [
   {
     quote:
-      "Priyanshu is very transparent with his communication. He has been very incredibly accommodating and responsive to our constant evolving needs.",
-    name: 'MARTINE PAUL',
+      'Priyanshu is very transparent with his communication. He has been incredibly accommodating and responsive to our constant evolving needs.',
+    name: 'Martine Paul',
     title: 'Co-Founder at TechVenture',
-    prefix: 'MARTINE SAID',
     initials: 'MP',
   },
   {
     quote:
       'Priyanshu consistently ensures accuracy and reliability, driving significant project impact through both individual contributions and proactive peer reviews.',
-    name: 'MANAS K BISWAS',
+    name: 'Manas K Biswas',
     title: 'Sr. Technical Architect at TestingXperts',
-    prefix: 'MANAS SAID',
     initials: 'MB',
   },
   {
     quote:
       'Sincere, and a total powerhouse. PR is one of those rare developers who treats a side project with the same rigor as a Tier-1 product. A great guy to work with.',
-    name: 'RAHUL B',
+    name: 'Rahul B',
     title: 'APM at AmEx',
-    prefix: 'RAHUL SAID',
     initials: 'RB',
   },
-  // {
-  //   quote:
-  //     "PR is the kind of 'workaholic beast' you actually want in your corner. His sincerity is unmatched, and his drive is honestly a bit contagious. We knocked out months of features in weeks—just the right person to have in the trenches with you.",
-  //   name: 'SARAH CHEN',
-  //   title: 'Director of Innovation at NovaTech',
-  //   prefix: 'SARAH SAID',
-  //   initials: 'SC',
-  // },
 ];
 
-/* ─── Animation Variants ─────────────────────────────────────────────────── */
+/* ─── Single Testimonial Card ────────────────────────────────────────────── */
 
-const quoteVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 80 : -80,
-    opacity: 0,
-    filter: 'blur(4px)',
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    filter: 'blur(0px)',
-    transition: {
-      duration: 0.6,
-      ease: [0.76, 0, 0.24, 1],
-    },
-  },
-  exit: (direction: number) => ({
-    x: direction > 0 ? -80 : 80,
-    opacity: 0,
-    filter: 'blur(4px)',
-    transition: {
-      duration: 0.4,
-      ease: [0.76, 0, 0.24, 1],
-    },
-  }),
-};
+function TestimonialCard({ item }: { item: Testimonial }) {
+  return (
+    <SpotlightCard
+      spotlightColor="rgba(139, 92, 246, 0.18)"
+      spotlightSize={280}
+      className="p-6 md:p-7 flex flex-col justify-between group cursor-default transition-all duration-300"
+    >
+      {/* Quote Body */}
+      <p className="text-sm md:text-[15px] font-normal text-neutral-300 leading-relaxed mb-6 group-hover:text-white transition-colors">
+        &ldquo;{item.quote}&rdquo;
+      </p>
 
-const metaVariants = {
-  enter: { y: 12, opacity: 0 },
-  center: {
-    y: 0,
-    opacity: 1,
-    transition: { duration: 0.5, delay: 0.15, ease: [0.76, 0, 0.24, 1] },
-  },
-  exit: {
-    y: -12,
-    opacity: 0,
-    transition: { duration: 0.3 },
-  },
-};
+      {/* Author Row */}
+      <div className="flex items-center gap-3.5 pt-1">
+        {/* Avatar Monogram */}
+        <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-500/30 flex items-center justify-center font-mono font-bold text-xs text-violet-300 shrink-0">
+          {item.initials}
+        </div>
 
-/* ─── Component ──────────────────────────────────────────────────────────── */
+        {/* Name & Title */}
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-bold text-white tracking-tight truncate group-hover:text-violet-200 transition-colors">
+            {item.name}
+          </span>
+          <span className="text-xs text-neutral-400 truncate">
+            {item.title}
+          </span>
+        </div>
+      </div>
+    </SpotlightCard>
+  );
+}
+
+/* ─── Main Testimonials Component ────────────────────────────────────────── */
 
 export default function Testimonials() {
-  const [[activeIndex, direction], setActiveIndex] = useState([0, 0]);
-  const sectionRef = useRef<HTMLElement>(null);
+  // Stagger order between columns so different testimonials lead each side
+  const col1 = [realTestimonials[0], realTestimonials[1], realTestimonials[2]];
+  const col2 = [realTestimonials[2], realTestimonials[0], realTestimonials[1]];
 
-  /* ── Scroll-linked color inversion ── */
-  const { scrollYProgress, scrollY } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end start'],
-  });
-
-  /* ── Fluid wave: driven by scroll velocity ── */
-  const scrollVelocity = useVelocity(scrollY);
-  // Absolute velocity → always pushes upward regardless of scroll direction
-  const rawAmplitude = useTransform(scrollVelocity, (v: number) =>
-    Math.min(Math.abs(v) / 55, 52)
-  );
-  const waveAmplitude = useSpring(rawAmplitude, {
-    stiffness: 72,
-    damping: 22,
-    mass: 0.85,
-  });
-
-  // Two cubics: horizontal tangents at left/right (smooth into the section), wide crest
-  const wavePathD = useTransform(waveAmplitude, (amp: number) => {
-    const h = 88;
-    const base = 78;
-    const peak = base - amp;
-    return [
-      `M0,${h}`,
-      `L0,${base}`,
-      `C320,${base} 480,${peak} 750,${peak}`,
-      `C1020,${peak} 1180,${base} 1500,${base}`,
-      `L1500,${h}`,
-      'Z',
-    ].join(' ');
-  });
-
-  // Background: white → black (snaps at ~36%)
-  const bgColor = useTransform(
-    scrollYProgress,
-    [0, 0.36, 0.40],
-    ['#ffffff', '#ffffff', '#000000']
-  );
-
-  // Primary text: black → white
-  const textColor = useTransform(
-    scrollYProgress,
-    [0, 0.36, 0.40],
-    ['#000000', '#000000', '#ffffff']
-  );
-
-  // Muted text
-  const mutedColor = useTransform(
-    scrollYProgress,
-    [0, 0.36, 0.40],
-    ['#a3a3a3', '#a3a3a3', '#737373']
-  );
-
-  // Borders
-  const borderColor = useTransform(
-    scrollYProgress,
-    [0, 0.36, 0.40],
-    ['#d4d4d4', '#d4d4d4', '#262626']
-  );
-
-  // Avatar bg
-  const avatarBg = useTransform(
-    scrollYProgress,
-    [0, 0.36, 0.40],
-    ['#f5f5f5', '#f5f5f5', '#171717']
-  );
-
-  // Dot inactive
-  const dotInactive = useTransform(
-    scrollYProgress,
-    [0, 0.36, 0.40],
-    ['#d4d4d4', '#d4d4d4', '#404040']
-  );
-
-  const paginate = (newDirection: number) => {
-    setActiveIndex((prev) => {
-      const next = prev[0] + newDirection;
-      if (next < 0) return [testimonials.length - 1, newDirection];
-      if (next >= testimonials.length) return [0, newDirection];
-      return [next, newDirection];
-    });
-  };
-
-  const current = testimonials[activeIndex];
+  // Duplicate for seamless 60fps infinite marquee loop
+  const col1Items = [...col1, ...col1];
+  const col2Items = [...col2, ...col2];
 
   return (
-    <motion.section
-      ref={sectionRef}
-      id="testimonials"
-      className="py-32 md:py-40 px-8 md:px-20 relative"
-      style={{ backgroundColor: bgColor }}
-    >
-      {/* ── Fluid wave top border ── */}
-      <div className="absolute -top-[78px] left-0 right-0 h-[88px] pointer-events-none z-20 overflow-visible">
-        <svg
-          viewBox="0 0 1500 88"
-          preserveAspectRatio="none"
-          className="w-full h-full block"
-        >
-          <motion.path
-            d={wavePathD as any}
-            style={{ fill: bgColor }}
-          />
-        </svg>
-      </div>
-
+    <section id="testimonials" className="py-32 px-6 md:px-16 bg-[#070709] relative overflow-hidden">
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* ── Header: Large title ── */}
+        {/* Section Header (Previous Version) */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
-          className="text-center mb-8"
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
         >
-          <motion.h2
-            className="text-5xl md:text-7xl font-black tracking-tighter"
-            style={{ color: textColor }}
-          >
-            TESTIMONIALS
-          </motion.h2>
-        </motion.div>
-
-        {/* ── Subtitle ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.15 }}
-          className="flex items-center justify-center gap-3 mb-20 md:mb-28"
-        >
-          <motion.span
-            className="text-[10px] md:text-[11px] uppercase tracking-[0.35em] font-bold"
-            style={{ color: mutedColor }}
-          >
-            What collaborators are saying
-          </motion.span>
-        </motion.div>
-
-        {/* ── Quote Carousel ── */}
-        <div className="min-h-[220px] md:min-h-[200px] relative mb-16 md:mb-20">
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={activeIndex}
-              custom={direction}
-              variants={quoteVariants as any}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="absolute inset-0"
-            >
-              {/* Prefix label + quote */}
-              <div className="flex items-start gap-4 md:gap-6 max-w-4xl mx-auto">
-                <motion.span
-                  className="hidden md:block text-[10px] uppercase tracking-[0.3em] font-bold mt-3 whitespace-nowrap min-w-[100px]"
-                  style={{ color: mutedColor }}
-                >
-                  {current.prefix}
-                </motion.span>
-
-                <motion.p
-                  className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-medium leading-snug tracking-tight"
-                  style={{ color: textColor }}
-                >
-                  {current.quote}
-                </motion.p>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* ── Footer: Avatar + Name + Nav Arrows ── */}
-        <motion.div
-          className="flex items-center justify-between max-w-4xl mx-auto pt-8"
-          style={{ borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: borderColor }}
-        >
-          {/* Person info */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeIndex}
-              variants={metaVariants as any}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="flex items-center gap-4"
-            >
-              {/* Avatar circle */}
-              <motion.div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{
-                  backgroundColor: avatarBg,
-                  borderWidth: 1,
-                  borderStyle: 'solid',
-                  borderColor,
-                }}
-              >
-                <motion.span
-                  className="text-sm font-bold"
-                  style={{ color: mutedColor }}
-                >
-                  {current.initials}
-                </motion.span>
-              </motion.div>
-
-              <div>
-                <motion.div
-                  className="text-[12px] font-bold tracking-wider uppercase"
-                  style={{ color: textColor }}
-                >
-                  {current.name}
-                </motion.div>
-                <motion.div
-                  className="text-[11px] mt-0.5"
-                  style={{ color: mutedColor }}
-                >
-                  {current.title}
-                </motion.div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Navigation arrows */}
-          <div className="flex items-center gap-2">
-            <motion.button
-              onClick={() => paginate(-1)}
-              aria-label="Previous testimonial"
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 active:scale-95"
-              style={{
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor,
-                color: mutedColor,
-              }}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </motion.button>
-
-            <motion.button
-              onClick={() => paginate(1)}
-              aria-label="Next testimonial"
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 active:scale-95"
-              style={{
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor,
-                color: mutedColor,
-              }}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </motion.button>
+          <div className="flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.4em] text-neutral-400 mb-4 font-bold">
+            <span className="w-12 h-[1px] bg-neutral-800" />
+            Social Proof
+            <span className="w-12 h-[1px] bg-neutral-800" />
           </div>
+          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
+            <DecryptedText text="TESTIMONIALS." speed={40} maxIterations={8} encryptedClassName="text-violet-400" />
+          </h2>
         </motion.div>
 
-        {/* ── Dot Indicators ── */}
-        <div className="flex items-center justify-center gap-2 mt-10">
-          {testimonials.map((_, i) => (
-            <motion.button
-              key={i}
-              onClick={() => setActiveIndex([i, i > activeIndex ? 1 : -1])}
-              aria-label={`Go to testimonial ${i + 1}`}
-              className="h-1 rounded-full transition-all duration-500"
-              style={{
-                width: i === activeIndex ? 32 : 8,
-                backgroundColor: i === activeIndex ? textColor : dotInactive,
-              }}
-            />
-          ))}
+        {/* 2-Column Marquee Stage (Column 1 flows Up, Column 2 flows Down) */}
+        <div className="relative h-[580px] md:h-[620px] overflow-hidden">
+          {/* Top Fade Gradient Mask */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 md:h-36 bg-gradient-to-b from-[#070709] via-[#070709]/85 to-transparent z-20" />
+
+          {/* Bottom Fade Gradient Mask */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 md:h-36 bg-gradient-to-t from-[#070709] via-[#070709]/85 to-transparent z-20" />
+
+          {/* Columns Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 h-full max-w-5xl mx-auto">
+            {/* Column 1: Flows UP */}
+            <div className="overflow-hidden relative h-full">
+              <div className="flex flex-col gap-5 animate-marquee-up pause-marquee">
+                {col1Items.map((item, idx) => (
+                  <TestimonialCard key={`col1-${item.name}-${idx}`} item={item} />
+                ))}
+              </div>
+            </div>
+
+            {/* Column 2: Flows DOWN */}
+            <div className="overflow-hidden relative h-full hidden md:block">
+              <div className="flex flex-col gap-5 animate-marquee-down pause-marquee">
+                {col2Items.map((item, idx) => (
+                  <TestimonialCard key={`col2-${item.name}-${idx}`} item={item} />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }
