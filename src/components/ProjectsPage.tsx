@@ -39,8 +39,8 @@ const detailedProjects: DetailedProject[] = [
     liveUrl: 'https://immoral-combat.netlify.app/',
     githubUrl: 'https://github.com/therealrawat',
     images: [
-      'https://pub-fb31e6086d984a29beb2f72346b229ec.r2.dev/images/ic1.png',
       'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop',
+      'https://pub-fb31e6086d984a29beb2f72346b229ec.r2.dev/images/ic1.png',
       'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop',
     ],
   },
