@@ -4,7 +4,6 @@ import Hero from './components/Hero';
 import BrandTicker from './components/BrandTicker';
 import ValueProp from './components/ValueProp';
 import Preloader from './components/Preloader';
-import ClickSpark from './components/reactbits/ClickSpark';
 import GhostCursor from './components/reactbits/GhostCursor';
 import { getCurrentRoute, type PageRoute } from './utils/navigation';
 
@@ -54,14 +53,7 @@ export default function App() {
   }, []);
 
   return (
-    <ClickSpark
-      sparkColor={['#8B5CF6', '#FFFFFF', '#C4B5FD', '#A78BFA']}
-      sparkSize={9}
-      sparkRadius={28}
-      sparkCount={9}
-      duration={420}
-      className="min-h-screen bg-[#070709] selection:bg-violet-600/35 selection:text-white text-white relative"
-    >
+    <div className="min-h-screen bg-[#070709] selection:bg-violet-600/35 selection:text-white text-white relative">
       {/* GhostCursor Smoke Trail from ReactBits */}
       <GhostCursor
         color="#8B5CF6"
@@ -132,6 +124,6 @@ export default function App() {
           <AIAssistant />
         </Suspense>
       )}
-    </ClickSpark>
+    </div>
   );
 }

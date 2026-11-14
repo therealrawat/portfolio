@@ -11,7 +11,8 @@ import {
   Award,
   Cpu,
   Layers,
-  Sparkles,
+  Zap,
+  ArrowUpRight,
 } from 'lucide-react';
 import SpotlightCard from './reactbits/SpotlightCard';
 import DecryptedText from './reactbits/DecryptedText';
@@ -234,7 +235,7 @@ export default function AboutMe() {
 
               <div className="pt-6 mt-6 border-t border-white/[0.08] flex items-center justify-between text-xs text-neutral-400">
                 <span>Direct client demos, stakeholder alignment, and production deployments.</span>
-                <Sparkles className="w-4 h-4 text-violet-400 shrink-0" />
+                <ArrowUpRight className="w-4 h-4 text-violet-400 shrink-0" />
               </div>
             </SpotlightCard>
           </motion.div>
@@ -269,7 +270,7 @@ export default function AboutMe() {
 
             {/* Pillar 3 */}
             <SpotlightCard className="p-6">
-              <Sparkles className="w-6 h-6 text-violet-400 mb-4" />
+              <Zap className="w-6 h-6 text-violet-400 mb-4" />
               <h4 className="text-base font-bold text-white tracking-tight mb-2">User Craft & Latency</h4>
               <p className="text-xs text-neutral-400 leading-relaxed font-light">
                 Obsessive attention to micro-interactions, responsive states, fluid 60fps animations, and deterministic sub-100ms UI response times.

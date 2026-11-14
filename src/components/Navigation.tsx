@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Loader2, ArrowUpRight, Github, Sparkles, Menu, X } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowUpRight, Github, Menu, X } from 'lucide-react';
 import logo from '../assets/pr-light.svg';
 import { navigateTo, getCurrentRoute, type PageRoute } from '../utils/navigation';
 
@@ -177,15 +177,6 @@ export default function Navigation() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            {/* Sparkle Quick Action */}
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              title="Return to top"
-              className="w-8 h-8 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-violet-400/40 hidden sm:flex items-center justify-center text-neutral-400 hover:text-white transition-all shadow-sm"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-violet-300" />
-            </button>
-
             {/* GitHub Profile Button */}
             <a
               href="https://github.com/priyanshurvt"

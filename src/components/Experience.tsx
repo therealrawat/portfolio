@@ -33,7 +33,7 @@ const phases = [
     title: 'Software Engineer',
     company: 'TestingXperts Pvt Ltd',
     location: 'Chandigarh, IN',
-    period: '2022 - Present',
+    period: '2024 - Present',
     description: 'Driving end-to-end delivery of client-facing projects while building AI-powered internal products that shape organizational capability. Delivered multiple enterprise projects earning recognition for high quality and impact.',
     number: '01',
     tags: ['.NET Core', 'Microservices', 'Product Strategy', 'SQL Server', 'AI Orchestration']
@@ -43,7 +43,7 @@ const phases = [
     title: 'Associate Software Engineer',
     company: 'smartData Enterprises',
     location: 'Dehradun, IN',
-    period: '2021 - 2022',
+    period: '2023 - 2024',
     description: 'Delivered high-performance backend modules for EHR systems, ensuring compliance and scalability. Refined system architecture for real-time medical data processing.',
     number: '02',
     tags: ['.NET Core', 'Microservices', 'Entity Framework', 'ReactJS']
@@ -53,7 +53,7 @@ const phases = [
     title: 'Engineering Intern',
     company: 'Rites Ltd',
     location: 'Remote',
-    period: '2020 - 2021',
+    period: '2022 - 2023',
     description: 'Developed technical documentation and gained hands-on experience in professional software life cycles, database modeling, and institutional systems.',
     number: '03',
     tags: ['.NET', 'Angular', 'Razor Pages', 'Documentation']

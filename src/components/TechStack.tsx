@@ -1,5 +1,5 @@
 import { motion, type Variants } from 'framer-motion';
-import { Code2, Cloud, Database, Layers, Sparkles, Terminal } from 'lucide-react';
+import { Code2, Cloud, Database, Layers, Cpu, Terminal } from 'lucide-react';
 import SpotlightCard from './reactbits/SpotlightCard';
 import DecryptedText from './reactbits/DecryptedText';
 import TrueFocus from './reactbits/TrueFocus';
@@ -17,7 +17,7 @@ const techCategories = [
   },
   {
     category: 'AI & ML',
-    icon: Sparkles,
+    icon: Cpu,
     technologies: ['Gemini AI', 'OpenAI', 'LangChain', 'Vector DBs', 'RAG'],
   },
   {

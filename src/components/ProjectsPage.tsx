@@ -5,7 +5,6 @@ import {
   Github,
   Layers,
   Cpu,
-  Sparkles,
   ExternalLink,
 } from 'lucide-react';
 import SpotlightCard from './reactbits/SpotlightCard';
@@ -210,7 +209,7 @@ export default function ProjectsPage() {
                   </div>
                   <div className="flex items-center justify-between pt-4 text-[11px] font-mono text-neutral-400">
                     <span className="flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                      <Layers className="w-3.5 h-3.5 text-violet-400" />
                       Hover cards for 3D fan-out
                     </span>
                     <span className="text-neutral-400">0{idx + 1} / 0{detailedProjects.length}</span>
