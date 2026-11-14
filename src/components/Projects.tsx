@@ -18,9 +18,9 @@ const projects: Project[] = [
     description: '3D WebGL stress-relief arcade fighter featuring real-time physics, comical dialogue bubbles, dynamic health bars, and instant K.O. combat mechanics.',
     liveUrl: 'https://immoral-combat.netlify.app/',
     images: [
-      'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop',
+      'https://pub-fb31e6086d984a29beb2f72346b229ec.r2.dev/images/ic1.png',
+      'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
     ],
   },
   {
@@ -28,9 +28,9 @@ const projects: Project[] = [
     description: 'Meeting intelligence pipeline transforming post-call transcripts into structured actionable insights with Gemini 1.5 Flash in a zero-retention privacy architecture.',
     liveUrl: 'https://syncscripts.netlify.app/',
     images: [
-      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800&auto=format&fit=crop',
+      'https://pub-fb31e6086d984a29beb2f72346b229ec.r2.dev/images/ss1.png',
+      'https://pub-fb31e6086d984a29beb2f72346b229ec.r2.dev/images/ss3.png',
+      'https://pub-fb31e6086d984a29beb2f72346b229ec.r2.dev/images/ss2.png',
     ],
   },
   {
