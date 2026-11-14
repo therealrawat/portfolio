@@ -2,15 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Loader2, ArrowUpRight } from 'lucide-react';
 import logo from '../assets/pr-light.svg';
-import { useViewMode } from '../context/ViewModeContext';
-import { sfx } from '../utils/audio';
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'completed'>('idle');
   const [scrollProgress, setScrollProgress] = useState(0);
-
-  const { mode, setMode } = useViewMode();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,7 +52,7 @@ export default function Navigation() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-16 flex items-center justify-between gap-4">
-        {/* Brand & Mode Switcher */}
+        {/* Brand */}
         <div className="flex items-center gap-4 sm:gap-6">
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -71,37 +67,6 @@ export default function Navigation() {
               PR.
             </span>
           </button>
-
-          {/* Mode Switcher Pill */}
-          <div className="flex items-center p-0.5 sm:p-1 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-full shadow-inner">
-            <button
-              onClick={() => {
-                sfx.playSwitch();
-                setMode('2d');
-              }}
-              className={`flex items-center gap-1 px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all ${
-                mode === '2d'
-                  ? 'bg-white text-black shadow-md'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <span>Standard</span>
-            </button>
-            <button
-              onClick={() => {
-                sfx.playSwitch();
-                setMode('3d');
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all ${
-                mode === '3d'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
-                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-              <span>3D World</span>
-            </button>
-          </div>
         </div>
 
         {/* Section links & Resume */}

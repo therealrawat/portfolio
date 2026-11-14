@@ -1,10 +1,7 @@
 import { motion, type Variants } from 'framer-motion';
-import { MoveUpRight, Gamepad2 } from 'lucide-react';
-import { useViewMode } from '../context/ViewModeContext';
-import { sfx } from '../utils/audio';
+import { MoveUpRight } from 'lucide-react';
 
 export default function Hero() {
-  const { setMode } = useViewMode();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -96,18 +93,6 @@ export default function Hero() {
                 <MoveUpRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1" />
               </span>
               <div className="absolute inset-0 bg-neutral-200 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
-            </button>
-
-            {/* Jump to 3D Game World */}
-            <button
-              onClick={() => {
-                sfx.playSwitch();
-                setMode('3d');
-              }}
-              className="group flex items-center gap-2.5 px-6 py-4 sm:px-8 sm:py-5 bg-gradient-to-r from-orange-950/60 to-amber-950/60 hover:from-orange-900/80 hover:to-amber-900/80 border border-orange-500/40 hover:border-orange-400 text-orange-200 font-bold uppercase text-xs tracking-widest rounded-none transition-all duration-500 hover:scale-[1.02] shadow-lg shadow-orange-950/30"
-            >
-              <Gamepad2 className="w-4 h-4 text-orange-400 animate-pulse" />
-              <span>Launch 3D Space</span>
             </button>
 
             {/* Contact Anchor */}
