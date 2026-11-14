@@ -2,120 +2,26 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2 } from 'lucide-react';
 import { PORTFOLIO_CONTEXT, getContextForSection, type SectionContext } from '../data/bio';
+import StickerPeel from './reactbits/StickerPeel';
+import logo from '../assets/pr-light.svg';
 
-/* ─── Morphing Bot Component ────────────────────────────────────────────── */
+/* ─── AI Assistant Tooltip Component ───────────────────────────────────── */
 
-function MorphingBot({ isOpen }: { isOpen: boolean }) {
-  const [isBot, setIsBot] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) return;
-
-    // Initial sequence: Logo -> Bot -> Logo
-    let tooltipTimer: ReturnType<typeof setTimeout> | undefined;
-    let resetTimer: ReturnType<typeof setTimeout> | undefined;
-    const timer = setTimeout(() => {
-      setIsBot(true);
-      tooltipTimer = setTimeout(() => setShowTooltip(true), 600);
-
-      resetTimer = setTimeout(() => {
-        setIsBot(false);
-        setShowTooltip(false);
-      }, 5000);
-    }, 2000);
-
-    return () => {
-      clearTimeout(timer);
-      if (tooltipTimer) clearTimeout(tooltipTimer);
-      if (resetTimer) clearTimeout(resetTimer);
-    };
-  }, [isOpen]);
-
-  const displayBot = !isOpen && isBot;
-  const displayTooltip = !isOpen && showTooltip;
-
+function AssistantTooltip({ show }: { show: boolean }) {
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      <AnimatePresence>
-        {displayTooltip && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, x: 10 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.8, x: 10 }}
-            className="absolute right-full mr-4 px-4 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-xl rounded-lg"
-          >
-            Hi! Ask me anything
-            <div className="absolute right-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <svg
-        viewBox="0 0 750 750"
-        className="w-12 h-12 transition-transform duration-700"
-        style={{ transform: displayBot ? 'scale(0.9) rotate(5deg)' : 'scale(1) rotate(0deg)' }}
-      >
-        {/* Top Part of Logo → transforms to Bot Head */}
-        <motion.path
-          d="M456,82 C496,75 536,81 537,81 C583,98 618,143 618,196 L618,375 L375,375 L375,196 C375,143 409,98 456,82 Z"
-          fill="white"
-          animate={displayBot ? {
-            y: -20,
-            scale: 0.85,
-            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
-          } : {
-            y: 0,
-            scale: 1,
-            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
-          }}
-        />
-
-        {/* Bottom Part of Logo → transforms to Bot Body */}
-        <motion.path
-          d="M293,667 C253,675 213,668 212,668 C166,651 131,606 131,553 L131,375 L375,375 L375,553 C374,606 340,651 293,667 Z"
-          fill="white"
-          animate={displayBot ? {
-            y: 20,
-            scale: 1.1,
-            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
-          } : {
-            y: 0,
-            scale: 1,
-            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] }
-          }}
-        />
-
-        {/* Eyes (only visible in Bot state) */}
-        <motion.circle
-          cx="450" cy="240" r="25" fill="black"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={displayBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-          transition={{ delay: 0.4 }}
-        />
-        <motion.circle
-          cx="550" cy="240" r="25" fill="black"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={displayBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-          transition={{ delay: 0.5 }}
-        />
-
-        {/* Antenna (only visible in Bot state) */}
-        <motion.line
-          x1="500" y1="80" x2="500" y2="20"
-          stroke="white" strokeWidth="15" strokeLinecap="round"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={displayBot ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
-          transition={{ delay: 0.6 }}
-        />
-        <motion.circle
-          cx="500" cy="15" r="15" fill="white"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={displayBot ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-          transition={{ delay: 0.8 }}
-        />
-      </svg>
-    </div>
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, x: 10 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          exit={{ opacity: 0, scale: 0.8, x: 10 }}
+          className="fixed bottom-12 right-28 z-50 px-4 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-xl rounded-lg pointer-events-none"
+        >
+          Hi! Ask me anything
+          <div className="absolute right-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45" />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -210,7 +116,22 @@ export default function AIAssistant() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentSection, setCurrentSection] = useState<SectionContext>('home');
+  const [showTooltip, setShowTooltip] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShowTooltip(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setShowTooltip(true);
+      const hideTimer = setTimeout(() => setShowTooltip(false), 5000);
+      return () => clearTimeout(hideTimer);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleOpen = () => setIsOpen(true);
@@ -361,21 +282,40 @@ Your Role & Contact Policy:
         )}
       </AnimatePresence>
 
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-8 right-8 z-50 w-16 h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]"
-        aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
-      >
-        {isOpen ? (
-          <X className="w-8 h-8 text-white" />
-        ) : (
-          <MorphingBot isOpen={isOpen} />
-        )}
-      </motion.button>
+      <AssistantTooltip show={!isOpen && showTooltip} />
+
+      {isOpen ? (
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          exit={{ scale: 0 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsOpen(false)}
+          className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shadow-[0_0_25px_rgba(139,92,246,0.6)] transition-all cursor-pointer"
+          aria-label="Close AI Assistant"
+        >
+          <X className="w-7 h-7" />
+        </motion.button>
+      ) : (
+        <div className="fixed bottom-6 right-6 z-50 w-24 h-24 flex items-center justify-center pointer-events-none">
+          <StickerPeel
+            imageSrc={logo}
+            width={72}
+            finish="holo"
+            peelBackHoverPct={32}
+            peelBackActivePct={48}
+            curlRadius={14}
+            backColor="#8B5CF6"
+            lightingIntensity={0.65}
+            shadowIntensity={0.6}
+            followPointer={true}
+            draggable={false}
+            onClick={() => setIsOpen(true)}
+            className="pointer-events-auto"
+          />
+        </div>
+      )}
 
       <AnimatePresence>
         {isOpen && (
