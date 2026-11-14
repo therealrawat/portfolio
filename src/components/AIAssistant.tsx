@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2 } from 'lucide-react';
 import { PORTFOLIO_CONTEXT, getContextForSection, type SectionContext } from '../data/bio';
-import { useViewMode } from '../context/ViewModeContext';
-import { useViewportState } from '../utils/mobileViewport';
 
 /* ─── Morphing Bot Component ────────────────────────────────────────────── */
 
@@ -202,8 +200,6 @@ interface Message {
 }
 
 export default function AIAssistant() {
-  const { mode } = useViewMode();
-  const viewport = useViewportState();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -350,9 +346,6 @@ Your Role & Contact Policy:
     }
   };
 
-  const hideFabForMobile3D = mode === '3d' && (viewport.showTouchControls || viewport.isCompactLandscape);
-  const fabBottomClass = mode === '3d' ? 'bottom-16 right-6' : 'bottom-8 right-8';
-
   return (
     <>
       <AnimatePresence>
@@ -368,14 +361,13 @@ Your Role & Contact Policy:
         )}
       </AnimatePresence>
 
-      {!hideFabForMobile3D && (
         <motion.button
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setIsOpen(!isOpen)}
-          className={`fixed ${fabBottomClass} z-50 w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]`}
+          className="fixed bottom-8 right-8 z-50 w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-all duration-500 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
           aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
         >
           {isOpen ? (
@@ -384,7 +376,6 @@ Your Role & Contact Policy:
             <MorphingBot isOpen={isOpen} />
           )}
         </motion.button>
-      )}
 
       <AnimatePresence>
         {isOpen && (
@@ -394,9 +385,7 @@ Your Role & Contact Policy:
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className={`fixed z-50 w-[min(92vw,400px)] h-[min(560px,calc(100dvh-1.5rem))] bg-black border border-white/10 shadow-2xl flex flex-col overflow-hidden ${
-              hideFabForMobile3D || mode === '3d' ? 'bottom-3 right-3 sm:right-6' : 'bottom-28 right-4 sm:right-8'
-            }`}
+            className="fixed z-50 w-[min(92vw,400px)] h-[min(560px,calc(100dvh-1.5rem))] bg-black border border-white/10 shadow-2xl flex flex-col overflow-hidden bottom-28 right-4 sm:right-8"
           >
             <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -406,7 +395,7 @@ Your Role & Contact Policy:
                 <div>
                   <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-widest">AI ASSISTANT</h3>
                   <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">
-                    {mode === '3d' ? '3d office tour' : currentSection}
+                    {currentSection}
                   </p>
                 </div>
               </div>

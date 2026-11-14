@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, ExternalLink, FileText, Sparkles } from 'lucide-react';
-import { sfx } from '../utils/audio';
 
 type ProjectCategory = 'all' | 'ai' | 'fullstack' | 'automation';
 
@@ -113,7 +112,6 @@ export default function Projects() {
               <button
                 key={cat.key}
                 onClick={() => {
-                  sfx.playInteract();
                   setActiveCategory(cat.key);
                 }}
                 className={`px-4 py-2 rounded-full text-xs font-semibold tracking-wider transition-all duration-300 ${
