@@ -1,0 +1,37 @@
+.logo-loop-fade {
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+@keyframes logoLoopLeft {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+@keyframes logoLoopRight {
+  0% {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-logo-loop-left {
+  animation: logoLoopLeft linear infinite;
+  will-change: transform;
+}
+
+.animate-logo-loop-right {
+  animation: logoLoopRight linear infinite;
+  will-change: transform;
+}
+
+.logo-loop-container:hover .logo-loop-track {
+  animation-play-state: paused;
+}
+
