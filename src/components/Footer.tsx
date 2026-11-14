@@ -28,7 +28,7 @@ export default function Footer() {
               <DecryptedText text="LET'S BUILD TOGETHER." speed={40} maxIterations={8} encryptedClassName="text-violet-400" />
             </h3>
             <p className="text-neutral-400 text-lg leading-relaxed font-light">
-              Open for strategic engineering, product architecture roles, and technical consulting partnerships.
+              Open for strategic engineering, product management roles, and technical consulting partnerships.
             </p>
           </motion.div>
 

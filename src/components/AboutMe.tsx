@@ -83,7 +83,7 @@ export default function AboutMe() {
             />
           </h1>
           <p className="text-lg md:text-xl text-neutral-300 max-w-3xl font-light leading-relaxed">
-            Software Engineer with over 4 years of experience architecting distributed solutions, transitioning technical features into business outcomes, and building AI-orchestrated products with product discipline.
+            I am Priyanshu Rawat, a Software Engineer with over 4 years of experience architecting distributed solutions, transitioning technical features into business outcomes, and building AI-orchestrated products with product discipline.
           </p>
         </motion.div>
 
@@ -140,7 +140,7 @@ export default function AboutMe() {
             </SpotlightCard>
           </motion.div>
 
-          {/* Military Leadership & AFSB Recommendation */}
+          {/* AFCAT & AFSB Recommendation */}
           <motion.div variants={itemVariants} className="md:col-span-1">
             <SpotlightCard
               spotlightColor="rgba(139, 92, 246, 0.25)"
@@ -149,23 +149,23 @@ export default function AboutMe() {
             >
               <div>
                 <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400 mb-6">
-                  <ShieldCheck className="w-5 h-5" />
+                  <Award className="w-5 h-5" />
                 </div>
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-violet-400 font-bold mb-2">
+                {/* <div className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-violet-400 font-bold mb-2">
                   <Award className="w-3.5 h-3.5" />
-                  Military Selection
-                </div>
+                  Officer Selection Board
+                </div> */}
                 <h3 className="text-xl font-bold text-white tracking-tight mb-4">
                   AFSB Recommended
                 </h3>
                 <p className="text-sm text-neutral-300 font-light leading-relaxed">
-                  Recommended by the <strong className="text-white font-semibold">Air Force Selection Board</strong> for Commission into the Indian Armed Forces. Trained in situational leadership, swift spatial evaluation, and decisive execution under high-stress conditions.
+                  Cleared the <strong className="text-white font-semibold">AFCAT</strong> and recommended by the <strong className="text-white font-semibold">Air Force Selection Board (1 AFSB)</strong> through an intensive 5-day assessment evaluating cognitive agility, situational problem-solving, and decisive leadership under pressure.
                 </p>
               </div>
 
               <div className="pt-6 mt-6 border-t border-white/[0.08]">
                 <p className="text-xs text-neutral-400 font-mono">
-                  Brings discipline, accountability, and calm decisiveness to sprint cycles and architectural governance.
+                  Brings mental resilience, high-ownership teamwork, and calm analytical execution to software engineering.
                 </p>
               </div>
             </SpotlightCard>
