@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
-  ShieldCheck,
   GraduationCap,
   Briefcase,
   Terminal,

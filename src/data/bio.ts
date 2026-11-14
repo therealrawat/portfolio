@@ -5,6 +5,12 @@ export const PORTFOLIO_CONTEXT = {
 
   projects: [
     {
+      name: "Immoral Combat",
+      tech: "Three.js, GSAP, WebGL, TypeScript, Tailwind CSS, Vite",
+      pm_angle: "Engineered as an arcade-style, stress-relief fighting game offering visceral micro-sessions. Features Mortal Kombat-inspired metallic life meters, spiked timers, comical dialogue bubbles, dynamic fighter avatars, and instant K.O. physics.",
+      engineering_angle: "Built with Three.js, GSAP, and TypeScript. Features procedural 3D fighter animation blending, real-time head-tracked speech bubbles, screen-space damage vignettes, sound fx, and optimized canvas rendering running at fluid 60 FPS."
+    },
+    {
       name: "SyncScripts",
       tech: "Gemini, React, TypeScript",
       pm_angle: "Solved Meeting Debt by automating transcript analysis. Professional teams in service-based and technical consulting firms face Information Overload post-meeting. SyncScripts transforms meeting transcripts into actionable insights, reducing context switching and improving team productivity.",

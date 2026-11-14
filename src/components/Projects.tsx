@@ -14,6 +14,16 @@ interface Project {
 
 const projects: Project[] = [
   {
+    title: 'Immoral Combat',
+    description: '3D WebGL stress-relief arcade fighter featuring real-time physics, comical dialogue bubbles, dynamic health bars, and instant K.O. combat mechanics.',
+    liveUrl: 'https://immoral-combat.netlify.app/',
+    images: [
+      'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop',
+    ],
+  },
+  {
     title: 'SyncScripts',
     description: 'Meeting intelligence pipeline transforming post-call transcripts into structured actionable insights with Gemini 1.5 Flash in a zero-retention privacy architecture.',
     liveUrl: 'https://syncscripts.netlify.app/',
@@ -51,16 +61,6 @@ const projects: Project[] = [
       'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?q=80&w=800&auto=format&fit=crop',
-    ],
-  },
-  {
-    title: 'PulseCheck AI',
-    description: 'Predictive churn modeling engine mapping LLM JSON outputs directly into real-time business telemetry and revenue protection metrics.',
-    liveUrl: 'https://the4her.netlify.app/',
-    images: [
-      'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=800&auto=format&fit=crop',
     ],
   },
 ];

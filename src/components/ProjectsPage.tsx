@@ -27,6 +27,24 @@ interface DetailedProject {
 
 const detailedProjects: DetailedProject[] = [
   {
+    id: 'immoral-combat',
+    title: 'Immoral Combat',
+    subtitle: '3D WebGL Stress-Relief Arcade Fighter',
+    highlightMetric: '60 FPS Real-Time Physics & WebGL Combat',
+    pmPhilosophy:
+      'Engineered as an arcade-style, stress-relief fighting game offering visceral micro-sessions. Features Mortal Kombat-inspired metallic life meters, spiked timers, comical dialogue bubbles, dynamic fighter avatars, and instant K.O. physics.',
+    engineeringArch:
+      'Built with Three.js, GSAP, and TypeScript. Features procedural 3D fighter animation blending, real-time head-tracked speech bubbles, screen-space damage vignettes, audio synthesis, and optimized canvas rendering running at fluid 60 FPS.',
+    techStack: ['Three.js', 'GSAP', 'WebGL', 'TypeScript', 'Tailwind CSS', 'Vite'],
+    liveUrl: 'https://immoral-combat.netlify.app/',
+    githubUrl: 'https://github.com/therealrawat',
+    images: [
+      'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop',
+    ],
+  },
+  {
     id: 'syncscripts',
     title: 'SyncScripts',
     subtitle: 'Zero-Retention AI Meeting Intelligence',
