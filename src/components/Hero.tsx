@@ -47,11 +47,6 @@ export default function Hero() {
             <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#8B5CF6]" />
             <ShinyText text="Open to Strategic Engineering & Product Roles" speed={3.5} className="font-semibold text-xs" />
           </div>
-
-          <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-neutral-400 font-semibold">
-            <span className="w-8 h-[1px] bg-neutral-800" />
-            MCA • 8.93 CGPA • AFSB Rec.
-          </div>
         </motion.div>
 
         {/* Impact Headline with ReactBits Decrypted Text */}
@@ -107,38 +102,17 @@ export default function Hero() {
           <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-4 pointer-events-auto">
             {/* Primary CTA */}
             <button
-              onClick={() => scrollToSection('projects')}
+              onClick={() => scrollToSection('contact')}
               className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] rounded-xl"
             >
               <span className="relative z-10 flex items-center gap-2">
-                Explore Work
+                Let's Connect
                 <MoveUpRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1 text-violet-600" />
               </span>
               <div className="absolute inset-0 bg-violet-100 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
             </button>
-
-            {/* Trajectory CTA */}
-            <button
-              onClick={() => scrollToSection('experience')}
-              className="px-6 py-4 sm:px-8 sm:py-5 border border-white/15 bg-white/[0.02] text-neutral-300 hover:text-white font-bold uppercase text-xs tracking-widest hover:border-violet-400 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] transition-all duration-500 rounded-xl"
-            >
-              Trajectory
-            </button>
           </motion.div>
         </div>
-
-        {/* Footer Meta */}
-        <motion.div
-          variants={itemVariants}
-          className="mt-16 flex items-center gap-8 text-[10px] uppercase tracking-widest text-neutral-400 font-semibold flex-wrap pointer-events-auto"
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping shadow-[0_0_8px_#8B5CF6]" />
-            <span className="text-neutral-300">Product Engineer @ TestingXperts</span>
-          </div>
-          <span className="opacity-25 hidden sm:inline">•</span>
-          <span className="hidden sm:inline text-neutral-400">Discovery → PRD → Architecture → Build → Scale</span>
-        </motion.div>
       </motion.div>
 
       {/* Decorative Monogram */}

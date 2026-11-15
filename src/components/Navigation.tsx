@@ -1,8 +1,23 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Loader2, ArrowUpRight, Github, Menu, X } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowUpRight, Menu, X } from 'lucide-react';
 import logo from '../assets/pr-light.svg';
 import { navigateTo, getCurrentRoute, type PageRoute } from '../utils/navigation';
+
+const LinkedinFilledIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"
+    />
+  </svg>
+);
 
 interface NavItem {
   label: string;
@@ -177,23 +192,23 @@ export default function Navigation() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            {/* GitHub Profile Button */}
+            {/* LinkedIn Profile Button */}
             <a
-              href="https://github.com/priyanshurvt"
+              href="https://linkedin.com/in/rawat-priyanshu"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="GitHub Profile"
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.08] text-xs font-mono text-neutral-300 hover:text-white transition-all shadow-sm"
+              aria-label="LinkedIn Profile"
+              className="hidden sm:inline-flex items-center justify-center gap-2 h-9 px-3.5 sm:px-4 rounded-xl border border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.08] text-xs font-medium text-neutral-200 hover:text-white transition-all shadow-sm shrink-0"
             >
-              <Github className="w-3.5 h-3.5 text-neutral-300" />
-              <span className="font-semibold text-[11px]">GitHub</span>
+              <LinkedinFilledIcon className="w-3.5 h-3.5 text-neutral-300" />
+              <span>LinkedIn</span>
             </a>
 
             {/* Electric Violet CTA (ReactBits style) */}
             <button
               onClick={handleDownload}
               disabled={downloadState === 'loading'}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-bold text-white bg-violet-600 hover:bg-violet-500 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)] transition-all duration-300 active:scale-95 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 h-9 px-3.5 sm:px-4 rounded-xl text-xs font-medium text-white bg-violet-600 hover:bg-violet-500 shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)] transition-all duration-300 active:scale-95 cursor-pointer shrink-0"
             >
               {downloadState === 'loading' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -247,13 +262,13 @@ export default function Navigation() {
 
               <div className="pt-2 mt-1 border-t border-white/[0.08] flex items-center justify-between px-2">
                 <a
-                  href="https://github.com/priyanshurvt"
+                  href="https://linkedin.com/in/rawat-priyanshu"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white py-1"
                 >
-                  <Github className="w-3.5 h-3.5" />
-                  <span>GitHub Profile</span>
+                  <LinkedinFilledIcon className="w-3.5 h-3.5" />
+                  <span>LinkedIn Profile</span>
                 </a>
               </div>
             </motion.div>

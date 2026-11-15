@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-import DecryptedText from './reactbits/DecryptedText';
 import SpotlightCard from './reactbits/SpotlightCard';
 
 /* ─── Real Testimonials Only ─────────────────────────────────────────────── */
@@ -85,7 +83,7 @@ export default function Testimonials() {
     <section id="testimonials" className="py-32 px-6 md:px-16 bg-[#070709] relative overflow-hidden">
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Section Header (Previous Version) */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -100,7 +98,7 @@ export default function Testimonials() {
           <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
             <DecryptedText text="TESTIMONIALS." speed={40} maxIterations={8} encryptedClassName="text-violet-400" />
           </h2>
-        </motion.div>
+        </motion.div> */}
 
         {/* 2-Column Marquee Stage (Column 1 flows Up, Column 2 flows Down) */}
         <div className="relative h-[580px] md:h-[620px] overflow-hidden">
