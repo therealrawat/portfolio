@@ -301,8 +301,8 @@ const categories: Category[] = [
       { name: 'FastAPI', icon: <FastApiIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
       { name: 'Node.js', icon: <NodeJsIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
       { name: 'Python', icon: <PythonIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
-      { name: 'Microservices', icon: <Terminal className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
-      { name: 'REST APIs', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
+      { name: 'Microservices', icon: <Terminal className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
+      { name: 'REST APIs', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
     ],
   },
   {
@@ -311,10 +311,10 @@ const categories: Category[] = [
     techs: [
       { name: 'Gemini AI', icon: <GeminiIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
       { name: 'OpenAI', icon: <OpenAiIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
-      { name: 'LangChain', icon: <Cpu className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
-      { name: 'CrewAI', icon: <Boxes className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
-      { name: 'Vector DBs', icon: <Database className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
-      { name: 'RAG Architecture', icon: <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
+      { name: 'LangChain', icon: <Cpu className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
+      { name: 'CrewAI', icon: <Boxes className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
+      { name: 'Vector DBs', icon: <Database className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
+      { name: 'RAG Architecture', icon: <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
     ],
   },
   {
@@ -325,7 +325,7 @@ const categories: Category[] = [
       { name: 'Docker', icon: <DockerIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
       { name: 'Kubernetes', icon: <KubernetesIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
       { name: 'Azure', icon: <Cloud className="w-5 h-5 sm:w-6 sm:h-6 text-sky-400" /> },
-      { name: 'CI/CD', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
+      { name: 'CI/CD', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
       { name: 'Git', icon: <GitIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
     ],
   },
@@ -346,8 +346,8 @@ const categories: Category[] = [
     techs: [
       { name: 'Figma', icon: <FigmaIcon className="w-5 h-5 sm:w-6 sm:h-6" /> },
       { name: 'Linear', icon: <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" /> },
-      { name: 'PRD Methodology', icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" /> },
-      { name: 'Stateless Architecture', icon: <Cpu className="w-5 h-5 sm:w-6 sm:h-6 text-violet-300" /> },
+      { name: 'PRD Methodology', icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
+      { name: 'Stateless Architecture', icon: <Cpu className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-300" /> },
     ],
   },
 ];
@@ -368,8 +368,8 @@ export default function TechStack() {
   return (
     <section id="tech" className="py-28 md:py-36 px-6 sm:px-10 md:px-16 lg:px-20 bg-[#070709] relative overflow-hidden">
       {/* Subtle ambient lighting */}
-      <div className="pointer-events-none absolute top-1/4 -right-40 w-96 h-96 bg-violet-600/5 rounded-full blur-[140px]" />
-      <div className="pointer-events-none absolute bottom-1/4 -left-40 w-96 h-96 bg-violet-900/5 rounded-full blur-[140px]" />
+      <div className="pointer-events-none absolute top-1/4 -right-40 w-96 h-96 bg-white/[0.02] rounded-full blur-[140px]" />
+      <div className="pointer-events-none absolute bottom-1/4 -left-40 w-96 h-96 bg-white/[0.02] rounded-full blur-[140px]" />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header */}
@@ -384,7 +384,7 @@ export default function TechStack() {
             <ShinyText
               text="Cutting-Edge"
               speed={4}
-              className="font-semibold text-violet-400"
+              className="font-semibold text-white"
             />
             <br />
             Technology Solutions
@@ -408,7 +408,7 @@ export default function TechStack() {
                   setSelectedTech(cat.techs[0].name);
                 }}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${isActive
-                  ? 'bg-violet-500/20 border border-violet-400/80 text-white font-semibold shadow-[0_0_12px_rgba(139,92,246,0.3)]'
+                  ? 'bg-white/[0.1] border border-white/60 text-white font-semibold shadow-[0_0_12px_rgba(255,255,255,0.2)]'
                   : 'bg-white/[0.03] border border-white/10 text-neutral-400 hover:text-white'
                   }`}
               >
@@ -434,10 +434,10 @@ export default function TechStack() {
                   }}
                   className="group flex items-center gap-3 text-left transition-all cursor-pointer select-none py-1.5"
                 >
-                  {/* Active Indicator Bar (matches the '| Other' inspiration design) */}
+                  {/* Active Indicator Bar */}
                   <div
                     className={`w-[2px] h-5 rounded-full transition-all duration-300 ${isActive
-                      ? 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]'
+                      ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]'
                       : 'bg-transparent group-hover:bg-white/20'
                       }`}
                   />
@@ -470,12 +470,12 @@ export default function TechStack() {
                   return (
                     <SpotlightCard
                       key={tech.name}
-                      spotlightColor="rgba(139, 92, 246, 0.25)"
+                      spotlightColor="rgba(255, 255, 255, 0.12)"
                       spotlightSize={260}
                       onClick={() => setSelectedTech(tech.name)}
                       className={`group h-20 sm:h-22 cursor-pointer transition-all duration-300 border ${isSelected
-                        ? 'border-violet-400/90 bg-violet-950/25 shadow-[0_0_20px_rgba(139,92,246,0.35)]'
-                        : 'border-white/10 bg-[#0c0c11]/80 hover:border-violet-500/40 hover:bg-white/[0.04]'
+                        ? 'border-white/60 bg-white/[0.08] shadow-[0_0_20px_rgba(255,255,255,0.2)]'
+                        : 'border-white/10 bg-[#0c0c11]/80 hover:border-white/40 hover:bg-white/[0.04]'
                         }`}
                       contentClassName="flex items-center justify-center w-full h-full px-4 py-3"
                     >
@@ -483,7 +483,7 @@ export default function TechStack() {
                         <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110">
                           {tech.icon}
                         </div>
-                        <span className="text-xs sm:text-sm font-semibold text-white tracking-tight group-hover:text-violet-200 transition-colors whitespace-nowrap">
+                        <span className="text-xs sm:text-sm font-semibold text-white tracking-tight group-hover:text-white transition-colors whitespace-nowrap">
                           {tech.name}
                         </span>
                       </div>
@@ -504,7 +504,7 @@ export default function TechStack() {
             >
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2.5">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-violet-400 font-bold px-2 py-0.5 rounded-md border border-violet-500/20 bg-violet-500/10">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-200 font-bold px-2 py-0.5 rounded-md border border-white/20 bg-white/[0.05]">
                     {activeDetail.category}
                   </span>
                   <span className="text-neutral-500 text-xs">•</span>
@@ -520,8 +520,8 @@ export default function TechStack() {
                 </p>
               </div>
 
-              <div className="shrink-0 flex items-center gap-1.5 text-xs font-mono text-violet-300 bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-xl self-start sm:self-center">
-                <CheckCircle2 className="w-3.5 h-3.5 text-violet-400" />
+              <div className="shrink-0 flex items-center gap-1.5 text-xs font-mono text-neutral-200 bg-white/[0.05] border border-white/20 px-3 py-1.5 rounded-xl self-start sm:self-center">
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                 Production Rigor
               </div>
             </motion.div>

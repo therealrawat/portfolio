@@ -140,8 +140,8 @@ export default function ProjectsPage() {
   return (
     <div className="min-h-screen bg-[#070709] text-white relative pt-28 pb-24 px-6 md:px-16 overflow-hidden">
       {/* Ambient Gradient Glows */}
-      <div className="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-violet-600/[0.08] blur-[150px] rounded-full z-0" />
-      <div className="pointer-events-none absolute bottom-20 left-10 w-[500px] h-[500px] bg-violet-900/[0.05] blur-[140px] rounded-full z-0" />
+      <div className="pointer-events-none absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-white/[0.03] blur-[150px] rounded-full z-0" />
+      <div className="pointer-events-none absolute bottom-20 left-10 w-[500px] h-[500px] bg-white/[0.02] blur-[140px] rounded-full z-0" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Navigation Breadcrumb / Back Action */}
@@ -153,9 +153,9 @@ export default function ProjectsPage() {
         >
           <button
             onClick={() => navigateTo('home')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.03] hover:border-violet-400 hover:bg-violet-500/10 text-neutral-300 hover:text-white text-xs font-semibold transition-all group cursor-pointer shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.08] text-neutral-300 hover:text-white text-xs font-semibold transition-all group cursor-pointer shadow-sm"
           >
-            <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1 text-violet-400" />
+            <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1 text-white" />
             <span>Back to Portfolio</span>
           </button>
         </motion.div>
@@ -176,7 +176,7 @@ export default function ProjectsPage() {
               text="ARCHITECTED PROJECTS."
               speed={35}
               maxIterations={8}
-              encryptedClassName="text-violet-400"
+              encryptedClassName="text-white/60"
             />
           </h1>
           <p className="text-lg md:text-xl text-neutral-300 max-w-3xl font-light leading-relaxed">
@@ -195,7 +195,7 @@ export default function ProjectsPage() {
               transition={{ duration: 0.7, delay: idx * 0.08 }}
             >
               <SpotlightCard
-                spotlightColor="rgba(139, 92, 246, 0.2)"
+                spotlightColor="rgba(255, 255, 255, 0.12)"
                 spotlightSize={400}
                 className="p-6 sm:p-8 md:p-10 rounded-2xl w-full"
               >
@@ -218,7 +218,7 @@ export default function ProjectsPage() {
                         <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                           {project.title}
                         </h3>
-                        <span className="text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-300 font-bold shrink-0">
+                        <span className="text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-lg border border-white/20 bg-white/[0.05] text-white font-bold shrink-0">
                           {project.highlightMetric}
                         </span>
                       </div>
@@ -229,7 +229,7 @@ export default function ProjectsPage() {
 
                       {/* PM Angle */}
                       <div className="mb-4 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1.5">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-white mb-1.5">
                           <Layers className="w-3.5 h-3.5" />
                           <span>Product Problem & Strategy</span>
                         </div>
@@ -240,7 +240,7 @@ export default function ProjectsPage() {
 
                       {/* Engineering Architecture */}
                       <div className="mb-6 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-400 mb-1.5">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-white mb-1.5">
                           <Cpu className="w-3.5 h-3.5" />
                           <span>Engineering Implementation</span>
                         </div>
@@ -278,7 +278,7 @@ export default function ProjectsPage() {
                           href={project.githubUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 bg-white/[0.03] hover:border-violet-400 hover:bg-violet-500/10 text-neutral-200 hover:text-white text-xs font-semibold transition-all"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.08] text-neutral-200 hover:text-white text-xs font-semibold transition-all"
                         >
                           <Github className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white" />
                           <span>Source Code</span>
@@ -302,7 +302,7 @@ export default function ProjectsPage() {
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <span className="text-[10px] uppercase font-mono tracking-widest text-violet-400 font-bold block mb-2">
+              <span className="text-[10px] uppercase font-mono tracking-widest text-white/70 font-bold block mb-2">
                 Need a Custom System Built?
               </span>
               <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
@@ -316,7 +316,7 @@ export default function ProjectsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href="mailto:priyanshurawat.business@gmail.com"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all shadow-[0_0_20px_rgba(139,92,246,0.35)]"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.25)]"
               >
                 <span>Initiate Discussion</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export default function ProjectsPage() {
 
               <button
                 onClick={() => navigateTo('home')}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-violet-400 hover:bg-white/[0.08] text-white text-xs font-semibold transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.08] text-white text-xs font-semibold transition-all cursor-pointer"
               >
                 <span>Back to Home</span>
               </button>

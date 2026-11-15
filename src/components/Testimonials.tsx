@@ -38,7 +38,7 @@ const realTestimonials: Testimonial[] = [
 function TestimonialCard({ item }: { item: Testimonial }) {
   return (
     <SpotlightCard
-      spotlightColor="rgba(139, 92, 246, 0.18)"
+      spotlightColor="rgba(255, 255, 255, 0.12)"
       spotlightSize={280}
       className="p-6 md:p-7 flex flex-col justify-between group cursor-default transition-all duration-300"
     >
@@ -50,13 +50,13 @@ function TestimonialCard({ item }: { item: Testimonial }) {
       {/* Author Row */}
       <div className="flex items-center gap-3.5 pt-1">
         {/* Avatar Monogram */}
-        <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-500/30 flex items-center justify-center font-mono font-bold text-xs text-violet-300 shrink-0">
+        <div className="w-10 h-10 rounded-full bg-white/[0.05] border border-white/20 flex items-center justify-center font-mono font-bold text-xs text-white shrink-0">
           {item.initials}
         </div>
 
         {/* Name & Title */}
         <div className="flex flex-col min-w-0">
-          <span className="text-sm font-bold text-white tracking-tight truncate group-hover:text-violet-200 transition-colors">
+          <span className="text-sm font-bold text-white tracking-tight truncate group-hover:text-white transition-colors">
             {item.name}
           </span>
           <span className="text-xs text-neutral-400 truncate">
@@ -96,7 +96,7 @@ export default function Testimonials() {
             <span className="w-12 h-[1px] bg-neutral-800" />
           </div>
           <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
-            <DecryptedText text="TESTIMONIALS." speed={40} maxIterations={8} encryptedClassName="text-violet-400" />
+            <DecryptedText text="TESTIMONIALS." speed={40} maxIterations={8} encryptedClassName="text-white/60" />
           </h2>
         </motion.div> */}
 

@@ -403,7 +403,7 @@ export interface GhostCursorProps {
 }
 
 export default function GhostCursor({
-  color = '#8B5CF6',
+  color = '#b497cf',
   brightness = 1,
   size = 80,
   trailLength = 50,

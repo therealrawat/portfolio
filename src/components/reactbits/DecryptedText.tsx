@@ -19,7 +19,7 @@ export default function DecryptedText({
   animateOn = 'view',
   revealDirection = 'start',
   className = '',
-  encryptedClassName = 'text-violet-400/80',
+  encryptedClassName = 'text-white/60',
 }: DecryptedTextProps) {
   const [displayText, setDisplayText] = useState(text);
   const [isHovered, setIsHovered] = useState(false);

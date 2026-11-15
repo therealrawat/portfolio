@@ -14,7 +14,7 @@ const DiscoveryIllustration = () => (
       <path d="M52 102 L100 80 L148 102 L100 124 Z" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth="0.8" />
       <path d="M52 102 L52 116 L100 138 L100 124 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
       <path d="M148 102 L148 116 L100 138 L100 124 Z" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.09)" strokeWidth="0.8" />
-      <line x1="72" y1="97" x2="110" y2="111" stroke="rgba(139,92,246,0.5)" strokeWidth="0.8" />
+      <line x1="72" y1="97" x2="110" y2="111" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
       <line x1="72" y1="103" x2="108" y2="116" stroke="rgba(255,255,255,0.15)" strokeWidth="0.7" />
     </g>
 
@@ -23,7 +23,7 @@ const DiscoveryIllustration = () => (
       animate={{ x: [-18, 18, -18] }}
       transition={{ duration: 3.5, ease: 'easeInOut', repeat: Infinity }}
     >
-      <circle cx="114" cy="62" r="19" stroke="#8B5CF6" strokeWidth="1.5" fill="rgba(139,92,246,0.06)" />
+      <circle cx="114" cy="62" r="19" stroke="#FFFFFF" strokeWidth="1.5" fill="rgba(255,255,255,0.06)" />
       <circle cx="108" cy="56" r="4" fill="rgba(255,255,255,0.15)" />
       <motion.line
         x1="128" y1="76" x2="142" y2="90"
@@ -33,7 +33,7 @@ const DiscoveryIllustration = () => (
 
     <motion.line
       x1="62" y1="102" x2="100" y2="84"
-      stroke="rgba(139,92,246,0.4)"
+      stroke="rgba(255,255,255,0.3)"
       strokeWidth="1"
       strokeDasharray="4 4"
       animate={{ x1: [62, 115, 62], x2: [100, 138, 100] }}
@@ -59,7 +59,7 @@ const PRDIllustration = () => {
         <path d="M55 120 L100 96 L145 120 L100 144 Z" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.17)" strokeWidth="0.8" />
         <path d="M55 120 L55 80 L100 56 L100 96 Z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.19)" strokeWidth="0.8" />
         <path d="M145 120 L145 80 L100 56 L100 96 Z" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
-        <path d="M55 80 L100 56 L145 80 L100 104 Z" fill="rgba(139,92,246,0.06)" stroke="rgba(139,92,246,0.3)" strokeWidth="0.8" />
+        <path d="M55 80 L100 56 L145 80 L100 104 Z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
         <path d="M75 68 L100 55 L125 68 L100 81 Z" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.27)" strokeWidth="0.8" />
       </g>
 
@@ -67,7 +67,7 @@ const PRDIllustration = () => {
         <motion.line
           key={i}
           x1={l.x1} y1={l.y1} x2={l.x1} y2={l.y1}
-          stroke={i === 1 ? '#8B5CF6' : 'rgba(255,255,255,0.4)'}
+          stroke={i === 1 ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
           strokeWidth="1"
           strokeLinecap="round"
           animate={{
@@ -97,18 +97,18 @@ const ArchitectureIllustration = () => (
       <ellipse cx="100" cy="155" rx="55" ry="10" fill="rgba(255,255,255,0.03)" />
       {/* Node 1 */}
       <rect x="40" y="90" width="36" height="40" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" />
-      {/* Node 2 (Center / Violet) */}
-      <rect x="82" y="65" width="36" height="40" rx="6" fill="rgba(139,92,246,0.08)" stroke="#8B5CF6" strokeWidth="1" />
+      {/* Node 2 (Center) */}
+      <rect x="82" y="65" width="36" height="40" rx="6" fill="rgba(255,255,255,0.08)" stroke="#FFFFFF" strokeWidth="1" />
       {/* Node 3 */}
       <rect x="124" y="90" width="36" height="40" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" />
 
       {/* Connection wires */}
-      <line x1="76" y1="105" x2="82" y2="85" stroke="rgba(139,92,246,0.4)" strokeWidth="0.8" strokeDasharray="3 3" />
-      <line x1="118" y1="85" x2="124" y2="105" stroke="rgba(139,92,246,0.4)" strokeWidth="0.8" strokeDasharray="3 3" />
+      <line x1="76" y1="105" x2="82" y2="85" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8" strokeDasharray="3 3" />
+      <line x1="118" y1="85" x2="124" y2="105" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8" strokeDasharray="3 3" />
 
       {/* Flashing Activity LEDs */}
       <circle cx="58" cy="102" r="2" fill="rgba(255,255,255,0.4)" />
-      <circle cx="100" cy="77" r="2.5" fill="#8B5CF6" />
+      <circle cx="100" cy="77" r="2.5" fill="#FFFFFF" />
       <circle cx="142" cy="102" r="2" fill="rgba(255,255,255,0.4)" />
     </g>
   </svg>
@@ -125,8 +125,8 @@ const BuildIllustration = () => (
       <path d="M150 70 L120 40 L120 120 L150 90 Z" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.16)" strokeWidth="0.8" />
 
       {/* Code syntax tags */}
-      <path d="M72 80 L88 64 M72 80 L88 96" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M128 80 L112 64 M128 80 L112 96" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M72 80 L88 64 M72 80 L88 96" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M128 80 L112 64 M128 80 L112 96" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <line x1="104" y1="62" x2="96" y2="98" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeLinecap="round" />
     </g>
   </svg>
@@ -144,14 +144,14 @@ const IterationIllustration = () => (
         cx="100"
         cy="80"
         r="38"
-        stroke="#8B5CF6"
+        stroke="#FFFFFF"
         strokeWidth="1.5"
         strokeDasharray="20 180"
         animate={{ rotate: 360 }}
         transition={{ duration: 6, ease: 'linear', repeat: Infinity }}
         style={{ transformOrigin: '100px 80px' }}
       />
-      <circle cx="100" cy="80" r="16" fill="rgba(139,92,246,0.1)" stroke="rgba(139,92,246,0.3)" strokeWidth="0.8" />
+      <circle cx="100" cy="80" r="16" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
       <circle cx="100" cy="80" r="4" fill="#FFFFFF" />
     </g>
   </svg>
@@ -205,9 +205,9 @@ export default function ProductMindset() {
 
   return (
     <section id="mindset" className="py-32 px-8 md:px-20 bg-[#070709] relative overflow-hidden">
-      {/* Ambient Electric Violet glow */}
+      {/* Ambient Clean White glow */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="w-[600px] h-[300px] rounded-full bg-violet-600/[0.04] blur-[140px]" />
+        <div className="w-[600px] h-[300px] rounded-full bg-white/[0.02] blur-[140px]" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -224,7 +224,7 @@ export default function ProductMindset() {
             Product Lifecycle
           </div>
           <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
-            <DecryptedText text="MY APPROACH." speed={40} maxIterations={8} encryptedClassName="text-violet-400" />
+            <DecryptedText text="MY APPROACH." speed={40} maxIterations={8} encryptedClassName="text-white/60" />
           </h2>
         </motion.div>
 
@@ -241,14 +241,14 @@ export default function ProductMindset() {
             return (
               <motion.div key={phase.title} variants={cardVariants} className="h-full">
                 <SpotlightCard
-                  spotlightColor="rgba(139, 92, 246, 0.16)"
+                  spotlightColor="rgba(255, 255, 255, 0.12)"
                   spotlightSize={250}
                   className="flex flex-col justify-between group h-full p-6"
                 >
                   <div>
                     {/* Fig label */}
                     <div className="pb-1">
-                      <span className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 font-semibold group-hover:text-violet-300 transition-colors">
+                      <span className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 font-semibold group-hover:text-white transition-colors">
                         {phase.title}
                       </span>
                     </div>
@@ -267,7 +267,7 @@ export default function ProductMindset() {
 
                   {/* Text */}
                   <div className="pt-4 border-t border-white/[0.08] flex flex-col gap-2">
-                    <h3 className="text-[15px] font-bold text-white tracking-tight group-hover:text-violet-200 transition-colors">
+                    <h3 className="text-[15px] font-bold text-white tracking-tight group-hover:text-white transition-colors">
                       {phase.title}
                     </h3>
                     <p className="text-neutral-400 text-[12px] leading-relaxed">

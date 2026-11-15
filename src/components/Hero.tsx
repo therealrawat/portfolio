@@ -32,8 +32,8 @@ export default function Hero() {
 
   return (
     <section className="min-h-screen flex flex-col justify-center relative overflow-hidden px-6 md:px-20 pt-28 pb-16">
-      {/* Electric Violet Radial Spotlight Ambient Glow */}
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-violet-600/[0.08] blur-[150px] z-0" />
+      {/* White Radial Spotlight Ambient Glow */}
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-white/[0.03] blur-[150px] z-0" />
 
       <motion.div
         variants={containerVariants}
@@ -43,8 +43,8 @@ export default function Hero() {
       >
         {/* Availability Badge */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8 flex-wrap pointer-events-auto">
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#070709]/90 border border-violet-500/30 rounded-xl text-xs text-neutral-200 shadow-[0_0_15px_rgba(139,92,246,0.15)] backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_#8B5CF6]" />
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#070709]/90 border border-white/20 rounded-xl text-xs text-neutral-200 shadow-[0_0_15px_rgba(255,255,255,0.1)] backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
             <ShinyText text="Open to Strategic Engineering & Product Roles" speed={3.5} className="font-semibold text-xs" />
           </div>
         </motion.div>
@@ -58,7 +58,7 @@ export default function Hero() {
                 speed={35}
                 maxIterations={10}
                 animateOn="view"
-                encryptedClassName="text-violet-400"
+                encryptedClassName="text-white/60"
               />
             </div>
             <br />
@@ -66,7 +66,7 @@ export default function Hero() {
               className="text-transparent transition-all duration-500"
               style={{
                 WebkitTextStroke: '1.5px rgba(255,255,255,0.3)',
-                textShadow: '0 0 45px rgba(139,92,246,0.15)',
+                textShadow: '0 0 45px rgba(255,255,255,0.15)',
               }}
             >
               OPERATIONAL
@@ -78,7 +78,7 @@ export default function Hero() {
                 speed={40}
                 maxIterations={10}
                 animateOn="view"
-                encryptedClassName="text-violet-400"
+                encryptedClassName="text-white/60"
               />
             </div>
           </h1>
@@ -103,13 +103,13 @@ export default function Hero() {
             {/* Primary CTA */}
             <button
               onClick={() => scrollToSection('contact')}
-              className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] rounded-xl"
+              className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-bold uppercase text-xs tracking-widest overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(255,255,255,0.35)] rounded-xl"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Let's Connect
-                <MoveUpRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1 text-violet-600" />
+                <MoveUpRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1 text-black" />
               </span>
-              <div className="absolute inset-0 bg-violet-100 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
+              <div className="absolute inset-0 bg-neutral-200 translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
             </button>
           </motion.div>
         </div>

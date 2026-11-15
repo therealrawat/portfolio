@@ -15,11 +15,11 @@ function AssistantTooltip({ show }: { show: boolean }) {
           initial={{ opacity: 0, scale: 0.85, x: 10 }}
           animate={{ opacity: 1, scale: 1, x: 0 }}
           exit={{ opacity: 0, scale: 0.85, x: 10 }}
-          className="fixed bottom-12 right-28 z-50 px-3.5 py-1.5 bg-[#09090f]/95 backdrop-blur-md border border-violet-500/40 text-white text-[11px] font-mono tracking-wider shadow-[0_4px_20px_rgba(139,92,246,0.25)] rounded-full pointer-events-none flex items-center gap-2"
+          className="fixed bottom-12 right-28 z-50 px-3.5 py-1.5 bg-[#09090f]/95 backdrop-blur-md border border-white/20 text-white text-[11px] font-mono tracking-wider shadow-[0_4px_20px_rgba(255,255,255,0.15)] rounded-full pointer-events-none flex items-center gap-2"
         >
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
           </span>
           <span>Ask me anything</span>
         </motion.div>
@@ -85,7 +85,7 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
               key={i}
               className={isUser
                 ? "font-mono text-xs px-1.5 py-0.5 rounded bg-black/20 text-white font-medium"
-                : "font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/10 text-violet-300 font-medium"
+                : "font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/10 text-white font-medium"
               }
             >
               {code}
@@ -105,7 +105,7 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
               rel="noopener noreferrer"
               className={isUser
                 ? "underline font-bold text-white hover:text-neutral-200 transition-colors"
-                : "text-violet-300 hover:text-violet-200 underline font-semibold transition-colors"
+                : "text-white/90 hover:text-white underline font-semibold transition-colors"
               }
             >
               {label}
@@ -130,7 +130,7 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
                 rel="noopener noreferrer"
                 className={isUser
                   ? "underline font-bold text-white hover:text-neutral-200 transition-colors"
-                  : "text-violet-300 hover:text-violet-200 underline font-semibold transition-colors"
+                  : "text-white/90 hover:text-white underline font-semibold transition-colors"
                 }
               >
                 {url}
@@ -155,7 +155,7 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
                 href={`mailto:${email}`}
                 className={isUser
                   ? "underline font-bold text-white hover:text-neutral-200 transition-colors"
-                  : "text-violet-300 hover:text-violet-200 underline font-semibold transition-colors"
+                  : "text-white/90 hover:text-white underline font-semibold transition-colors"
                 }
               >
                 {email}
@@ -380,7 +380,7 @@ Your Role & Contact Policy:
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setIsOpen(false)}
-          className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shadow-[0_0_28px_rgba(139,92,246,0.55)] border border-white/20 transition-all cursor-pointer"
+          className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full bg-white hover:bg-neutral-200 text-black flex items-center justify-center shadow-[0_0_28px_rgba(255,255,255,0.4)] border border-white/20 transition-all cursor-pointer"
           aria-label="Close AI Assistant"
         >
           <X className="w-6 h-6" />
@@ -394,7 +394,7 @@ Your Role & Contact Policy:
             peelBackHoverPct={32}
             peelBackActivePct={48}
             curlRadius={14}
-            backColor="#8B5CF6"
+            backColor="#FFFFFF"
             lightingIntensity={0.65}
             shadowIntensity={0.6}
             followPointer={true}
@@ -413,21 +413,21 @@ Your Role & Contact Policy:
             exit={{ opacity: 0, y: 35, scale: 0.96 }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="fixed bottom-24 right-4 sm:right-8 z-50 w-[calc(100vw-2rem)] sm:w-[420px] h-[610px] max-h-[82vh] bg-[#08080d]/95 backdrop-blur-2xl border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_35px_rgba(139,92,246,0.18)] flex flex-col overflow-hidden rounded-2xl"
+            className="fixed bottom-24 right-4 sm:right-8 z-50 w-[calc(100vw-2rem)] sm:w-[420px] h-[610px] max-h-[82vh] bg-[#08080d]/95 backdrop-blur-2xl border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_35px_rgba(255,255,255,0.15)] flex flex-col overflow-hidden rounded-2xl"
           >
             {/* Top ambient lighting & edge glow */}
-            <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 bg-violet-600/15 rounded-full blur-[70px]" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 bg-violet-900/10 rounded-full blur-[60px]" />
-            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
+            <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 bg-white/[0.04] rounded-full blur-[70px]" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 bg-white/[0.02] rounded-full blur-[60px]" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
             {/* Header */}
             <div className="p-4 sm:p-5 border-b border-white/[0.08] flex items-center justify-between relative z-10 bg-[#08080d]/70 backdrop-blur-md">
               <div className="flex items-center gap-3">
-                <div className="relative w-9 h-9 border border-violet-500/30 bg-violet-500/10 rounded-xl flex items-center justify-center shrink-0 p-2">
+                <div className="relative w-9 h-9 border border-white/20 bg-white/[0.05] rounded-xl flex items-center justify-center shrink-0 p-2">
                   <img
                     src={logo}
                     alt="Priyanshu Rawat"
-                    className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                    className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
                   />
                   <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -439,7 +439,7 @@ Your Role & Contact Policy:
                     Priyanshu Intelligence
                   </h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="inline-flex items-center text-[9px] font-mono font-semibold text-violet-300 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                    <span className="inline-flex items-center text-[9px] font-mono font-semibold text-neutral-200 bg-white/[0.05] border border-white/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
                       Live • {currentSection}
                     </span>
                   </div>
@@ -481,13 +481,13 @@ Your Role & Contact Policy:
                   >
                     <div
                       className={`max-w-[88%] text-[13px] leading-relaxed break-words rounded-2xl relative group ${isUser
-                          ? 'bg-gradient-to-r from-violet-600 to-violet-500 text-white font-medium px-4 py-2.5 rounded-tr-xs shadow-[0_4px_16px_rgba(139,92,246,0.3)]'
+                          ? 'bg-white text-black font-semibold px-4 py-2.5 rounded-tr-xs shadow-[0_4px_16px_rgba(255,255,255,0.2)]'
                           : 'bg-white/[0.04] text-neutral-200 border border-white/[0.08] backdrop-blur-md px-4 py-3 rounded-tl-xs shadow-sm'
                         }`}
                     >
                       {!isUser && (
-                        <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-white/[0.06] text-[10px] font-mono text-violet-400/90 font-medium">
-                          <span className="flex items-center gap-1.5 uppercase tracking-wider text-violet-300">
+                        <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-white/[0.06] text-[10px] font-mono text-white/80 font-medium">
+                          <span className="flex items-center gap-1.5 uppercase tracking-wider text-white">
                             <img src={logo} alt="Priyanshu Rawat" className="w-3.5 h-3.5 object-contain opacity-90" />
                             Priyanshu AI
                           </span>
@@ -519,12 +519,12 @@ Your Role & Contact Policy:
                         key={qp.label}
                         type="button"
                         onClick={() => sendMessage(qp.prompt)}
-                        className="text-left p-2.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-violet-500/40 hover:bg-violet-500/10 transition-all group flex items-center justify-between cursor-pointer"
+                        className="text-left p-2.5 rounded-xl border border-white/10 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.08] transition-all group flex items-center justify-between cursor-pointer"
                       >
                         <span className="text-xs text-neutral-300 group-hover:text-white font-medium pr-1">
                           {qp.label}
                         </span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-violet-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+                        <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
                       </button>
                     ))}
                   </div>
@@ -540,9 +540,9 @@ Your Role & Contact Policy:
                 >
                   <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-md px-4 py-3 rounded-2xl rounded-tl-xs flex items-center gap-2.5">
                     <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" />
                     </div>
                     <span className="text-[11px] font-mono text-neutral-400">Synthesizing...</span>
                   </div>
@@ -553,7 +553,7 @@ Your Role & Contact Policy:
 
             {/* Input Footer */}
             <div className="p-3.5 sm:p-4 border-t border-white/[0.08] bg-[#08080d]/90 backdrop-blur-md relative z-10">
-              <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-1.5 focus-within:border-violet-500/50 focus-within:ring-1 focus-within:ring-violet-500/20 focus-within:bg-white/[0.05] transition-all">
+              <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-1.5 focus-within:border-white/50 focus-within:ring-1 focus-within:ring-white/20 focus-within:bg-white/[0.05] transition-all">
                 <input
                   type="text"
                   value={input}
@@ -567,7 +567,7 @@ Your Role & Contact Policy:
                   type="button"
                   onClick={() => sendMessage()}
                   disabled={!input.trim() || isLoading}
-                  className="w-8 h-8 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-20 disabled:hover:bg-violet-600 text-white flex items-center justify-center transition-all shadow-[0_0_12px_rgba(139,92,246,0.35)] shrink-0 cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-white hover:bg-neutral-200 disabled:opacity-20 disabled:hover:bg-white text-black flex items-center justify-center transition-all shadow-[0_0_12px_rgba(255,255,255,0.25)] shrink-0 cursor-pointer"
                   aria-label="Send message"
                 >
                   <Send className="w-3.5 h-3.5" />
@@ -576,7 +576,7 @@ Your Role & Contact Policy:
 
               <div className="flex items-center justify-between mt-2 px-1 text-[9px] font-mono text-neutral-500">
                 <span className="flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-violet-400/60" />
+                  <span className="w-1 h-1 rounded-full bg-white/60" />
                   Portfolio Intelligence
                 </span>
                 <span>Enter ↵</span>

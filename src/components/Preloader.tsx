@@ -32,13 +32,13 @@ export default function Preloader() {
               className="flex items-baseline gap-4"
             >
               <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white">
-                <DecryptedText text="PRIYANSHU." speed={30} maxIterations={6} encryptedClassName="text-violet-400" />
+                <DecryptedText text="PRIYANSHU." speed={30} maxIterations={6} encryptedClassName="text-white/60" />
               </h1>
               <motion.div
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 0.4, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-                className="h-1 w-12 md:w-20 bg-gradient-to-r from-violet-500 to-white origin-left shadow-[0_0_12px_#8B5CF6]"
+                className="h-1 w-12 md:w-20 bg-gradient-to-r from-white to-neutral-400 origin-left shadow-[0_0_12px_rgba(255,255,255,0.8)]"
               />
             </motion.div>
             
@@ -49,7 +49,7 @@ export default function Preloader() {
               className="mt-4 flex justify-between items-center text-[10px] uppercase tracking-[0.3em] text-neutral-400 font-medium font-mono"
             >
               <span>Portfolio {new Date().getFullYear()}</span>
-              <span className="text-violet-400 font-bold">● Initializing Suite</span>
+              <span className="text-white font-bold">● Initializing Suite</span>
             </motion.div>
           </div>
 
@@ -58,13 +58,13 @@ export default function Preloader() {
             initial={{ scaleY: 0 }}
             animate={{ scaleY: 1 }}
             transition={{ delay: 1.2, duration: 0.5 }}
-            className="absolute bottom-10 left-10 w-[1px] h-20 bg-violet-500/30"
+            className="absolute bottom-10 left-10 w-[1px] h-20 bg-white/20"
           />
           <motion.div 
             initial={{ scaleY: 0 }}
             animate={{ scaleY: 1 }}
             transition={{ delay: 1.2, duration: 0.5 }}
-            className="absolute top-10 right-10 w-[1px] h-20 bg-violet-500/30"
+            className="absolute top-10 right-10 w-[1px] h-20 bg-white/20"
           />
         </motion.div>
       )}

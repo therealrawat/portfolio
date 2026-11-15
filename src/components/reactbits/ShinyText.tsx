@@ -17,7 +17,7 @@ export default function ShinyText({
     <span
       className={`inline-block bg-clip-text text-transparent ${disabled
         ? 'text-white'
-        : 'animate-shine bg-[linear-gradient(110deg,#ffffff,45%,#8b5cf6,55%,#ffffff)] bg-[length:250%_100%]'
+        : 'animate-shine bg-[linear-gradient(110deg,#a1a1aa,45%,#ffffff,55%,#a1a1aa)] bg-[length:250%_100%]'
         } ${className}`}
       style={{
         animationDuration,

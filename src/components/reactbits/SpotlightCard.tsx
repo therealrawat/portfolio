@@ -13,7 +13,7 @@ export default function SpotlightCard({
   children,
   className = '',
   contentClassName = '',
-  spotlightColor = 'rgba(139, 92, 246, 0.16)',
+  spotlightColor = 'rgba(255, 255, 255, 0.12)',
   spotlightSize = 340,
   onClick,
 }: SpotlightCardProps) {
@@ -45,14 +45,14 @@ export default function SpotlightCard({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c11]/85 backdrop-blur-md transition-all duration-300 hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-950/20 ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c11]/85 backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:shadow-xl hover:shadow-white/5 ${className}`}
     >
       {/* Border Glow Spotlight */}
       <div
         className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-300 z-10"
         style={{
           opacity,
-          background: `radial-gradient(${spotlightSize * 0.7}px circle at ${position.x}px ${position.y}px, rgba(139, 92, 246, 0.45), transparent 70%)`,
+          background: `radial-gradient(${spotlightSize * 0.7}px circle at ${position.x}px ${position.y}px, rgba(255, 255, 255, 0.35), transparent 70%)`,
           mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           WebkitMaskComposite: 'xor',

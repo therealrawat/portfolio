@@ -55,13 +55,13 @@ export default function LogoLoop({
               onClick={() => onItemClick?.(item)}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-mono transition-all duration-300 select-none whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? 'border-violet-400 bg-violet-500/20 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]'
+                  ? 'border-white bg-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
                   : item.highlight
-                  ? 'border-violet-500/40 bg-violet-500/10 text-violet-200 hover:border-violet-400 hover:text-white'
-                  : 'border-white/10 bg-[#0c0c14]/80 text-neutral-300 hover:border-violet-500/40 hover:bg-white/[0.06] hover:text-white'
+                  ? 'border-white/40 bg-white/10 text-neutral-200 hover:border-white hover:text-white'
+                  : 'border-white/10 bg-[#0c0c14]/80 text-neutral-300 hover:border-white/40 hover:bg-white/[0.06] hover:text-white'
               }`}
             >
-              {item.icon && <span className="text-violet-400 shrink-0">{item.icon}</span>}
+              {item.icon && <span className="text-white shrink-0">{item.icon}</span>}
               <span className="font-semibold">{item.name}</span>
               {item.category && (
                 <span className="text-[10px] text-neutral-400 font-normal">

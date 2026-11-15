@@ -132,10 +132,10 @@ export default function BrandTicker() {
             return (
               <div
                 key={`${brand.name}-${idx}`}
-                className="group flex items-center gap-4 px-6 py-3.5 rounded-xl border border-white/10 bg-[#0c0c11]/80 hover:border-violet-500/50 hover:bg-violet-950/20 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] transition-all duration-300 cursor-default shrink-0 shadow-lg shadow-black/40"
+                className="group flex items-center gap-4 px-6 py-3.5 rounded-xl border border-white/10 bg-[#0c0c11]/80 hover:border-white/50 hover:bg-white/[0.05] hover:shadow-[0_0_20px_rgba(255,255,255,0.18)] transition-all duration-300 cursor-default shrink-0 shadow-lg shadow-black/40"
               >
-                <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center p-2 group-hover:border-violet-400 group-hover:bg-violet-500/20 transition-all duration-300">
-                  <span className="w-full h-full text-neutral-400 group-hover:text-violet-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center p-2 group-hover:border-white/40 group-hover:bg-white/[0.08] transition-all duration-300">
+                  <span className="w-full h-full text-neutral-400 group-hover:text-white transition-colors">
                     <Icon />
                   </span>
                 </div>
@@ -144,7 +144,7 @@ export default function BrandTicker() {
                     <span className="text-xs font-black tracking-widest text-neutral-200 group-hover:text-white uppercase transition-colors">
                       {brand.name}
                     </span>
-                    <span className="text-[8px] uppercase tracking-wider text-neutral-400 px-1.5 py-0.5 rounded-lg border border-white/10 font-bold group-hover:border-violet-400/30 group-hover:text-violet-300">
+                    <span className="text-[8px] uppercase tracking-wider text-neutral-400 px-1.5 py-0.5 rounded-lg border border-white/10 font-bold group-hover:border-white/30 group-hover:text-white">
                       {brand.type}
                     </span>
                   </div>

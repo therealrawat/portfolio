@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=JetBrains+Mono:wght@400..700&display=swap');
 
 @theme {
-  --color-accent: #8b5cf6;
+  --color-accent: #ffffff;
   --color-primary: #ffffff;
   --color-secondary: #070709;
   --color-muted: #94a3b8;
@@ -13,7 +13,7 @@
     --bg-main: #070709;
     --text-main: #ffffff;
     --text-muted: #94a3b8;
-    --accent: #8b5cf6;
+    --accent: #ffffff;
   }
 
   body {
@@ -25,7 +25,7 @@
     overflow-x: hidden;
   }
 
-  /* Ambient Glow with Subtle Electric Violet Undertone */
+  /* Ambient Glow with Subtle Clean White Undertone */
   body::after {
     content: "";
     position: fixed;
@@ -35,7 +35,7 @@
     height: 100vh;
     z-index: -1;
     pointer-events: none;
-    background: radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.07) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 70%);
+    background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.005) 40%, transparent 70%);
   }
 
   a,
@@ -47,9 +47,9 @@
     cursor: pointer;
   }
 
-  /* 3-Color Selection: Violet Glow */
+  /* Selection: Clean White Tint */
   ::selection {
-    background: rgba(139, 92, 246, 0.35);
+    background: rgba(255, 255, 255, 0.22);
     color: #ffffff;
   }
 

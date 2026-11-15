@@ -2,10 +2,10 @@ import Lanyard from './reactbits/Lanyard';
 
 export default function AboutMe() {
   return (
-    <div className="min-h-screen bg-[#070709] text-white relative selection:bg-violet-600/35 selection:text-white">
+    <div className="min-h-screen bg-[#070709] text-white relative selection:bg-white/20 selection:text-white">
       {/* Ambient Gradient Glows */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-violet-600/[0.08] blur-[160px] rounded-full z-0" />
-      <div className="pointer-events-none absolute bottom-20 right-10 w-[600px] h-[600px] bg-violet-900/[0.04] blur-[180px] rounded-full z-0" />
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-white/[0.03] blur-[160px] rounded-full z-0" />
+      <div className="pointer-events-none absolute bottom-20 right-10 w-[600px] h-[600px] bg-white/[0.02] blur-[180px] rounded-full z-0" />
 
       {/* Full-screen 3D Lanyard Hero hanging directly from the very top of the screen */}
       <div className="w-full h-screen relative z-10">

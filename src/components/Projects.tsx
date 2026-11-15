@@ -81,7 +81,7 @@ export default function Projects() {
                 text="SELECTED PROJECTS."
                 speed={35}
                 maxIterations={8}
-                encryptedClassName="text-violet-400"
+                encryptedClassName="text-white/60"
               />
             </h2>
           </div>
@@ -89,7 +89,7 @@ export default function Projects() {
           {/* More Projects Button */}
           <button
             onClick={() => navigateTo('projects')}
-            className="self-start md:self-end group inline-flex items-center gap-2.5 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 hover:bg-neutral-200 hover:shadow-[0_0_25px_rgba(139,92,246,0.35)] shrink-0 cursor-pointer"
+            className="self-start md:self-end group inline-flex items-center gap-2.5 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 hover:bg-neutral-200 hover:shadow-[0_0_25px_rgba(255,255,255,0.25)] shrink-0 cursor-pointer"
           >
             <span>More Projects</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
@@ -119,9 +119,9 @@ export default function Projects() {
                   className="block h-full group"
                 >
                   <SpotlightCard
-                    spotlightColor="rgba(139, 92, 246, 0.18)"
+                    spotlightColor="rgba(255, 255, 255, 0.12)"
                     spotlightSize={340}
-                    className="p-5 sm:p-6 flex flex-col justify-between h-full cursor-pointer hover:border-violet-500/40"
+                    className="p-5 sm:p-6 flex flex-col justify-between h-full cursor-pointer hover:border-white/40"
                   >
                     <div>
                       {/* Top Preview Stage: 3 Layered Images (2 in background, 1 centered in front) */}
@@ -131,10 +131,10 @@ export default function Projects() {
 
                       {/* Title & Diagonal Arrow */}
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-violet-200 transition-colors">
+                        <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-white transition-colors">
                           {project.title}
                         </h3>
-                        <ArrowUpRight className="w-4 h-4 text-neutral-500 group-hover:text-violet-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                        <ArrowUpRight className="w-4 h-4 text-neutral-500 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                       </div>
 
                       {/* Clean 2-Line Description */}

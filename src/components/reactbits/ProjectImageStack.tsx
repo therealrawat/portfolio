@@ -55,9 +55,9 @@ export default function ProjectImageStack({ images, title }: ProjectImageStackPr
         background: 'radial-gradient(ellipse at 50% 25%, rgba(255,255,255,0.03) 0%, rgba(5,5,8,0.95) 100%)',
       }}
     >
-      {/* Subtle Electric Violet Ambient Glow */}
+      {/* Subtle White Ambient Glow */}
       <div
-        className={`pointer-events-none absolute inset-0 bg-violet-600/[0.07] blur-2xl transition-opacity duration-500 ${
+        className={`pointer-events-none absolute inset-0 bg-white/[0.04] blur-2xl transition-opacity duration-500 ${
           isHovered ? 'opacity-100' : 'opacity-0'
         }`}
       />
@@ -117,7 +117,7 @@ export default function ProjectImageStack({ images, title }: ProjectImageStackPr
             scale: isHovered ? 1.03 : 1,
           }}
           transition={springConfig}
-          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[66%] sm:w-[62%] h-[78%] rounded-xl overflow-hidden border border-white/20 group-hover:border-violet-400/50 bg-[#161620] shadow-2xl shadow-black/95 z-20 transition-colors duration-300"
+          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[66%] sm:w-[62%] h-[78%] rounded-xl overflow-hidden border border-white/20 group-hover:border-white/50 bg-[#161620] shadow-2xl shadow-black/95 z-20 transition-colors duration-300"
         >
           <img
             src={images[1]}

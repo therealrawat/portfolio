@@ -25,7 +25,7 @@ export default function Footer() {
               Get In Touch
             </div>
             <h3 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tighter">
-              <DecryptedText text="LET'S BUILD TOGETHER." speed={40} maxIterations={8} encryptedClassName="text-violet-400" />
+              <DecryptedText text="LET'S BUILD TOGETHER." speed={40} maxIterations={8} encryptedClassName="text-white/60" />
             </h3>
             <p className="text-neutral-400 text-lg leading-relaxed font-light">
               Open for strategic engineering, product management roles, and technical consulting partnerships.
@@ -50,15 +50,15 @@ export default function Footer() {
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between p-5 rounded-xl border border-white/10 bg-white/[0.02] hover:border-violet-500/60 hover:bg-violet-950/20 hover:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all duration-300"
+                className="group flex items-center justify-between p-5 rounded-xl border border-white/10 bg-white/[0.02] hover:border-white/50 hover:bg-white/[0.05] hover:shadow-[0_0_25px_rgba(255,255,255,0.18)] transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
-                  <social.icon className="w-5 h-5 text-neutral-400 group-hover:text-violet-400 transition-colors" />
+                  <social.icon className="w-5 h-5 text-neutral-400 group-hover:text-white transition-colors" />
                   <span className="text-[11px] uppercase tracking-[0.3em] text-neutral-300 group-hover:text-white transition-colors font-bold">
                     {social.label}
                   </span>
                 </div>
-                <ArrowUp className="w-4 h-4 rotate-45 text-neutral-500 group-hover:text-violet-400 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                <ArrowUp className="w-4 h-4 rotate-45 text-neutral-500 group-hover:text-white transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </a>
             ))}
           </motion.div>
@@ -74,8 +74,8 @@ export default function Footer() {
             className="group flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] text-neutral-400 hover:text-white transition-colors font-bold"
           >
             BACK TO TOP
-            <div className="w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center group-hover:border-violet-400 group-hover:bg-violet-500/10 transition-colors">
-              <ArrowUp className="w-3.5 h-3.5 text-neutral-400 group-hover:text-violet-400 group-hover:-translate-y-0.5 transition-all" />
+            <div className="w-8 h-8 rounded-xl border border-white/10 flex items-center justify-center group-hover:border-white/40 group-hover:bg-white/[0.08] transition-colors">
+              <ArrowUp className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white group-hover:-translate-y-0.5 transition-all" />
             </div>
           </button>
         </div>
