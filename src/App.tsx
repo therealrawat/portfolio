@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
-import BrandTicker from './components/BrandTicker';
 import ValueProp from './components/ValueProp';
 import Preloader from './components/Preloader';
 import GhostCursor from './components/reactbits/GhostCursor';
@@ -10,7 +9,6 @@ import { getCurrentRoute, type PageRoute } from './utils/navigation';
 const loadAboutMe = () => import('./components/AboutMe');
 const loadProjectsPage = () => import('./components/ProjectsPage');
 const loadProjects = () => import('./components/Projects');
-const loadProductMindset = () => import('./components/ProductMindset');
 const loadTechStack = () => import('./components/TechStack');
 const loadTestimonials = () => import('./components/Testimonials');
 const loadExperience = () => import('./components/Experience');
@@ -20,7 +18,6 @@ const AIAssistant = lazy(() => import('./components/AIAssistant'));
 const AboutMe = lazy(loadAboutMe);
 const ProjectsPage = lazy(loadProjectsPage);
 const Projects = lazy(loadProjects);
-const ProductMindset = lazy(loadProductMindset);
 const TechStack = lazy(loadTechStack);
 const Testimonials = lazy(loadTestimonials);
 const Experience = lazy(loadExperience);
@@ -88,13 +85,9 @@ export default function App() {
         ) : (
           <>
             <Hero />
-            <BrandTicker />
             <ValueProp />
             <Suspense fallback={null}>
               <Projects />
-            </Suspense>
-            <Suspense fallback={null}>
-              <ProductMindset />
             </Suspense>
             <Suspense fallback={null}>
               <TechStack />

@@ -224,7 +224,6 @@ export default function AIAssistant() {
     const handleScroll = () => {
       const sections = [
         { id: 'projects', element: document.getElementById('projects') },
-        { id: 'mindset', element: document.getElementById('mindset') },
         { id: 'tech', element: document.getElementById('tech') },
         { id: 'contact', element: document.getElementById('contact') },
       ];
