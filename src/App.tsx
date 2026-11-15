@@ -87,13 +87,13 @@ export default function App() {
             <Hero />
             <ValueProp />
             <Suspense fallback={null}>
-              <Projects />
-            </Suspense>
-            <Suspense fallback={null}>
               <TechStack />
             </Suspense>
             <Suspense fallback={null}>
               <Experience />
+            </Suspense>
+            <Suspense fallback={null}>
+              <Projects />
             </Suspense>
             <Suspense fallback={null}>
               <Testimonials />
