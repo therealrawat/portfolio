@@ -136,9 +136,8 @@ export default function Navigation() {
 
       {/* Floating Header Container */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isScrolled ? 'pt-3 md:pt-4 px-4' : 'pt-0 px-0'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled ? 'pt-3 md:pt-4 px-4' : 'pt-0 px-0'
+          }`}
       >
         <motion.div
           layout
@@ -147,11 +146,10 @@ export default function Navigation() {
             stiffness: 280,
             damping: 28,
           }}
-          className={`pointer-events-auto flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            isScrolled
+          className={`pointer-events-auto flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled
               ? 'w-full max-w-4xl py-2 px-3 sm:px-4 bg-[#0c0c11]/85 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/80'
               : 'w-full max-w-7xl py-5 px-6 md:px-12 bg-transparent border border-transparent'
-          }`}
+            }`}
         >
           {/* Left: Brand + Slash + Nav Links */}
           <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
@@ -187,11 +185,10 @@ export default function Navigation() {
                   <button
                     key={item.id}
                     onClick={() => handleNavClick(item.id)}
-                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
-                      isActive
+                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${isActive
                         ? 'bg-violet-500/20 text-violet-200 border border-violet-500/40 shadow-[0_0_12px_rgba(139,92,246,0.3)]'
                         : 'text-neutral-300 hover:text-white hover:bg-white/[0.04]'
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -203,7 +200,7 @@ export default function Navigation() {
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Ghost Cursor Toggle Button */}
-            <button
+            {/* <button
               onClick={() => toggleCursorActive()}
               title={cursorActive ? 'Disable cursor smoke trail' : 'Enable cursor smoke trail'}
               aria-label="Toggle cursor effect"
@@ -215,7 +212,7 @@ export default function Navigation() {
             >
               <Sparkles className={`w-3.5 h-3.5 transition-colors ${cursorActive ? 'text-violet-400' : 'text-neutral-500'}`} />
               <span className="hidden lg:inline text-[11px] font-mono">{cursorActive ? 'Trail: ON' : 'Trail: OFF'}</span>
-            </button>
+            </button> */}
 
             {/* LinkedIn Profile Button */}
             <a
@@ -274,11 +271,10 @@ export default function Navigation() {
                   <button
                     key={item.id}
                     onClick={() => handleNavClick(item.id)}
-                    className={`flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                      isActive
+                    className={`flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${isActive
                         ? 'bg-violet-500/20 text-violet-200 border border-violet-500/30'
                         : 'text-neutral-300 hover:text-white hover:bg-violet-500/10'
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </button>
