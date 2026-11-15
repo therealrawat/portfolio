@@ -5,6 +5,28 @@ import SpotlightCard from './reactbits/SpotlightCard';
 import DecryptedText from './reactbits/DecryptedText';
 import TrueFocus from './reactbits/TrueFocus';
 import LogoLoop, { type LogoItem } from './reactbits/LogoLoop';
+import {
+  TypeScriptIcon,
+  ReactIcon,
+  ThreeJsIcon,
+  NextJsIcon,
+  AngularIcon,
+  TailwindIcon,
+  ViteIcon,
+  WebGLIcon,
+  DotNetIcon,
+  PythonIcon,
+  FastApiIcon,
+  DockerIcon,
+  KubernetesIcon,
+  PostgresIcon,
+  RedisIcon,
+  GoogleCloudIcon,
+  GeminiIcon,
+  SqlServerIcon,
+  GsapIcon,
+  getTechIcon,
+} from './icons/TechIcons';
 
 interface TechDetail {
   name: string;
@@ -264,28 +286,28 @@ const techCategories = [
 ];
 
 const MARQUEE_ROW_1: LogoItem[] = [
-  { name: 'Three.js', category: '3D WebGL', highlight: true },
-  { name: 'TypeScript', category: 'Language', highlight: true },
-  { name: 'React', category: 'Frontend' },
-  { name: 'GSAP', category: 'Animation' },
-  { name: 'Next.js', category: 'Full-Stack' },
-  { name: 'WebGL', category: 'Shaders', highlight: true },
-  { name: 'Angular', category: 'Enterprise' },
-  { name: 'Tailwind CSS', category: 'Styling' },
-  { name: 'Vite', category: 'Tooling' },
+  { name: 'Three.js', category: '3D WebGL', icon: <ThreeJsIcon className="w-4 h-4 text-white" />, highlight: true },
+  { name: 'TypeScript', category: 'Language', icon: <TypeScriptIcon className="w-4 h-4" />, highlight: true },
+  { name: 'React', category: 'Frontend', icon: <ReactIcon className="w-4 h-4" /> },
+  { name: 'GSAP', category: 'Animation', icon: <GsapIcon className="w-4 h-4" /> },
+  { name: 'Next.js', category: 'Full-Stack', icon: <NextJsIcon className="w-4 h-4" /> },
+  { name: 'WebGL', category: 'Shaders', icon: <WebGLIcon className="w-4 h-4" />, highlight: true },
+  { name: 'Angular', category: 'Enterprise', icon: <AngularIcon className="w-4 h-4" /> },
+  { name: 'Tailwind CSS', category: 'Styling', icon: <TailwindIcon className="w-4 h-4" /> },
+  { name: 'Vite', category: 'Tooling', icon: <ViteIcon className="w-4 h-4" /> },
 ];
 
 const MARQUEE_ROW_2: LogoItem[] = [
-  { name: '.NET Core', category: 'Backend', highlight: true },
-  { name: 'Gemini AI', category: 'LLMs & Agents', highlight: true },
-  { name: 'FastAPI', category: 'Async Python' },
-  { name: 'PostgreSQL', category: 'Relational DB' },
-  { name: 'Docker', category: 'Containers', highlight: true },
-  { name: 'Redis', category: 'In-Memory Cache' },
-  { name: 'LangChain', category: 'Orchestration' },
-  { name: 'Google Cloud', category: 'Cloud Infra', highlight: true },
-  { name: 'Kubernetes', category: 'Orchestration' },
-  { name: 'SQL Server', category: 'Enterprise DB' },
+  { name: '.NET Core', category: 'Backend', icon: <DotNetIcon className="w-4 h-4" />, highlight: true },
+  { name: 'Gemini AI', category: 'LLMs & Agents', icon: <GeminiIcon className="w-4 h-4" />, highlight: true },
+  { name: 'FastAPI', category: 'Async Python', icon: <FastApiIcon className="w-4 h-4" /> },
+  { name: 'PostgreSQL', category: 'Relational DB', icon: <PostgresIcon className="w-4 h-4" /> },
+  { name: 'Docker', category: 'Containers', icon: <DockerIcon className="w-4 h-4" />, highlight: true },
+  { name: 'Redis', category: 'In-Memory Cache', icon: <RedisIcon className="w-4 h-4" /> },
+  { name: 'Python', category: 'AI & Data', icon: <PythonIcon className="w-4 h-4" /> },
+  { name: 'Google Cloud', category: 'Cloud Infra', icon: <GoogleCloudIcon className="w-4 h-4" />, highlight: true },
+  { name: 'Kubernetes', category: 'Orchestration', icon: <KubernetesIcon className="w-4 h-4" /> },
+  { name: 'SQL Server', category: 'Enterprise DB', icon: <SqlServerIcon className="w-4 h-4" /> },
 ];
 
 export default function TechStack() {
@@ -359,7 +381,7 @@ export default function TechStack() {
           </div>
         </div>
 
-        {/* ─── ReactBits Infinite Marquee Ticker ──────────────────────────────── */}
+        {/* ─── ReactBits Infinite Marquee Ticker with Real Logos ──────────────── */}
         <div className="mb-14 space-y-3">
           <div className="flex items-center justify-between px-1 mb-2 text-[10px] font-mono text-neutral-400 uppercase tracking-widest">
             <span className="flex items-center gap-1.5">
@@ -407,7 +429,10 @@ export default function TechStack() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 pt-1">
+              <div className="flex items-center gap-3.5 pt-1">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center p-2 shrink-0 shadow-inner">
+                  {getTechIcon(activeDetail.name, "w-6 h-6") || <Cpu className="w-5 h-5 text-violet-400" />}
+                </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                   {activeDetail.name}
                 </h3>
@@ -509,22 +534,24 @@ export default function TechStack() {
                         {category.philosophy}
                       </p>
 
-                      {/* Technologies Interactive Pills */}
+                      {/* Technologies Interactive Pills with Authentic Logos */}
                       <div className="flex flex-wrap gap-2">
                         {category.technologies.map((tech) => {
                           const isSelected = selectedTech === tech;
                           const hasDetails = !!TECH_DETAILS[tech];
+                          const icon = getTechIcon(tech, "w-3.5 h-3.5");
                           return (
                             <button
                               key={tech}
                               type="button"
                               onClick={() => handleSelectTech(tech)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                                 isSelected
                                   ? 'border border-violet-400 bg-violet-500/25 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)] font-bold'
                                   : 'border border-white/[0.08] bg-white/[0.03] text-neutral-300 hover:text-white hover:bg-violet-950/30 hover:border-violet-400/50'
                               }`}
                             >
+                              {icon && <span className="shrink-0">{icon}</span>}
                               <span>{tech}</span>
                               {hasDetails && (
                                 <ArrowUpRight className={`w-3 h-3 transition-transform ${isSelected ? 'text-violet-300 translate-x-0.5 -translate-y-0.5' : 'text-neutral-500 opacity-60'}`} />
