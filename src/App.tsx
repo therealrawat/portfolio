@@ -66,7 +66,7 @@ export default function App() {
       {/* GhostCursor Smoke Trail from ReactBits */}
       {cursorActive && (
         <GhostCursor
-          color="#FFFFFF"
+          color="#b497cf"
           size={75}
           trailLength={45}
           inertia={0.5}
