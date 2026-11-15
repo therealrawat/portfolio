@@ -93,10 +93,10 @@ export default function App() {
               <TechStack />
             </Suspense>
             <Suspense fallback={null}>
-              <Testimonials />
+              <Experience />
             </Suspense>
             <Suspense fallback={null}>
-              <Experience />
+              <Testimonials />
             </Suspense>
             <Suspense fallback={null}>
               <Footer />
