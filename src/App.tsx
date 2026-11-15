@@ -138,28 +138,20 @@ export default function App() {
           <button
             onClick={() => toggleCursorActive()}
             title={cursorActive ? 'Disable Ghost Cursor trail' : 'Enable Ghost Cursor trail'}
-            className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-mono transition-all duration-300 shadow-xl cursor-pointer ${
-              cursorActive
-                ? 'bg-[#0c0c12]/85 border-violet-500/30 text-violet-300 hover:border-violet-400 shadow-[0_4px_20px_rgba(139,92,246,0.15)]'
-                : 'bg-[#0c0c12]/85 border-white/10 text-neutral-400 hover:text-white hover:border-white/20'
-            }`}
+            className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-mono transition-all duration-300 shadow-xl cursor-pointer ${cursorActive
+              ? 'bg-[#0c0c12]/85 border-violet-500/30 text-violet-300 hover:border-violet-400 shadow-[0_4px_20px_rgba(139,92,246,0.15)]'
+              : 'bg-[#0c0c12]/85 border-white/10 text-neutral-400 hover:text-white hover:border-white/20'
+              }`}
           >
+
+            <span className="text-[11px] font-medium">Click Me</span>
             <span
-              className={`w-2 h-2 rounded-full transition-all ${
-                cursorActive
-                  ? 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]'
-                  : 'bg-neutral-600'
-              }`}
-            />
-            <span className="text-[11px] font-medium tracking-tight">Cursor Trail</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                cursorActive
-                  ? 'bg-violet-500/20 text-violet-300'
-                  : 'bg-white/5 text-neutral-500'
-              }`}
+              className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${cursorActive
+                ? 'bg-violet-500/20 text-violet-300'
+                : 'bg-white/5 text-neutral-500'
+                }`}
             >
-              {cursorActive ? 'ON' : 'OFF'}
+              {cursorActive ? '-' : '+'}
             </span>
           </button>
         </div>
