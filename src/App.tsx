@@ -5,6 +5,7 @@ import ValueProp from './components/ValueProp';
 import Preloader from './components/Preloader';
 import GhostCursor from './components/reactbits/GhostCursor';
 import { getCurrentRoute, type PageRoute } from './utils/navigation';
+import { getCursorActive, toggleCursorActive } from './utils/cursorState';
 
 const loadAboutMe = () => import('./components/AboutMe');
 const loadProjectsPage = () => import('./components/ProjectsPage');
@@ -26,6 +27,17 @@ const Footer = lazy(loadFooter);
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [currentRoute, setCurrentRoute] = useState<PageRoute>(getCurrentRoute);
+  const [cursorActive, setCursorActiveState] = useState<boolean>(getCursorActive);
+
+  useEffect(() => {
+    const handleCursorSync = () => {
+      setCursorActiveState(getCursorActive());
+    };
+    window.addEventListener('ghost-cursor-changed', handleCursorSync);
+    return () => {
+      window.removeEventListener('ghost-cursor-changed', handleCursorSync);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -52,19 +64,21 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#070709] selection:bg-violet-600/35 selection:text-white text-white relative">
       {/* GhostCursor Smoke Trail from ReactBits */}
-      <GhostCursor
-        color="#8B5CF6"
-        size={75}
-        trailLength={45}
-        inertia={0.5}
-        turbulence={0.45}
-        drift={0.25}
-        bloomStrength={0.55}
-        grainIntensity={0}
-        clickPuff={true}
-        zIndex={30}
-        className="fixed inset-0 pointer-events-none"
-      />
+      {cursorActive && (
+        <GhostCursor
+          color="#8B5CF6"
+          size={75}
+          trailLength={45}
+          inertia={0.5}
+          turbulence={0.45}
+          drift={0.25}
+          bloomStrength={0.55}
+          grainIntensity={0}
+          clickPuff={true}
+          zIndex={30}
+          className="fixed inset-0 pointer-events-none"
+        />
+      )}
 
       {/* Preloader */}
       {loading && <Preloader />}
@@ -116,6 +130,39 @@ export default function App() {
         >
           <AIAssistant />
         </Suspense>
+      )}
+
+      {/* Manual Ghost Cursor Quick-Toggle Pill (Bottom-Left) */}
+      {!loading && (
+        <div className="fixed bottom-6 left-6 z-40 hidden sm:block pointer-events-auto">
+          <button
+            onClick={() => toggleCursorActive()}
+            title={cursorActive ? 'Disable Ghost Cursor trail' : 'Enable Ghost Cursor trail'}
+            className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-mono transition-all duration-300 shadow-xl cursor-pointer ${
+              cursorActive
+                ? 'bg-[#0c0c12]/85 border-violet-500/30 text-violet-300 hover:border-violet-400 shadow-[0_4px_20px_rgba(139,92,246,0.15)]'
+                : 'bg-[#0c0c12]/85 border-white/10 text-neutral-400 hover:text-white hover:border-white/20'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full transition-all ${
+                cursorActive
+                  ? 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]'
+                  : 'bg-neutral-600'
+              }`}
+            />
+            <span className="text-[11px] font-medium tracking-tight">Cursor Trail</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                cursorActive
+                  ? 'bg-violet-500/20 text-violet-300'
+                  : 'bg-white/5 text-neutral-500'
+              }`}
+            >
+              {cursorActive ? 'ON' : 'OFF'}
+            </span>
+          </button>
+        </div>
       )}
     </div>
   );

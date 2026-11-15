@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Loader2, ArrowUpRight, Menu, X } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowUpRight, Menu, X, Sparkles } from 'lucide-react';
 import logo from '../assets/pr-light.svg';
 import { navigateTo, getCurrentRoute, type PageRoute } from '../utils/navigation';
+import { getCursorActive, toggleCursorActive } from '../utils/cursorState';
 
 const LinkedinFilledIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
   <svg
@@ -36,6 +37,15 @@ export default function Navigation() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentRoute, setCurrentRoute] = useState<PageRoute>(getCurrentRoute);
+  const [cursorActive, setCursorActiveState] = useState<boolean>(getCursorActive);
+
+  useEffect(() => {
+    const handleCursorSync = () => {
+      setCursorActiveState(getCursorActive());
+    };
+    window.addEventListener('ghost-cursor-changed', handleCursorSync);
+    return () => window.removeEventListener('ghost-cursor-changed', handleCursorSync);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -192,6 +202,21 @@ export default function Navigation() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Ghost Cursor Toggle Button */}
+            <button
+              onClick={() => toggleCursorActive()}
+              title={cursorActive ? 'Disable cursor smoke trail' : 'Enable cursor smoke trail'}
+              aria-label="Toggle cursor effect"
+              className={`hidden sm:inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl border text-xs font-medium transition-all shadow-sm shrink-0 cursor-pointer ${
+                cursorActive
+                  ? 'border-violet-500/40 bg-violet-500/10 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.2)]'
+                  : 'border-white/10 bg-white/[0.03] text-neutral-400 hover:text-white hover:bg-white/[0.06]'
+              }`}
+            >
+              <Sparkles className={`w-3.5 h-3.5 transition-colors ${cursorActive ? 'text-violet-400' : 'text-neutral-500'}`} />
+              <span className="hidden lg:inline text-[11px] font-mono">{cursorActive ? 'Trail: ON' : 'Trail: OFF'}</span>
+            </button>
+
             {/* LinkedIn Profile Button */}
             <a
               href="https://linkedin.com/in/rawat-priyanshu"
@@ -270,6 +295,14 @@ export default function Navigation() {
                   <LinkedinFilledIcon className="w-3.5 h-3.5" />
                   <span>LinkedIn Profile</span>
                 </a>
+
+                <button
+                  onClick={() => toggleCursorActive()}
+                  className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white py-1"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${cursorActive ? 'text-violet-400' : 'text-neutral-500'}`} />
+                  <span className="font-mono text-[10px]">{cursorActive ? 'Trail: ON' : 'Trail: OFF'}</span>
+                </button>
               </div>
             </motion.div>
           )}
