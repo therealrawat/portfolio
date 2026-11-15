@@ -407,11 +407,10 @@ export default function TechStack() {
                   setActiveCategory(cat.id);
                   setSelectedTech(cat.techs[0].name);
                 }}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-violet-500/20 border border-violet-400/80 text-white font-semibold shadow-[0_0_12px_rgba(139,92,246,0.3)]'
-                    : 'bg-white/[0.03] border border-white/10 text-neutral-400 hover:text-white'
-                }`}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${isActive
+                  ? 'bg-violet-500/20 border border-violet-400/80 text-white font-semibold shadow-[0_0_12px_rgba(139,92,246,0.3)]'
+                  : 'bg-white/[0.03] border border-white/10 text-neutral-400 hover:text-white'
+                  }`}
               >
                 {cat.label}
               </button>
@@ -437,18 +436,16 @@ export default function TechStack() {
                 >
                   {/* Active Indicator Bar (matches the '| Other' inspiration design) */}
                   <div
-                    className={`w-[2px] h-5 rounded-full transition-all duration-300 ${
-                      isActive
-                        ? 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]'
-                        : 'bg-transparent group-hover:bg-white/20'
-                    }`}
+                    className={`w-[2px] h-5 rounded-full transition-all duration-300 ${isActive
+                      ? 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]'
+                      : 'bg-transparent group-hover:bg-white/20'
+                      }`}
                   />
                   <span
-                    className={`text-base sm:text-lg transition-colors duration-200 ${
-                      isActive
-                        ? 'text-white font-semibold'
-                        : 'text-neutral-500 hover:text-neutral-300 font-normal'
-                    }`}
+                    className={`text-base sm:text-lg transition-colors duration-200 ${isActive
+                      ? 'text-white font-semibold'
+                      : 'text-neutral-500 hover:text-neutral-300 font-normal'
+                      }`}
                   >
                     {cat.label}
                   </span>
@@ -476,11 +473,10 @@ export default function TechStack() {
                       spotlightColor="rgba(139, 92, 246, 0.25)"
                       spotlightSize={260}
                       onClick={() => setSelectedTech(tech.name)}
-                      className={`group h-20 sm:h-22 cursor-pointer transition-all duration-300 border ${
-                        isSelected
-                          ? 'border-violet-400/90 bg-violet-950/25 shadow-[0_0_20px_rgba(139,92,246,0.35)]'
-                          : 'border-white/10 bg-[#0c0c11]/80 hover:border-violet-500/40 hover:bg-white/[0.04]'
-                      }`}
+                      className={`group h-20 sm:h-22 cursor-pointer transition-all duration-300 border ${isSelected
+                        ? 'border-violet-400/90 bg-violet-950/25 shadow-[0_0_20px_rgba(139,92,246,0.35)]'
+                        : 'border-white/10 bg-[#0c0c11]/80 hover:border-violet-500/40 hover:bg-white/[0.04]'
+                        }`}
                       contentClassName="flex items-center justify-center w-full h-full px-4 py-3"
                     >
                       <div className="flex items-center justify-center gap-2.5 sm:gap-3">
