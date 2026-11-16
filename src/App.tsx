@@ -61,12 +61,21 @@ export default function App() {
     };
   }, []);
 
+  const isAbout = currentRoute === 'about';
+
   return (
-    <div className="min-h-screen bg-[#070709] selection:bg-white/20 selection:text-white text-white relative">
+    <div
+      className={`min-h-screen relative transition-colors duration-500 ${
+        isAbout
+          ? 'bg-[#f5f5f7] selection:bg-black/15 selection:text-black text-black'
+          : 'bg-[#070709] selection:bg-white/20 selection:text-white text-white'
+      }`}
+    >
       {/* GhostCursor Smoke Trail from ReactBits */}
       {cursorActive && (
         <GhostCursor
           color="#b497cf"
+          theme={isAbout ? 'light' : 'dark'}
           size={75}
           trailLength={45}
           inertia={0.5}
@@ -89,7 +98,7 @@ export default function App() {
         {currentRoute === 'about' ? (
           <Suspense fallback={null}>
             <AboutMe />
-            <Footer />
+            <Footer theme="light" />
           </Suspense>
         ) : currentRoute === 'projects' ? (
           <Suspense fallback={null}>
@@ -138,18 +147,24 @@ export default function App() {
           <button
             onClick={() => toggleCursorActive()}
             title={cursorActive ? 'Disable Ghost Cursor trail' : 'Enable Ghost Cursor trail'}
-            className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-mono transition-all duration-300 shadow-xl cursor-pointer ${cursorActive
-              ? 'bg-[#0c0c12]/85 border-white/30 text-white hover:border-white/60 shadow-[0_4px_20px_rgba(255,255,255,0.12)]'
-              : 'bg-[#0c0c12]/85 border-white/10 text-neutral-400 hover:text-white hover:border-white/20'
-              }`}
+            className={`group flex items-center gap-2.5 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-mono transition-all duration-300 shadow-xl cursor-pointer ${
+              cursorActive
+                ? isAbout
+                  ? 'bg-black/90 border-black/30 text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]'
+                  : 'bg-[#0c0c12]/85 border-white/30 text-white hover:border-white/60 shadow-[0_4px_20px_rgba(255,255,255,0.12)]'
+                : isAbout
+                  ? 'bg-white/90 border-black/10 text-neutral-600 hover:text-black hover:border-black/20'
+                  : 'bg-[#0c0c12]/85 border-white/10 text-neutral-400 hover:text-white hover:border-white/20'
+            }`}
           >
 
             <span className="text-[11px] font-medium">Click Me</span>
             <span
-              className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${cursorActive
-                ? 'bg-white/15 text-white'
-                : 'bg-white/5 text-neutral-500'
-                }`}
+              className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                cursorActive
+                  ? isAbout ? 'bg-white/20 text-white' : 'bg-white/15 text-white'
+                  : isAbout ? 'bg-black/5 text-neutral-600' : 'bg-white/5 text-neutral-500'
+              }`}
             >
               {cursorActive ? '-' : '+'}
             </span>

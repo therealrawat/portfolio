@@ -146,7 +146,7 @@ export default function Navigation() {
             stiffness: 280,
             damping: 28,
           }}
-          className={`pointer-events-auto flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled
+          className={`pointer-events-auto flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled || currentRoute === 'about'
               ? 'w-full max-w-4xl py-2 px-3 sm:px-4 bg-[#0c0c11]/85 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/80'
               : 'w-full max-w-7xl py-5 px-6 md:px-12 bg-transparent border border-transparent'
             }`}

@@ -38,7 +38,7 @@ const BEVEL = 0.007;
 const JOINTS = 4;
 const NODE_WEIGHT = 1 / 0.05;
 const MAX_STEP = 1 / 960;
-const ITERATIONS = 2;
+const ITERATIONS = 4;
 const SAMPLES = 72;
 const FOV = 24;
 const STRAP_WIDTH = 0.36;
@@ -566,29 +566,29 @@ const solveSegment = (sim: any, i: number, h: number, physics: any) => {
   const stretch = length - sim.rest;
   if (stretch <= 0 || length < 1e-9) return;
   const normal = delta.divideScalar(length);
-  const wb = last ? bodyWeight(body, r, normal) : NODE_WEIGHT;
+  const isDragging = !!sim.grab;
+  const wb = last ? (isDragging ? 0 : bodyWeight(body, r, normal)) : NODE_WEIGHT;
   const rate = (length - sim.lengths[i]) / h;
   const tension =
     physics.hold * Math.tanh((physics.stiffness * stretch) / physics.hold) +
     physics.spring * stretch +
     physics.bandDamping * Math.max(0, rate);
   const room = tension * h * h - sim.impulses[i];
-  if (room <= 0) return;
-  const lambda = Math.min(stretch / (wa + wb), room);
+  if (!isDragging && room <= 0) return;
+  const lambda = isDragging ? (stretch / (wa + wb)) * 0.85 : Math.min(stretch / (wa + wb), room);
   sim.impulses[i] += lambda;
   if (wa) a.addScaledVector(normal, lambda * wa);
-  if (last) pushBody(body, r, normal.multiplyScalar(-lambda));
-  else b.addScaledVector(normal, -lambda * wb);
+  if (last) {
+    if (!isDragging) pushBody(body, r, normal.multiplyScalar(-lambda));
+  } else {
+    b.addScaledVector(normal, -lambda * wb);
+  }
 };
 
 const solvePin = (body: any, grab: any, target: THREE.Vector3) => {
   const r = scratch.g.copy(grab.local).applyQuaternion(body.quaternion);
   const delta = scratch.a.copy(target).sub(body.position).sub(r);
-  const distance = delta.length();
-  if (distance < 1e-9) return;
-  const normal = delta.divideScalar(distance);
-  const lambda = distance / bodyWeight(body, r, normal);
-  pushBody(body, r, normal.multiplyScalar(lambda));
+  body.position.add(delta);
 };
 
 const placeHanging = (sim: any, layout: any, intro: boolean) => {
@@ -1032,7 +1032,7 @@ export default function Lanyard({
         clampMesh.geometry.dispose();
         clampMesh.geometry = buildClampGeometry(strapScale);
       }
-      canvas.style.touchAction = s.interactive ? 'pan-y' : 'auto';
+      canvas.style.touchAction = s.interactive ? 'none' : 'auto';
 
       applied = { layoutKey, framingKey, imageKey, faceKey, strapColor: s.strapColor, strapScale };
       start();
@@ -1215,10 +1215,16 @@ export default function Lanyard({
       toPointer(event);
       const hit = pickCard();
       if (!hit) return;
+
+      const dragPlane = new THREE.Plane();
+      camera.getWorldDirection(scratch.a).negate();
+      dragPlane.setFromNormalAndCoplanarPoint(scratch.a, hit.point);
+
       sim.grab = {
         local: hit.point.clone().sub(sim.body.position).applyQuaternion(sim.body.quaternion.clone().invert()),
         rotation: sim.body.quaternion.clone(),
         reach: hit.distance,
+        plane: dragPlane,
         from: hit.point.clone(),
         target: hit.point.clone()
       };
@@ -1234,7 +1240,9 @@ export default function Lanyard({
       toPointer(event);
       if (sim.grab) {
         if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 6) press = null;
-        raycaster.ray.at(sim.grab.reach, sim.grab.target);
+        if (!sim.grab.plane || !raycaster.ray.intersectPlane(sim.grab.plane, sim.grab.target)) {
+          raycaster.ray.at(sim.grab.reach, sim.grab.target);
+        }
         start();
         return;
       }
